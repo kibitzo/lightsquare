@@ -1,0 +1,35 @@
+{
+  "name": "lightsquare",
+  "version": "0.0.1",
+  "description": "A chessboard that stays smooth on every phone. Pieces move with CSS transforms on the GPU, no animation loop, no dependencies.",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./lightsquare.css": "./dist/lightsquare.css"
+  },
+  "files": [
+    "dist"
+  ],
+  "sideEffects": [
+    "*.css"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json && cp src/lightsquare.css dist/lightsquare.css",
+    "test": "vitest run"
+  },
+  "keywords": [
+    "chess",
+    "chessboard",
+    "board",
+    "mobile",
+    "performance"
+  ],
+  "author": "Kibitzo (https://kibitzo.com)",
+  "homepage": "https://kibitzo.com/lightsquare",
+  "license": "MIT"
+}

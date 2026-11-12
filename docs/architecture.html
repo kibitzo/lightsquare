@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lightsquare: how a move reaches the screen</title>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --color-paper:   #0c1117;
+      --color-ink:     #e2e8f0;
+      --color-muted:   #94a3b8;
+      --color-accent:  #f59e0b;
+      --font-sans:     'Geist', system-ui, sans-serif;
+      --font-serif:    'Instrument Serif', 'Noto Serif', serif;
+      --font-mono:     'Geist Mono', ui-monospace, monospace;
+    }
+    body {
+      font-family: var(--font-sans);
+      background: var(--color-paper);
+      color: var(--color-ink);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 3rem 2rem;
+    }
+    .frame { max-width: 1200px; width: 100%; }
+    .diagram-container { width: 100%; overflow-x: auto; }
+    .eyebrow {
+      font-family: var(--font-mono);
+      font-size: 0.66rem;
+      font-weight: 500;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--color-muted);
+      margin-bottom: 0.5rem;
+    }
+    h1 {
+      font-family: var(--font-serif);
+      font-size: clamp(1.5rem, 2.4vw + 0.75rem, 2rem);
+      font-weight: 400;
+      letter-spacing: -0.02em;
+      line-height: 1.15;
+      color: var(--color-ink);
+      margin-bottom: 1.5rem;
+    }
+    svg { width: 100%; min-width: 1136px; display: block; }
+    @media print {
+      .diagram-container { overflow-x: visible; }
+      svg { min-width: 0; }
+    }
+  </style>
+</head>
+<body>
+  <div class="frame">
+    <p class="eyebrow">Architecture · Lightsquare</p>
+    <h1>How a move reaches the screen</h1>
+
+    <div class="diagram-container">
+      <svg viewBox="0 0 1136 480" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="lightsquare-architecture-title lightsquare-architecture-desc">
+        <title id="lightsquare-architecture-title">Lightsquare: how a move reaches the screen</title>
+        <desc id="lightsquare-architecture-desc">The app and the player's finger both change one state object; a reconciler writes only what changed into the board's layers, and the browser animates the moved pieces without any script running per frame. Optional modules join the same update.</desc>
+        <defs>
+          <marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#94a3b8"/></marker>
+          <marker id="arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#f59e0b"/></marker>
+          <marker id="arrow-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#60a5fa"/></marker>
+        </defs>
+
+        <rect width="100%" height="100%" fill="#0c1117"/>
+
+        <!-- connectors first -->
+        <line x1="200" y1="141" x2="264" y2="141" stroke="#94a3b8" stroke-width="1.2" marker-end="url(#arrow)"/>
+        <line x1="264" y1="163" x2="200" y2="163" stroke="#94a3b8" stroke-width="1" stroke-dasharray="5,4" marker-end="url(#arrow)"/>
+        <line x1="424" y1="152" x2="488" y2="152" stroke="#94a3b8" stroke-width="1.2" marker-end="url(#arrow)"/>
+        <line x1="648" y1="152" x2="712" y2="152" stroke="#94a3b8" stroke-width="1.2" marker-end="url(#arrow)"/>
+        <line x1="872" y1="152" x2="936" y2="152" stroke="#94a3b8" stroke-width="1.2" marker-end="url(#arrow)"/>
+        <line x1="1016" y1="184" x2="1016" y2="312" stroke="#f59e0b" stroke-width="1.4" marker-end="url(#arrow-accent)"/>
+        <line x1="568" y1="312" x2="568" y2="184" stroke="#94a3b8" stroke-width="1.2" marker-end="url(#arrow)"/>
+        <line x1="792" y1="184" x2="792" y2="312" stroke="#94a3b8" stroke-width="1" stroke-dasharray="5,4" marker-end="url(#arrow)"/>
+
+        <!-- connector labels: mask, then text -->
+        <rect x="212" y="121" width="40" height="12" rx="2" fill="#0c1117"/>
+        <text x="232" y="130" fill="#8291a7" font-size="8" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle" letter-spacing="0.06em">CONFIG</text>
+        <rect x="212" y="171" width="40" height="12" rx="2" fill="#0c1117"/>
+        <text x="232" y="180" fill="#8291a7" font-size="8" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle" letter-spacing="0.06em">EVENTS</text>
+        <rect x="442" y="132" width="28" height="12" rx="2" fill="#0c1117"/>
+        <text x="456" y="141" fill="#8291a7" font-size="8" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle" letter-spacing="0.06em">SET</text>
+        <rect x="656" y="132" width="48" height="12" rx="2" fill="#0c1117"/>
+        <text x="680" y="141" fill="#8291a7" font-size="8" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle" letter-spacing="0.06em">CHANGES</text>
+        <rect x="884" y="132" width="40" height="12" rx="2" fill="#0c1117"/>
+        <text x="904" y="141" fill="#8291a7" font-size="8" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle" letter-spacing="0.06em">WRITES</text>
+        <rect x="944" y="242" width="64" height="12" rx="2" fill="#0c1117"/>
+        <text x="976" y="251" fill="#f59e0b" font-size="8" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle" letter-spacing="0.06em">TRANSFORMS</text>
+        <rect x="512" y="242" width="48" height="12" rx="2" fill="#0c1117"/>
+        <text x="536" y="251" fill="#8291a7" font-size="8" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle" letter-spacing="0.06em">INTENTS</text>
+        <rect x="744" y="242" width="40" height="12" rx="2" fill="#0c1117"/>
+        <text x="764" y="251" fill="#8291a7" font-size="8" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle" letter-spacing="0.06em">UPDATE</text>
+
+        <!-- Your app -->
+        <rect x="40" y="120" width="160" height="64" rx="6" fill="#0c1117"/>
+        <rect x="40" y="120" width="160" height="64" rx="6" fill="rgba(226,232,240,0.03)" stroke="rgba(226,232,240,0.28)" stroke-width="1"/>
+        <rect x="48" y="126" width="28" height="12" rx="2" fill="transparent" stroke="rgba(226,232,240,0.30)" stroke-width="0.8"/>
+        <text x="62" y="135" fill="#94a3b8" font-size="7" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle" letter-spacing="0.08em">APP</text>
+        <text x="120" y="156" fill="#e2e8f0" font-size="12" font-weight="600" font-family="'Geist', system-ui, sans-serif" text-anchor="middle">Your app</text>
+        <text x="120" y="172" fill="#94a3b8" font-size="9" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle">any page, any framework</text>
+
+        <!-- API -->
+        <rect x="264" y="120" width="160" height="64" rx="6" fill="#0c1117"/>
+        <rect x="264" y="120" width="160" height="64" rx="6" fill="rgba(226,232,240,0.05)" stroke="rgba(226,232,240,0.28)" stroke-width="1"/>
+        <rect x="272" y="126" width="32" height="12" rx="2" fill="transparent" stroke="rgba(226,232,240,0.30)" stroke-width="0.8"/>
+        <text x="288" y="135" fill="#94a3b8" font-size="7" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle" letter-spacing="0.08em">CORE</text>
+        <text x="344" y="156" fill="#e2e8f0" font-size="12" font-weight="600" font-family="'Geist', system-ui, sans-serif" text-anchor="middle">API</text>
+        <text x="344" y="172" fill="#94a3b8" font-size="9" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle">set · move · destroy</text>
+
+        <!-- State (focal) -->
+        <rect x="488" y="120" width="160" height="64" rx="6" fill="#0c1117"/>
+        <rect x="488" y="120" width="160" height="64" rx="6" fill="rgba(245,158,11,0.10)" stroke="#f59e0b" stroke-width="1.2"/>
+        <rect x="496" y="126" width="32" height="12" rx="2" fill="transparent" stroke="rgba(245,158,11,0.50)" stroke-width="0.8"/>
+        <text x="512" y="135" fill="#f59e0b" font-size="7" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle" letter-spacing="0.08em">CORE</text>
+        <text x="568" y="156" fill="#e2e8f0" font-size="12" font-weight="600" font-family="'Geist', system-ui, sans-serif" text-anchor="middle">State</text>
+        <text x="568" y="172" fill="#94a3b8" font-size="9" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle">one plain object</text>
+
+        <!-- Reconciler -->
+        <rect x="712" y="120" width="160" height="64" rx="6" fill="#0c1117"/>
+        <rect x="712" y="120" width="160" height="64" rx="6" fill="rgba(226,232,240,0.05)" stroke="rgba(226,232,240,0.28)" stroke-width="1"/>
+        <rect x="720" y="126" width="32" height="12" rx="2" fill="transparent" stroke="rgba(226,232,240,0.30)" stroke-width="0.8"/>
+        <text x="736" y="135" fill="#94a3b8" font-size="7" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle" letter-spacing="0.08em">CORE</text>
+        <text x="792" y="156" fill="#e2e8f0" font-size="12" font-weight="600" font-family="'Geist', system-ui, sans-serif" text-anchor="middle">Reconciler</text>
+        <text x="792" y="172" fill="#94a3b8" font-size="9" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle">writes only what changed</text>
+
+        <!-- Layers -->
+        <rect x="936" y="120" width="160" height="64" rx="6" fill="#0c1117"/>
+        <rect x="936" y="120" width="160" height="64" rx="6" fill="rgba(226,232,240,0.05)" stroke="rgba(226,232,240,0.28)" stroke-width="1"/>
+        <rect x="944" y="126" width="28" height="12" rx="2" fill="transparent" stroke="rgba(226,232,240,0.30)" stroke-width="0.8"/>
+        <text x="958" y="135" fill="#94a3b8" font-size="7" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle" letter-spacing="0.08em">DOM</text>
+        <text x="1016" y="156" fill="#e2e8f0" font-size="12" font-weight="600" font-family="'Geist', system-ui, sans-serif" text-anchor="middle">Layers</text>
+        <text x="1016" y="172" fill="#94a3b8" font-size="9" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle">squares, pieces, shapes</text>
+
+        <!-- Input -->
+        <rect x="488" y="312" width="160" height="64" rx="6" fill="#0c1117"/>
+        <rect x="488" y="312" width="160" height="64" rx="6" fill="rgba(226,232,240,0.05)" stroke="rgba(226,232,240,0.28)" stroke-width="1"/>
+        <rect x="496" y="318" width="32" height="12" rx="2" fill="transparent" stroke="rgba(226,232,240,0.30)" stroke-width="0.8"/>
+        <text x="512" y="327" fill="#94a3b8" font-size="7" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle" letter-spacing="0.08em">CORE</text>
+        <text x="568" y="348" fill="#e2e8f0" font-size="12" font-weight="600" font-family="'Geist', system-ui, sans-serif" text-anchor="middle">Input</text>
+        <text x="568" y="364" fill="#94a3b8" font-size="9" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle">tap, drag, premove</text>
+
+        <!-- Modules (optional) -->
+        <rect x="712" y="312" width="160" height="64" rx="6" fill="#0c1117"/>
+        <rect x="712" y="312" width="160" height="64" rx="6" fill="rgba(226,232,240,0.02)" stroke="rgba(226,232,240,0.28)" stroke-width="1" stroke-dasharray="4,3"/>
+        <rect x="720" y="318" width="28" height="12" rx="2" fill="transparent" stroke="rgba(226,232,240,0.30)" stroke-width="0.8"/>
+        <text x="734" y="327" fill="#94a3b8" font-size="7" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle" letter-spacing="0.08em">OPT</text>
+        <text x="792" y="348" fill="#e2e8f0" font-size="12" font-weight="600" font-family="'Geist', system-ui, sans-serif" text-anchor="middle">Modules</text>
+        <text x="792" y="364" fill="#94a3b8" font-size="9" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle">arrows, promotion, a11y</text>
+
+        <!-- Browser compositor (focal, external) -->
+        <rect x="936" y="312" width="160" height="64" rx="6" fill="#0c1117"/>
+        <rect x="936" y="312" width="160" height="64" rx="6" fill="rgba(245,158,11,0.10)" stroke="#f59e0b" stroke-width="1.2"/>
+        <rect x="944" y="318" width="28" height="12" rx="2" fill="transparent" stroke="rgba(245,158,11,0.50)" stroke-width="0.8"/>
+        <text x="958" y="327" fill="#f59e0b" font-size="7" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle" letter-spacing="0.08em">GPU</text>
+        <text x="1016" y="348" fill="#e2e8f0" font-size="12" font-weight="600" font-family="'Geist', system-ui, sans-serif" text-anchor="middle">Browser compositor</text>
+        <text x="1016" y="364" fill="#94a3b8" font-size="9" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle">slides the pieces</text>
+
+        <!-- one callout -->
+        <text x="1016" y="400" fill="#e2e8f0" font-size="14" font-style="italic" font-family="'Instrument Serif', 'Noto Serif', serif" text-anchor="middle">no script runs per frame</text>
+
+        <!-- legend strip -->
+        <line x1="40" y1="432" x2="1096" y2="432" stroke="rgba(226,232,240,0.10)" stroke-width="0.8"/>
+        <text x="40" y="456" fill="#94a3b8" font-size="8" font-family="'Geist Mono', ui-monospace, monospace" letter-spacing="0.14em">LEGEND</text>
+        <rect x="112" y="447" width="16" height="12" rx="2" fill="rgba(245,158,11,0.10)" stroke="#f59e0b" stroke-width="1"/>
+        <text x="136" y="456" fill="#94a3b8" font-size="9" font-family="'Geist', system-ui, sans-serif">where the design turns</text>
+        <line x1="288" y1="453" x2="320" y2="453" stroke="#94a3b8" stroke-width="1.2" marker-end="url(#arrow)"/>
+        <text x="328" y="456" fill="#94a3b8" font-size="9" font-family="'Geist', system-ui, sans-serif">every change</text>
+        <line x1="432" y1="453" x2="464" y2="453" stroke="#94a3b8" stroke-width="1" stroke-dasharray="5,4" marker-end="url(#arrow)"/>
+        <text x="472" y="456" fill="#94a3b8" font-size="9" font-family="'Geist', system-ui, sans-serif">optional, or back to the app</text>
+        <line x1="656" y1="453" x2="688" y2="453" stroke="#f59e0b" stroke-width="1.4" marker-end="url(#arrow-accent)"/>
+        <text x="696" y="456" fill="#94a3b8" font-size="9" font-family="'Geist', system-ui, sans-serif">handed to the browser</text>
+        <rect x="840" y="447" width="16" height="12" rx="2" fill="rgba(226,232,240,0.02)" stroke="rgba(226,232,240,0.28)" stroke-width="1" stroke-dasharray="4,3"/>
+        <text x="864" y="456" fill="#94a3b8" font-size="9" font-family="'Geist', system-ui, sans-serif">imported only if used</text>
+      </svg>
+    </div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,66 @@
+/* Lightsquare. Every rule here follows RULES.md: pieces move by transform
+   only, positions in percent, one background for the squares. */
+
+.ls-board {
+  --ls-light: #f0d9b5;
+  --ls-dark: #b58863;
+  --ls-move-ms: 160ms;
+  --ls-select: rgba(20, 85, 30, 0.5);
+  --ls-last: rgba(155, 199, 0, 0.41);
+  --ls-check: radial-gradient(ellipse at center, rgba(255, 0, 0, 1) 0%, rgba(231, 0, 0, 1) 25%, rgba(169, 0, 0, 0) 89%, rgba(158, 0, 0, 0) 100%);
+  --ls-dot: rgba(20, 85, 30, 0.5);
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1;
+  /* One background for 64 squares: a8 (top-left from White) is light. */
+  background: repeating-conic-gradient(var(--ls-light) 0 25%, var(--ls-dark) 0 50%) 0 0 / 25% 25%;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+  contain: layout paint;
+}
+
+.ls-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.ls-piece,
+.ls-mark {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 12.5%;
+  height: 12.5%;
+  /* transform: translate(col * 100%, row * 100%), set per element */
+}
+
+.ls-piece {
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  will-change: transform;
+  transition: transform var(--ls-move-ms) ease, opacity var(--ls-move-ms) ease;
+}
+
+.ls-board.ls-instant .ls-piece,
+.ls-piece.ls-dragging {
+  transition: none;
+}
+
+.ls-piece.ls-dragging {
+  z-index: 2;
+  scale: 1.12;
+}
+
+.ls-piece.ls-gone {
+  opacity: 0;
+}
+
+.ls-mark-select { background: var(--ls-select); }
+.ls-mark-last { background: var(--ls-last); }
+.ls-mark-check { background: var(--ls-check); }
+.ls-mark-dot { background: radial-gradient(var(--ls-dot) 19%, transparent 21%); }
+.ls-mark-capture { background: radial-gradient(transparent 0 79%, var(--ls-dot) 80%); }
