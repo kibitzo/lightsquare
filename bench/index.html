@@ -45,7 +45,11 @@
   h1 span { color: #d9ae5c; }
   .tagline { margin: 0 0 -0.22em; font-size: 14.5px; line-height: 1.25; color: var(--dim); }
   .tagline b { font-weight: 600; color: #e2e8f0; }
-  .facts { display: grid; grid-auto-flow: column; gap: 0; margin: 0 0 0 auto; padding: 0; list-style: none; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+  /* The way to the source: quiet, in the fixed-width face, at the right of the name. */
+  .repo { margin-left: auto; padding: 8px 12px; border: 1px solid var(--line); border-radius: 10px; font: 400 12px/1 var(--mono); letter-spacing: 0.02em; color: var(--text); white-space: nowrap; }
+  .repo:hover { border-color: var(--amber); color: var(--amber-soft); text-decoration: none; }
+  .repo span { color: var(--amber-soft); }
+  .facts { display: grid; grid-auto-flow: column; gap: 0; margin: 0; padding: 0; list-style: none; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
   .facts li { padding: 7px 14px; border-left: 1px solid var(--line); }
   .facts li:first-child { border-left: 0; }
   .facts b { display: block; font: 600 15px/1.2 var(--mono); color: var(--bright); font-variant-numeric: tabular-nums; }
@@ -311,6 +315,7 @@
         <p class="tagline">A chessboard that stays <b>smooth on every phone</b>.</p>
       </div>
     </div>
+    <a class="repo" href="https://github.com/kibitzo/lightsquare">github.com/kibitzo/lightsquare <span aria-hidden="true">↗</span></a>
     <ul class="facts" aria-label="Facts">
       <li><b>5.2 kB</b><small>core, gzipped</small></li>
       <li><b>0</b><small>dependencies</small></li>
@@ -451,7 +456,7 @@ board.<span class="f">use</span>(<span class="f">shapes</span>({ arrows: [{ from
     </div>
   </section>
 
-  <footer>Lightsquare · MIT · made for <a href="https://kibitzo.com">Kibitzo</a><br>Pieces on this page: <a href="https://github.com/lichess-org/lila/tree/master/public/piece/staunty">Staunty</a> by sadsnake1, recoloured, <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/">CC BY-NC-SA 4.0</a>, shown here only (<a href="pieces-staunty-NOTICE.md">notice</a>); and Cburnett by Colin M.L. Burnett (BSD), the set the package ships.</footer>
+  <footer>Lightsquare · MIT · <a href="https://github.com/kibitzo/lightsquare">source, docs and tests on GitHub</a> · made for <a href="https://kibitzo.com">Kibitzo</a><br>Pieces on this page: <a href="https://github.com/lichess-org/lila/tree/master/public/piece/staunty">Staunty</a> by sadsnake1, recoloured, <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/">CC BY-NC-SA 4.0</a>, shown here only (<a href="pieces-staunty-NOTICE.md">notice</a>); and Cburnett by Colin M.L. Burnett (BSD), the set the package ships.</footer>
 </div>
 <script type="module" src="bench.js"></script>
 </body>

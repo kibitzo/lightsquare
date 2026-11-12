@@ -295,6 +295,9 @@ describe.each([PROFILES[0], PROFILES[2]])("the published demo in $name", (profil
     expect(failed).toEqual([]);
     expect(errors).toEqual([]);
     expect(await page.evaluate(() => (document.querySelector(".brand img") as HTMLImageElement).naturalWidth)).toBeGreaterThan(0);
+    // A visitor can get from the demo to the source: in the header, where it is seen, and in the footer.
+    expect(await page.evaluate(() => [...document.querySelectorAll('a[href="https://github.com/kibitzo/lightsquare"]')].map((a) => a.closest("header, footer")?.tagName))).toEqual(["HEADER", "FOOTER"]);
+    expect(await page.evaluate(() => { const r = document.querySelector(".repo")!.getBoundingClientRect(); return r.width > 0 && r.right <= innerWidth && r.left >= 0; }), "the link is on screen").toBe(true);
   });
 
   it("plays: a step forward moves one piece", async () => {

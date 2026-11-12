@@ -62,7 +62,7 @@
       "note": "",
       "cells": [
         {
-          "text": "1.9 kB",
+          "text": "2.0 kB",
           "best": false
         },
         {
@@ -565,7 +565,7 @@
       "size": {
         "js": 5325,
         "jsWith": 7480,
-        "css": 1965
+        "css": 2032
       },
       "atRest": {
         "elements": 53,

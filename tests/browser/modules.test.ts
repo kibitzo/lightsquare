@@ -650,7 +650,7 @@ describe.each(PROFILES)("modules in $name", (profile) => {
     await fresh(page, { movable: "none", premovable: "white" });
     await page.evaluate((fen) => T.board.set({ premoveTargets: M.premoveTargets(fen, "white") }), START);
     await press("g1");
-    expect(await page.evaluate(() => T.marks())).toEqual(["dot f3", "dot h3", "ring e2", "select g1"]);
+    expect(await page.evaluate(() => T.marks())).toEqual(["dot f3", "dot h3", "select g1", "take e2"]);
     await press("e2");
     expect(await page.evaluate(() => T.marks())).toEqual(["premove e2", "premove g1"]);
   });

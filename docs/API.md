@@ -294,7 +294,7 @@ away. `themeVariables(theme)` returns the variables for an inline style
 | `boardImage` | `--ls-board-image` | none. A CSS image under the squares; with a picture of a whole board, set `dark: "transparent"`. |
 | `lastMove`, `check`, `premove` | `--ls-last`, `--ls-check`, `--ls-premove` | the built-in marks |
 | `selected`, `selectedEdge` | `--ls-select`, `--ls-select-edge` | the selected square: a soft amber tint inside an amber frame |
-| `target`, `hover` | `--ls-target`, `--ls-hover` | move dots; the square under a dragged piece |
+| `target`, `hover` | `--ls-target`, `--ls-hover` | the dots on the squares a piece may go to and the corners on a piece it may take; the square the piece would go to now, under a dragged piece or under the mouse (the shade of the dots unless set) |
 | `pieces` | the class `ls-set-<name>` | the page's default set |
 | `pieceSize` | `--ls-piece-size` | `100%` |
 | `moveMs` | `--ls-move-ms` | `180ms` (`0ms` under "reduce motion") |
@@ -302,7 +302,8 @@ away. `themeVariables(theme)` returns the variables for an inline style
 | `circles.default`, `circles.<name>` | `--ls-circle`, `--ls-circle-<name>` | circles only, where they should differ from the arrows |
 | `arrowTail`, `arrowHead` | `--ls-tail-opacity`, `--ls-head-opacity` | `0.14`, `0.82` |
 
-Also: `--ls-ease` (the slide's curve) and `--ls-circle-stroke` (how thick a
+Also: `--ls-dot-size` (how wide a move dot is, as a share of its square,
+default `0.3`), `--ls-ease` (the slide's curve) and `--ls-circle-stroke` (how thick a
 circle's line is, in squares, default `0.05`).
 
 Coordinates are small and quiet: over the pieces, in the colour of the

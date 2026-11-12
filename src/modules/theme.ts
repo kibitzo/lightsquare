@@ -28,7 +28,7 @@ export interface Theme {
   premove?: string;
   /** The keyboard cursor's corner brackets. */
   cursor?: string;
-  /** Move dots and rings. */
+  /** Move dots, the corners on a piece that can be taken, and the square under the pointer among them. */
   target?: string;
   /** The square under a dragged piece. */
   hover?: string;

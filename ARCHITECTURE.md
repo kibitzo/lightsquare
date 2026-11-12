@@ -78,7 +78,7 @@ that shows a static position downloads only the core.
 | `lightsquare/react` | React component | (Kibitzo's 1,451-line wrapper, in part) | 0.5 kB |
 | later: `lightsquare/editor` | spare pieces, drag pieces on and off | (not in cm-chessboard) | |
 
-The stylesheet for all of it is 1.9 kB. Everything together is about 13 kB.
+The stylesheet for all of it is 2.0 kB. Everything together is about 13 kB.
 
 A module is a function that receives a `surface` (the board element, the
 orientation, square and screen maths, the pieces, `tap`) and returns its own

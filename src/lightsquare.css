@@ -17,7 +17,7 @@
   --_select-edge: var(--ls-select-edge, rgba(245, 158, 11, 0.9));
   --_check: var(--ls-check, rgba(220, 38, 38, 0.78));
   --_target: var(--ls-target, rgba(0, 0, 0, 0.2));
-  --_hover: var(--ls-hover, rgba(0, 0, 0, 0.16));
+  --_hover: var(--ls-hover, var(--_target));
   --_premove: var(--ls-premove, rgba(90, 90, 90, 0.45));
   position: relative;
   width: 100%;
@@ -141,22 +141,45 @@
   background: radial-gradient(circle, var(--_check) 0 30%, transparent 70%);
 }
 
+/* Where the piece in hand may go: a dot on an empty square. Its width is
+   --ls-dot-size, a share of the square (default 0.3). */
 .ls-mark-dot {
-  background: radial-gradient(circle, var(--_target) 0 15%, transparent 16.5%);
+  background: radial-gradient(circle closest-side, var(--_target) 0 calc(var(--ls-dot-size, 0.3) * 100% - 2%), transparent calc(var(--ls-dot-size, 0.3) * 100%));
 }
 
-.ls-mark-ring {
-  background: radial-gradient(circle, transparent 0 39%, var(--_target) 40.5% 47%, transparent 48.5%);
+/* A piece it may take: the four corners of its square, so that nothing is
+   drawn over the piece itself. */
+.ls-mark-take {
+  background:
+    linear-gradient(135deg, var(--_target) 0 11%, transparent 11.6%),
+    linear-gradient(225deg, var(--_target) 0 11%, transparent 11.6%),
+    linear-gradient(315deg, var(--_target) 0 11%, transparent 11.6%),
+    linear-gradient(45deg, var(--_target) 0 11%, transparent 11.6%);
 }
 
+/* The square the piece would go to now: all of it in the shade of the
+   dots. Under a dragged piece the script says which square that is
+   (ls-mark-hover). Under a mouse that only points, the browser says it:
+   the two marks above take the pointer for that, and no script runs. */
 .ls-mark-hover {
-  box-shadow: inset 0 0 0 0.22em var(--_hover);
+  background: var(--_hover);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .ls-mark-dot,
+  .ls-mark-take {
+    pointer-events: auto;
+  }
+  .ls-mark-dot:hover,
+  .ls-mark-take:hover {
+    background: var(--_hover);
+  }
 }
 
 /* A finger covers the square it is on: show a halo around it instead. */
 @media (pointer: coarse) {
   .ls-mark-hover {
-    box-shadow: none;
+    background: none;
   }
   .ls-mark-hover::after {
     content: "";

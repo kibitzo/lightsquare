@@ -135,10 +135,57 @@ describe.each(PROFILES)("moving pieces in $name", (profile) => {
     expect(await events()).toEqual([{ type: "select", square: "e2" }]);
   });
 
-  it("a target that holds a piece is shown as a ring", async () => {
+  it("a target that holds a piece is marked on its four corners, with nothing drawn over the piece", async () => {
     await fresh(page, { position: "4k3/8/8/3p4/4P3/8/8/4K3", movable: "white", targets: { e4: ["e5", "d5"] } });
     await hand.tap(await at("e4"));
-    expect(await marks()).toEqual(["dot e5", "ring d5", "select e4"]);
+    expect(await marks()).toEqual(["dot e5", "select e4", "take d5"]);
+    const corners = await page.evaluate(() => getComputedStyle(document.querySelector(".ls-mark-take")!).backgroundImage.match(/linear-gradient/g)?.length);
+    expect(corners).toBe(4);
+  });
+
+  it("a move dot is three tenths of its square wide, and --ls-dot-size changes that", async () => {
+    await fresh(page, OPENING);
+    await hand.tap(await at("e2"));
+    // The dot is a round gradient measured from the square's nearest side: its edge is at the dot's width, as a share of the square.
+    const edge = (): Promise<number> =>
+      page.evaluate(() => {
+        const stops = [...getComputedStyle(document.querySelector(".ls-mark-dot")!).backgroundImage.matchAll(/([\d.]+)%/g)].map((m) => Number(m[1]));
+        return Math.max(...stops);
+      });
+    expect(await page.evaluate(() => getComputedStyle(document.querySelector(".ls-mark-dot")!).backgroundImage)).toContain("closest-side");
+    expect(await edge()).toBeCloseTo(30, 0);
+    await page.evaluate(() => document.getElementById("board")!.style.setProperty("--ls-dot-size", "0.4"));
+    expect(await edge()).toBeCloseTo(40, 0);
+    await page.evaluate(() => document.getElementById("board")!.style.removeProperty("--ls-dot-size"));
+  });
+
+  it.skipIf(profile.touch)("under a mouse, the square the piece would go to is shaded whole, and no script runs for it", async () => {
+    await fresh(page, { position: "4k3/8/8/3p4/4P3/8/8/4K3", movable: "white", targets: { e4: ["e5", "d5"] } });
+    await hand.tap(await at("e4"));
+    const look = (name: string): Promise<{ image: string; colour: string }> =>
+      page.evaluate((n) => {
+        const style = getComputedStyle(document.querySelector(`.ls-mark-${n}`)!);
+        return { image: style.backgroundImage, colour: style.backgroundColor };
+      }, name);
+    const shade = await page.evaluate(() => getComputedStyle(document.getElementById("board")!).getPropertyValue("--_target").trim());
+    await page.evaluate(() => {
+      P.reset();
+      (window as unknown as { writes: number }).writes = 0;
+      new MutationObserver((records) => ((window as unknown as { writes: number }).writes += records.length)).observe(document.getElementById("board")!, { subtree: true, childList: true, attributes: true });
+    });
+    for (const [square, name] of [["e5", "dot"], ["d5", "take"]] as const) {
+      const p = await at(square);
+      await page.mouse.move(p.x, p.y);
+      expect(await look(name), `${name} under the mouse`).toEqual({ image: "none", colour: shade.replace(/,\s*/g, ", ") });
+    }
+    const away = await at("a1");
+    await page.mouse.move(away.x, away.y);
+    expect((await look("dot")).image).toContain("radial-gradient");
+    expect((await look("take")).image).toContain("linear-gradient");
+    expect(await page.evaluate(() => ({ frames: P.raf, timers: P.timers, writes: (window as unknown as { writes: number }).writes }))).toEqual({ frames: 0, timers: 0, writes: 0 });
+    // The marks take the pointer for the shade, and a press on them still reaches the board.
+    await hand.tap(await at("d5"));
+    expect((await events()).at(-1)).toMatchObject({ type: "move", from: "e4", to: "d5" });
   });
 
   it("tap, tap moves the piece with a slide and reports the move", async () => {

@@ -79,7 +79,7 @@ export function wantedMarks(s: State): Map<string, Wanted> {
   if (chosen) {
     want.set("select", { square: chosen.square });
     const targets = canMove(s, chosen) ? s.targets : s.premoveTargets;
-    for (const t of targets?.get(chosen.square) ?? []) want.set(`${at(s, t) ? "ring" : "dot"} ${t}`, { square: t });
+    for (const t of targets?.get(chosen.square) ?? []) want.set(`${at(s, t) ? "take" : "dot"} ${t}`, { square: t });
   }
   if (s.hover) want.set("hover", { square: s.hover });
   return want;
