@@ -69,13 +69,13 @@ that shows a static position downloads only the core.
 | Entry point | What | Replaces in cm-chessboard | Size, gzipped |
 |---|---|---|---|
 | `lightsquare` (core) | position, pieces, marks, coordinates, orientation, tap and drag, premove, events (also what each change of the pieces was), module host | Chessboard, Markers, AutoBorderNone | 5.2 kB |
-| `lightsquare/shapes` | arrows, circles, arrow labels, drawing by the user | Arrows, RightClickAnnotator | 2.0 kB |
-| `lightsquare/promotion` | promotion picker | PromotionDialog | 0.6 kB |
-| `lightsquare/overlay` | HTML anchored to squares | HtmlLayer | 0.4 kB |
-| `lightsquare/a11y` | screen-reader description, move announcements, keyboard moves | Accessibility | 1.1 kB |
-| `lightsquare/premove` | where a piece could premove to (geometry only) | (not in cm-chessboard) | 0.8 kB |
-| `lightsquare/theme` | looks as data: `applyTheme`, built-in board colours | (not in cm-chessboard) | 0.6 kB |
-| `lightsquare/react` | React component | (Kibitzo's 1,451-line wrapper, in part) | 0.5 kB |
+| `@kibitzo/lightsquare/shapes` | arrows, circles, arrow labels, drawing by the user | Arrows, RightClickAnnotator | 2.0 kB |
+| `@kibitzo/lightsquare/promotion` | promotion picker | PromotionDialog | 0.6 kB |
+| `@kibitzo/lightsquare/overlay` | HTML anchored to squares | HtmlLayer | 0.4 kB |
+| `@kibitzo/lightsquare/a11y` | screen-reader description, move announcements, keyboard moves | Accessibility | 1.1 kB |
+| `@kibitzo/lightsquare/premove` | where a piece could premove to (geometry only) | (not in cm-chessboard) | 0.8 kB |
+| `@kibitzo/lightsquare/theme` | looks as data: `applyTheme`, built-in board colours | (not in cm-chessboard) | 0.6 kB |
+| `@kibitzo/lightsquare/react` | React component | (Kibitzo's 1,451-line wrapper, in part) | 0.5 kB |
 | later: `lightsquare/editor` | spare pieces, drag pieces on and off | (not in cm-chessboard) | |
 
 The stylesheet for all of it is 2.0 kB. Everything together is about 13 kB.
@@ -187,7 +187,7 @@ Looks are CSS, so they cost no script and one setting reaches every board.
   any element above the boards. The rest of an app can use the same
   variables: a tray of captured pieces shows the user's set with
   `background-image: var(--ls-wq)`.
-- **Themes as data** (`lightsquare/theme`). A theme is a plain object
+- **Themes as data** (`@kibitzo/lightsquare/theme`). A theme is a plain object
   (squares, marks, piece set, piece size, slide time, arrow colours and
   strength). `applyTheme(element, theme)` writes the variables and the
   class. An app stores one theme per user and applies it to the page.
@@ -324,9 +324,10 @@ held-back script heard of them, not the slide's true length.
 | M1 core | marks, coordinates, flip, premove, events, the speed tests | done |
 | M2 modules | shapes, promotion, overlay | done |
 | M3 | a11y module, React component | done |
-| M4 | Kibitzo: an adapter with the props of its current board component, then its pages one at a time (puzzles, lessons, coach, vision, play) | next; each page passes its browser tests and a phone check |
+| M4 | Kibitzo: an adapter with the props of its current board component, then every page (puzzles, lessons, coach, vision, play) | done; live on kibitzo.com since 2026-11-12, and the old board is removed there. The founder's judgement of production on the phone is still to come |
 | M5 | fenshot's board; cm-chessboard removed | no import of cm-chessboard is left |
-| M6 | publish 1.0: docs and demo at kibitzo.com/lightsquare, npm | after some weeks in production |
+| M6 | npm: `@kibitzo/lightsquare` 0.1.0, with the demo at kibitzo.github.io/lightsquare | prepared; how a release is made is in [docs/RELEASING.md](docs/RELEASING.md) |
+| M7 | 1.0: the API is frozen | after some weeks in production |
 | later | the board editor module | when a product needs it |
 
 ## 13. Our own work

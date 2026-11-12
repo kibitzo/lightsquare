@@ -10,7 +10,7 @@
  * of the screen the box also has the class `ls-at-top` or `ls-at-right`. For a plain tint or badge, use the
  * board's `marks` option: it needs no module.
  */
-import type { Module, ModuleHooks, Square } from "../index";
+import type { Module, ModuleHooks, Square } from "../index.js";
 
 export interface Overlay extends ModuleHooks {
   /** Show `content` on a square. The same key again moves or replaces it. */

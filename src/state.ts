@@ -1,5 +1,5 @@
-import type { Color, Placed, Square } from "./position";
-import type { Change, SquareMark, Targets, UserMove } from "./types";
+import type { Color, Placed, Square } from "./position.js";
+import type { Change, SquareMark, Targets, UserMove } from "./types.js";
 
 export interface State {
   pieces: Placed[];

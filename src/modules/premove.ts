@@ -7,7 +7,7 @@
  *
  *   board.set({ premovable: "white", premoveTargets: premoveTargets(fen, "white") });
  */
-import { readFen, type Color, type PieceCode, type Square } from "../position";
+import { readFen, type Color, type PieceCode, type Square } from "../position.js";
 
 export interface PremoveOptions {
   /**

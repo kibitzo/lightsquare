@@ -6,9 +6,9 @@ Everything the library offers, in one page. The reasons behind it are in
 ## Start
 
 ```ts
-import { lightsquare } from "lightsquare";
-import "lightsquare/lightsquare.css";
-import "lightsquare/pieces/cburnett.css";
+import { lightsquare } from "@kibitzo/lightsquare";
+import "@kibitzo/lightsquare/lightsquare.css";
+import "@kibitzo/lightsquare/pieces/cburnett.css";
 
 const board = lightsquare(document.getElementById("board")!, { movable: "white" });
 ```
@@ -135,7 +135,7 @@ const board = lightsquare(element, {
 ## Premove
 
 ```ts
-import { premoveTargets } from "lightsquare/premove";
+import { premoveTargets } from "@kibitzo/lightsquare/premove";
 
 // while the opponent thinks
 board.set({ movable: "none", premovable: "white", premoveTargets: premoveTargets(fen, "white") });
@@ -181,10 +181,10 @@ animation does not move a mark off its square.
 Each is a separate import. A page that does not import a module does not
 download it.
 
-### Arrows and circles: `lightsquare/shapes`
+### Arrows and circles: `@kibitzo/lightsquare/shapes`
 
 ```ts
-import { shapes } from "lightsquare/shapes";
+import { shapes } from "@kibitzo/lightsquare/shapes";
 
 const drawing = board.use(shapes({
   arrows: [{ from: "e2", to: "e4" }, { from: "g8", to: "f6", name: "red", label: "1" }],
@@ -216,29 +216,29 @@ arrows never look like the app's orange and red ones. Change this with
 `nameFor`. An arrow is slim while it is aimed and fills out when the button
 is let go. A left press on the board clears the user's drawing.
 
-### Promotion picker: `lightsquare/promotion`
+### Promotion picker: `@kibitzo/lightsquare/promotion`
 
 ```ts
-import { promotion } from "lightsquare/promotion";
+import { promotion } from "@kibitzo/lightsquare/promotion";
 
 const picker = board.use(promotion());
 const piece = await picker.ask("e8", "white");   // "q" | "r" | "b" | "n", or null if cancelled
 ```
 
-### HTML on a square: `lightsquare/overlay`
+### HTML on a square: `@kibitzo/lightsquare/overlay`
 
 ```ts
-import { overlay } from "lightsquare/overlay";
+import { overlay } from "@kibitzo/lightsquare/overlay";
 
 const html = board.use(overlay());
 html.put("tip", "e4", element);    // the same key again moves or replaces it
 html.remove("tip");
 ```
 
-### Screen readers and keyboard: `lightsquare/a11y`
+### Screen readers and keyboard: `@kibitzo/lightsquare/a11y`
 
 ```ts
-import { a11y } from "lightsquare/a11y";
+import { a11y } from "@kibitzo/lightsquare/a11y";
 
 board.use(a11y({ label: "Puzzle board", words: { white: "Blanc" } }));
 ```
@@ -250,10 +250,10 @@ a press with a mouse or a finger they are left to the page, so an app's own
 arrow keys can step through the moves. The cursor is four corner brackets in
 the selection's colour (`--ls-cursor`).
 
-### React: `lightsquare/react`
+### React: `@kibitzo/lightsquare/react`
 
 ```tsx
-import { Lightsquare } from "lightsquare/react";
+import { Lightsquare } from "@kibitzo/lightsquare/react";
 
 <Lightsquare position={fen} movable="white" targets={targets} onMove={play} ref={boardRef} className="w-full" />
 ```
@@ -267,10 +267,10 @@ Looks are CSS variables and one class. Set them on the board, on a wrapper,
 or on the page's root: every board below follows, and the nearest setting
 wins. Nothing here costs script per board.
 
-### Themes: `lightsquare/theme`
+### Themes: `@kibitzo/lightsquare/theme`
 
 ```ts
-import { applyTheme, themes, themeVariables } from "lightsquare/theme";
+import { applyTheme, themes, themeVariables } from "@kibitzo/lightsquare/theme";
 
 applyTheme(document.documentElement, {
   ...themes.ocean,                   // wood, sand, forest, ocean, slate, rose, night
@@ -330,7 +330,7 @@ on the class `ls-set-<name>`:
 .ls-set-mine { --ls-wk: url(/pieces/wk.svg); /* ... */ --ls-bp: url(/pieces/bp.svg); }
 ```
 
-`lightsquare/pieces/cburnett.css` is such a set and also the page's default.
+`@kibitzo/lightsquare/pieces/cburnett.css` is such a set and also the page's default.
 `node scripts/sprite-to-css.mjs sprite.svg pieces.css mine` makes a set from
 a cm-chessboard sprite. The same variables work outside the board:
 `background-image: var(--ls-wq)` shows the user's queen anywhere in the app.
@@ -344,7 +344,7 @@ drawing.set({ look: { width: 0.2, headLength: 0.46, headWidth: 0.54 } });   // i
 ## Write a module
 
 ```ts
-import type { Module, ModuleHooks } from "lightsquare";
+import type { Module, ModuleHooks } from "@kibitzo/lightsquare";
 
 export function ruler(): Module<ModuleHooks & { hello(): string }> {
   return (surface) => ({

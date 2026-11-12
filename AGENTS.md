@@ -29,6 +29,7 @@ is in [ARCHITECTURE.md](ARCHITECTURE.md).
     npm test                 unit tests and the rules read against the source
     npm run test:browser     Chromium and WebKit, desktop and phone profiles
     npm run build            dist/ and the sizes
+    npm run check:package    the packed npm file, met as a user meets it (after a build)
 
 ## Layout
 

@@ -2,7 +2,7 @@
  * Looks, as data. A theme is a plain object: an app can keep one per user
  * and apply it to the page, and every board under that element follows.
  *
- *   import { applyTheme, themes } from "lightsquare/theme";
+ *   import { applyTheme, themes } from "@kibitzo/lightsquare/theme";
  *   applyTheme(document.documentElement, { ...themes.ocean, pieces: "cburnett", shapes: { default: "#7c3aed" } });
  *
  * A theme only sets CSS variables and one class, so it costs no script per

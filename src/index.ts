@@ -1,4 +1,4 @@
-export { lightsquare } from "./board";
-export { START, EMPTY } from "./position";
-export type { Color, PieceCode, Placed, Square } from "./position";
-export type { Board, Change, Module, ModuleHooks, Options, SquareMark, Surface, Targets, UserMove } from "./types";
+export { lightsquare } from "./board.js";
+export { START, EMPTY } from "./position.js";
+export type { Color, PieceCode, Placed, Square } from "./position.js";
+export type { Board, Change, Module, ModuleHooks, Options, SquareMark, Surface, Targets, UserMove } from "./types.js";

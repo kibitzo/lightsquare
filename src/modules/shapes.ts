@@ -9,7 +9,7 @@
  * the board without script. A shape is drawn once, when it appears, and is
  * not touched again: pieces can slide under it at no cost.
  */
-import type { Module, ModuleHooks, Square } from "../index";
+import type { Module, ModuleHooks, Square } from "../index.js";
 
 export interface Arrow {
   from: Square;

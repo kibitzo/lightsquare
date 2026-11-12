@@ -9,7 +9,7 @@
  * or a press beside them cancels. While the picker is open the board under
  * it does not react.
  */
-import type { Color, Module, ModuleHooks, Square } from "../index";
+import type { Color, Module, ModuleHooks, Square } from "../index.js";
 
 export type PromotionPiece = "q" | "r" | "b" | "n";
 

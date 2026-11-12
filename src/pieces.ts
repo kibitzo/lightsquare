@@ -1,4 +1,4 @@
-import { pairPieces, type Pairing, type PieceCode, type Placed, type Square } from "./position";
+import { pairPieces, type Pairing, type PieceCode, type Placed, type Square } from "./position.js";
 
 export interface PieceView {
   element(p: Placed): HTMLElement;

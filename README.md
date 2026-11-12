@@ -58,14 +58,17 @@ board runs, so a phone that holds the page's script back cannot make the
 slide stutter. The design in full is in [ARCHITECTURE.md](ARCHITECTURE.md);
 the rules it obeys, each with a test, are in [RULES.md](RULES.md).
 
-Status: the library is complete for our needs and tested in Chromium and
-WebKit; it has not run in production yet and is not on npm.
+Status: the library draws every board of [Kibitzo](https://kibitzo.com) in
+production since November 2026, and is tested in Chromium and WebKit. It is
+young: until 1.0 a minor version may change the API.
+
+    npm install @kibitzo/lightsquare
 
 ```ts
-import { lightsquare } from "lightsquare";
-import { shapes } from "lightsquare/shapes";
-import "lightsquare/lightsquare.css";
-import "lightsquare/pieces/cburnett.css";
+import { lightsquare } from "@kibitzo/lightsquare";
+import { shapes } from "@kibitzo/lightsquare/shapes";
+import "@kibitzo/lightsquare/lightsquare.css";
+import "@kibitzo/lightsquare/pieces/cburnett.css";
 
 const board = lightsquare(document.getElementById("board")!, {
   movable: "white",
@@ -97,6 +100,7 @@ page.
   chessboard.js), with the method and its limits. The comparison is a
   project of its own in `compare/`; the library does not depend on it.
 - [RULES.md](RULES.md): the hard rules every change obeys.
+- [docs/RELEASING.md](docs/RELEASING.md): how a version reaches npm.
 - [ARCHITECTURE.md](ARCHITECTURE.md): the design, the comparison with other
   boards, how it is tested, the order of work.
 
@@ -105,6 +109,7 @@ page.
     npm test                 unit tests
     npm run test:browser     Chromium and WebKit, desktop and phone profiles
     npm run build            dist/ and the sizes
+    npm run check:package    the packed npm file, met as a user meets it
     npm run bench            a page for a real phone, on the local network
 
 ## Credits

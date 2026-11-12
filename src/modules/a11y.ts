@@ -12,7 +12,7 @@
  *
  * All words can be replaced for other languages.
  */
-import type { Module, ModuleHooks, Placed, Square } from "../index";
+import type { Module, ModuleHooks, Placed, Square } from "../index.js";
 
 export interface A11yWords {
   board: string;

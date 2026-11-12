@@ -1,5 +1,5 @@
-import type { Color, Square } from "./position";
-import type { Wanted } from "./state";
+import type { Color, Square } from "./position.js";
+import type { Wanted } from "./state.js";
 
 const SVG = "http://www.w3.org/2000/svg";
 

@@ -1,4 +1,4 @@
-import type { Color, PieceCode, Placed, Square, Told } from "./position";
+import type { Color, PieceCode, Placed, Square, Told } from "./position.js";
 
 /** For each square a piece stands on, the squares it may go to. */
 export type Targets = ReadonlyMap<Square, readonly Square[]>;

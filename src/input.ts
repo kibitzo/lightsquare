@@ -1,4 +1,4 @@
-import { cellSquare, type Color, type Placed, type Square } from "./position";
+import { cellSquare, type Color, type Placed, type Square } from "./position.js";
 
 /** What the pointer code needs from the board. */
 export interface InputHost {

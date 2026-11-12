@@ -1,9 +1,9 @@
-import { attachInput, type Input } from "./input";
-import { coordView, layer, markView, squares, type CoordView, type MarkView } from "./marks";
-import { pieceView, type PieceView } from "./pieces";
-import { EMPTY, START, cellSquare, oneMove, pairPieces, readFen, screenCell, whatChanged, writeFen, type PieceCode, type Placed, type Square, type Told } from "./position";
-import { allows, at, canMove, canPremove, initial, wantedMarks, type State } from "./state";
-import type { Board, Change, ModuleHooks, Options, Surface } from "./types";
+import { attachInput, type Input } from "./input.js";
+import { coordView, layer, markView, squares, type CoordView, type MarkView } from "./marks.js";
+import { pieceView, type PieceView } from "./pieces.js";
+import { EMPTY, START, cellSquare, oneMove, pairPieces, readFen, screenCell, whatChanged, writeFen, type PieceCode, type Placed, type Square, type Told } from "./position.js";
+import { allows, at, canMove, canPremove, initial, wantedMarks, type State } from "./state.js";
+import type { Board, Change, ModuleHooks, Options, Surface } from "./types.js";
 
 interface Core {
   s: State;
