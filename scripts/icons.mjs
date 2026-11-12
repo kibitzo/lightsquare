@@ -2,7 +2,10 @@
 // a circle in a square, in the manner of a Renaissance notebook page.
 //   node scripts/icons.mjs
 // Writes docs/icons/icon.svg (full detail, for large sizes), icon-small.svg
-// (fewer and heavier lines, for 32 pixels and below) and their PNG sizes.
+// (fewer and heavier lines, for 32 pixels and below), their PNG sizes, and
+// social-preview.png (1280 by 640: the picture GitHub shows when a link to
+// the repository is shared; it is uploaded by hand in the repository's
+// settings, GitHub has no other way).
 // The piece is the Cburnett bishop of assets/cburnett (BSD, see its NOTICE).
 // To try another piece, change PIECE: k, q, r, b, n or p.
 import { mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
@@ -88,9 +91,28 @@ async function pngs() {
   await browser.close();
 }
 
+/** The picture for shared links: the mark, the name in the mark's two tones, one line. */
+async function socialPreview() {
+  const { chromium } = await import("playwright");
+  const browser = await chromium.launch();
+  const page = await browser.newPage({ viewport: { width: 1280, height: 640 } });
+  await page.setContent(`<!doctype html><style>
+    html, body { margin: 0; height: 100%; }
+    body { display: flex; align-items: center; justify-content: center; gap: 56px; background: #0c1117 linear-gradient(rgba(148, 163, 184, 0.045) 1px, transparent 1px) 0 0 / 100% 40px, #0c1117 linear-gradient(90deg, rgba(148, 163, 184, 0.045) 1px, transparent 1px) 0 0 / 40px 100%; background-color: #0c1117; font-family: -apple-system, system-ui, "Segoe UI", Roboto, sans-serif; }
+    svg { width: 300px; height: 300px; border-radius: 64px; box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6); }
+    h1 { margin: 0 0 22px; font-size: 124px; line-height: 1; font-weight: 800; letter-spacing: -0.038em; color: #fdf3d8; }
+    h1 span { color: #d9ae5c; }
+    p { margin: 0; font-size: 33px; line-height: 1.3; color: #94a3b8; }
+    small { display: block; margin-top: 30px; font: 300 22px/1 ui-monospace, "SF Mono", Menlo, Consolas, monospace; letter-spacing: 0.14em; text-transform: uppercase; color: #64748b; }
+  </style>${icon(false)}<div><h1>Light<span>square</span></h1><p>A chessboard for the web that<br>stays smooth on every phone.</p><small>MIT &nbsp;/&nbsp; no dependencies &nbsp;/&nbsp; kibitzo</small></div>`);
+  await page.screenshot({ path: fileURLToPath(new URL("social-preview.png", out)) });
+  await browser.close();
+}
+
 mkdirSync(out, { recursive: true });
 for (const file of readdirSync(out)) rmSync(new URL(file, out));
 writeFileSync(new URL("icon.svg", out), icon(false));
 writeFileSync(new URL("icon-small.svg", out), icon(true));
 await pngs();
+await socialPreview();
 console.log(`docs/icons/: ${readdirSync(out).join(", ")}`);
