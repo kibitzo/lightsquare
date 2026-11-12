@@ -17,8 +17,11 @@
   a:hover { text-decoration: underline; }
 
   .page { max-width: 1240px; margin: 0 auto; padding: 14px 14px 48px; display: grid; gap: 16px; grid-template-columns: minmax(0, 1fr); }
-  header { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 14px; }
-  h1 { margin: 0; font-size: 22px; font-weight: 650; letter-spacing: -0.01em; color: #f59e0b; }
+  header { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; }
+  /* The mark and the name as one unit: the letters as tall as the mark allows. */
+  .brand { display: flex; align-items: center; gap: 11px; }
+  .brand img { display: block; width: 44px; height: 44px; border-radius: 10px; }
+  h1 { margin: 0; font-size: 34px; line-height: 44px; font-weight: 700; letter-spacing: -0.025em; color: #f59e0b; }
   header p { margin: 0; color: #94a3b8; font-size: 14px; }
   .chips { display: flex; gap: 6px; margin-left: auto; }
   .chip { padding: 3px 9px; border-radius: 999px; border: 1px solid rgba(148, 163, 184, 0.2); font-size: 12px; color: #94a3b8; font-variant-numeric: tabular-nums; white-space: nowrap; }
@@ -169,8 +172,7 @@
 <body>
 <div class="page" id="page">
   <header>
-    <img src="/icon.svg" width="34" height="34" alt="" style="align-self:center;border-radius:8px">
-    <h1>Lightsquare</h1>
+    <div class="brand"><img src="/icon.svg" width="44" height="44" alt=""><h1>Lightsquare</h1></div>
     <p>A chessboard that stays smooth on every phone.</p>
     <div class="chips"><span class="chip" id="where"></span><span class="chip">4.7 kB core</span></div>
   </header>
