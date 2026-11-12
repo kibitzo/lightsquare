@@ -164,6 +164,7 @@ toggle("lpm", () => {});
 interface Look {
   board: keyof typeof themes;
   pieces: string;
+  labels: "on" | "off";
   pieceSize: number;
   moveMs: number;
   arrow: string;
@@ -172,7 +173,7 @@ interface Look {
 }
 
 const LOOK_KEY = "lightsquare-playground-look";
-const look: Look = { board: "wood", pieces: "cburnett", pieceSize: 100, moveMs: 180, arrow: ARROW_COLOURS[0], arrowWidth: 20, arrowHead: 82 };
+const look: Look = { board: "wood", pieces: "cburnett", labels: "on", pieceSize: 100, moveMs: 180, arrow: ARROW_COLOURS[0], arrowWidth: 20, arrowHead: 82 };
 
 /** The look as the theme an app would store for a user. */
 function themeOf(l: Look): Theme {
@@ -182,6 +183,7 @@ function themeOf(l: Look): Theme {
 function applyLook(): void {
   const theme = themeOf(look);
   applyTheme($("page"), theme);
+  board.set({ coordinates: look.labels === "on" });
   const width = look.arrowWidth / 100;
   drawing.set({ look: { width, headWidth: width * 2.7, headLength: width * 2.3 } });
   $("theme").textContent = `applyTheme(element, ${JSON.stringify(theme, null, 1).replace(/\n\s*/g, " ")})`;
@@ -210,6 +212,8 @@ async function buildLooks(): Promise<void> {
   const config = (await fetch("/config.json").then((r) => r.json()).catch(() => ({}))) as { extraPieces?: boolean };
   for (const [name, t] of Object.entries(themes)) choice("boards", "board", name, `<i style="background:linear-gradient(135deg, ${t.light} 50%, ${t.dark} 50%)"></i>`, "swatch");
   for (const colour of ARROW_COLOURS) choice("arrows", "arrow", colour, `<i style="background:${colour}"></i>`, "swatch");
+  choice("labels", "labels", "on", "On", "");
+  choice("labels", "labels", "off", "Off", "");
   choice("sets", "pieces", "cburnett", "Cburnett", "");
   if (config.extraPieces) {
     choice("sets", "pieces", "extra", "Kibitzo", "");

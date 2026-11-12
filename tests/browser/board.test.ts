@@ -212,8 +212,25 @@ describe.each(PROFILES)("board in $name", (profile) => {
       probe.remove();
       return out;
     });
-    expect(colours.first).toBe(colours.dark);
-    expect(colours.second).toBe(colours.light);
+    const brightness = (rgb: string): number => (rgb.match(/[\d.]+/g) ?? []).slice(0, 3).reduce((sum, v) => sum + Number(v) * (rgb.includes("srgb") ? 255 : 1), 0);
+    expect(brightness(colours.first), "on a light square: darker than the dark squares").toBeLessThan(brightness(colours.dark));
+    expect(brightness(colours.second), "on a dark square: lighter than the light squares").toBeGreaterThan(brightness(colours.light));
+    const styled = await page.evaluate(() => {
+      const wrap = document.getElementById("wrap")!;
+      wrap.style.cssText += ";--ls-coord-on-light: rgb(1, 2, 3); --ls-coord-size: 21px; --ls-coord-weight: 400";
+      const first = getComputedStyle(document.querySelector(".ls-coord")!);
+      const out = [first.color, first.fontSize, first.fontWeight];
+      for (const name of ["--ls-coord-on-light", "--ls-coord-size", "--ls-coord-weight"]) wrap.style.removeProperty(name);
+      const plain = getComputedStyle(document.querySelector(".ls-coord")!);
+      const coords = getComputedStyle(document.querySelector(".ls-coords")!).zIndex;
+      const pieces = getComputedStyle(document.querySelector(".ls-pieces")!).zIndex;
+      return { out, weight: plain.fontWeight, size: parseFloat(plain.fontSize), overPieces: Number(coords) > Number(pieces) };
+    });
+    expect(styled.out).toEqual(["rgb(1, 2, 3)", "21px", "400"]);
+    expect(styled.weight).toBe("600");
+    expect(styled.size).toBeGreaterThanOrEqual(7);
+    expect(styled.size).toBeLessThanOrEqual(12);
+    expect(styled.overPieces).toBe(true);
     await page.evaluate(() => T.set({ coordinates: false }));
     expect(await page.evaluate(() => document.querySelectorAll(".ls-coords, .ls-coord").length)).toBe(0);
     await page.evaluate(() => T.set({ coordinates: true }));

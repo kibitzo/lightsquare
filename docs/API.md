@@ -223,8 +223,14 @@ away. `themeVariables(theme)` returns the variables for an inline style
 | `shapes.default`, `shapes.<name>` | `--ls-shape`, `--ls-shape-<name>` | orange; deep red, green, blue, yellow |
 | `arrowTail`, `arrowHead` | `--ls-tail-opacity`, `--ls-head-opacity` | `0.14`, `0.82` |
 
-Also: `--ls-ease` (the slide's curve), `--ls-circle-width` (in squares,
-default `0.05`), `--ls-coord-on-light`, `--ls-coord-on-dark`.
+Also: `--ls-ease` (the slide's curve) and `--ls-circle-width` (in squares,
+default `0.05`).
+
+Coordinates are small and quiet: over the pieces, in the colour of the
+other squares a touch deeper, growing with the board (about 10 px on a
+phone, 12 px at most). Change them with `--ls-coord-font`,
+`--ls-coord-size`, `--ls-coord-weight`, `--ls-coord-on-light` and
+`--ls-coord-on-dark`.
 
 ### Piece sets
 

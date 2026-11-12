@@ -55,8 +55,8 @@
 
 /* Bottom to top. A dragged piece is lifted above everything with its layer. */
 .ls-marks { z-index: 1; }
-.ls-coords { z-index: 2; }
-.ls-pieces { z-index: 3; }
+.ls-pieces { z-index: 2; }
+.ls-coords { z-index: 3; }
 .ls-shapes { z-index: 4; }
 .ls-over { z-index: 5; }
 .ls-overlay { z-index: 6; }
@@ -169,13 +169,19 @@
 }
 
 /* Rank numbers in the top-left of the left column, file letters in the
-   bottom-right of the bottom row, each in the colour of the other squares. */
+   bottom-right of the bottom row: small, quiet, there when you look for
+   them. They sit over the pieces, so a piece never hides its square's
+   name, and they grow with the board: about 10 px on a phone, 12 px at
+   most. Each takes the colour of the other squares, a touch deeper. */
 .ls-coord {
   box-sizing: border-box;
   display: flex;
-  padding: 0.22em 0.32em;
-  font: 600 11px/1 system-ui, -apple-system, "Segoe UI", sans-serif;
-  font-size: clamp(7px, 2.5cqw, 15px);
+  padding: 0.6cqw 0.9cqw;
+  font-family: var(--ls-coord-font, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif);
+  font-size: var(--ls-coord-size, clamp(7px, calc(2.4cqw + 1px), 12px));
+  font-weight: var(--ls-coord-weight, 600);
+  line-height: 1;
+  letter-spacing: 0.02em;
 }
 
 .ls-coord-file {
@@ -184,11 +190,13 @@
 }
 
 .ls-coord-light {
-  color: var(--ls-coord-on-light, var(--_dark));
+  color: var(--_dark);
+  color: var(--ls-coord-on-light, color-mix(in srgb, var(--_dark) 93%, #000));
 }
 
 .ls-coord-dark {
-  color: var(--ls-coord-on-dark, var(--_light));
+  color: var(--_light);
+  color: var(--ls-coord-on-dark, color-mix(in srgb, var(--_light) 95%, #fff));
 }
 
 /* Module "shapes": arrows and circles, in board units (the layer's viewBox
