@@ -46,7 +46,8 @@ Bottom to top. Each layer is one element; only the layers in use exist.
 | marks | last move, selected square, check, move dots, any custom square mark | one small element per mark, placed by transform |
 | pieces | one element per piece | placed by `translate(col * 100%, row * 100%)`, moved by transition |
 | shapes | arrows, circles, labels | one SVG overlay, redrawn only when shapes change |
-| overlay | promotion picker, move-quality badges, any HTML the app anchors to a square | HTML placed by transform |
+| over | the app's marks that sit above the pieces: move-quality badges, verdicts | one small element per mark, placed by transform |
+| overlay | promotion picker, any HTML the app anchors to a square | HTML placed by transform |
 | drag | the piece under the finger | the piece itself, lifted; follows the pointer |
 
 A piece is promoted to its own GPU layer (`will-change: transform`) only
@@ -85,6 +86,7 @@ const board = lightsquare(element, {
   targets,                          // Map<Square, Square[]>: where each piece may go
   lastMove: ["e2", "e4"],
   check: "e8",
+  marks: [{ square: "e4", name: "brilliant", above: true }],   // the app's own
   onMove({ from, to, piece, captured }) {},   // the user moved a piece
   onSelect(square) {},
 });
@@ -103,6 +105,14 @@ board.destroy();
   to take the move back. The app is the authority; the board never judges.
 - **A board is look-only until told otherwise** (`movable: "none"`), and a
   look-only board lets the page scroll under the finger.
+- **The app's own marks** (hints, verdicts, move-quality badges) go through
+  `marks`. The board supplies the mechanism: an element with the class
+  `ls-mark-<name>` on the square, under or over the pieces, placed in the
+  same write as the move and never measured. The app's stylesheet supplies
+  the look. That split is what makes a badge fast: it is drawn by the same
+  pass as the pieces, whoever designed it. The badge pictures themselves
+  stay in the app, so the library stays small and every site keeps its own
+  style.
 - Not built yet: `board.use(module)` for the modules of section 4.
 
 ## 6. Input
@@ -232,8 +242,11 @@ what the tester reports (rule 11).
    move. Fallback: pre-rendered PNG sets.
 3. **Safari details:** pointer capture, the long-press menu, scroll locking
    during a drag. Each needs a test on a phone.
-4. **Arrows in SVG.** Static between changes, so cheap; an arrow that
-   animates would break the rules and is out.
+4. **Arrows in SVG.** Drawn once when the arrows change, in one layer, and
+   left alone between changes, so they cost nothing while pieces move. They
+   may fade in and out (an opacity transition on the layer's elements). An
+   arrow that moves or grows frame by frame from script would break the
+   rules and is out.
 
 ## 12. Order of work
 

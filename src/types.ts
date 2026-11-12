@@ -10,6 +10,20 @@ export interface UserMove {
   captured?: PieceCode;
 }
 
+/**
+ * Anything the app wants to show on a square: a hint, a verdict, a
+ * move-quality badge. The board places an element with the class
+ * `ls-mark-<name>` on the square, in the same write as the move; the app's
+ * stylesheet decides what it looks like.
+ */
+export interface SquareMark {
+  square: Square;
+  /** Lowercase letters, digits and hyphens. */
+  name: string;
+  /** Draw it over the pieces (a badge) instead of under them (a tint). */
+  above?: boolean;
+}
+
 export interface Options {
   /** A FEN (only the placement field is read), or "start" / "empty". */
   position?: string;
@@ -26,6 +40,8 @@ export interface Options {
   lastMove?: readonly [Square, Square] | null;
   /** The square of a king in check. */
   check?: Square | null;
+  /** The app's own marks. The whole list is replaced on every set. */
+  marks?: readonly SquareMark[] | null;
   /**
    * The user moved a piece. The board already shows the move; answer with
    * `set({ position })` to confirm it (castling, en passant, promotion) or

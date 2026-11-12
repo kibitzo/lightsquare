@@ -12,9 +12,9 @@ ones and phones in Low Power Mode.
 - No chess rules inside: your app says which moves are allowed.
 - MIT.
 
-Status: early. The core (pieces, marks, tap and drag, events) is built and
-tested; coordinates, premove, arrows, the promotion picker and the React
-wrapper are next. Not on npm yet.
+Status: early. The core (pieces, marks, the app's own marks and badges, tap
+and drag, events) is built and tested; coordinates, premove, arrows, the
+promotion picker and the React wrapper are next. Not on npm yet.
 
 ```ts
 import { lightsquare } from "lightsquare";

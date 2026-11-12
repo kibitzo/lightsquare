@@ -1,6 +1,6 @@
 import { attachInput } from "./input";
 import { EMPTY, START, pairPieces, readFen, screenCell, writeFen, type Color, type PieceCode, type Placed, type Square } from "./position";
-import type { Board, Options, Targets, UserMove } from "./types";
+import type { Board, Options, SquareMark, Targets, UserMove } from "./types";
 
 interface State {
   pieces: Placed[];
@@ -9,6 +9,7 @@ interface State {
   targets: Targets | null;
   lastMove: readonly [Square, Square] | null;
   check: Square | null;
+  marks: readonly SquareMark[];
   selected: Square | null;
   hover: Square | null;
   onMove: ((move: UserMove) => void) | null;
@@ -20,6 +21,11 @@ interface Mark {
   square: Square;
 }
 
+interface Wanted {
+  square: Square;
+  above?: boolean;
+}
+
 function layer(host: HTMLElement, name: string): HTMLElement {
   const el = document.createElement("div");
   el.className = `ls-layer ${name}`;
@@ -28,10 +34,12 @@ function layer(host: HTMLElement, name: string): HTMLElement {
 }
 
 export function lightsquare(host: HTMLElement, options: Options = {}): Board {
-  const s: State = { pieces: [], orientation: "white", movable: "none", targets: null, lastMove: null, check: null, selected: null, hover: null, onMove: null, onSelect: null };
+  const s: State = { pieces: [], orientation: "white", movable: "none", targets: null, lastMove: null, check: null, marks: [], selected: null, hover: null, onMove: null, onSelect: null };
   host.classList.add("ls-board");
   const marksLayer = layer(host, "ls-marks");
   const piecesLayer = layer(host, "ls-pieces");
+  /** For marks drawn over the pieces. Made when the first one is shown. */
+  let overLayer: HTMLElement | null = null;
   const elements = new Map<number, HTMLElement>();
   const marks = new Map<string, Mark>();
   const fading = new Set<Element>();
@@ -95,15 +103,16 @@ export function lightsquare(host: HTMLElement, options: Options = {}): Board {
    * Every mark to show, by key: "kind" or "kind name". A mark whose key
    * stays keeps its element; if only its square changed, it is moved.
    */
-  function wantedMarks(): Map<string, Square> {
-    const want = new Map<string, Square>();
-    s.lastMove?.forEach((square, i) => want.set(`last ${i}`, square));
-    if (s.check) want.set("check", s.check);
+  function wantedMarks(): Map<string, Wanted> {
+    const want = new Map<string, Wanted>();
+    s.lastMove?.forEach((square, i) => want.set(`last ${i}`, { square }));
+    if (s.check) want.set("check", { square: s.check });
+    for (const m of s.marks) want.set(`${m.name} ${m.square}${m.above ? " above" : ""}`, m);
     if (s.selected) {
-      want.set("select", s.selected);
-      for (const t of s.targets?.get(s.selected) ?? []) want.set(`${at(t) ? "ring" : "dot"} ${t}`, t);
+      want.set("select", { square: s.selected });
+      for (const t of s.targets?.get(s.selected) ?? []) want.set(`${at(t) ? "ring" : "dot"} ${t}`, { square: t });
     }
-    if (s.hover) want.set("hover", s.hover);
+    if (s.hover) want.set("hover", { square: s.hover });
     return want;
   }
 
@@ -114,7 +123,7 @@ export function lightsquare(host: HTMLElement, options: Options = {}): Board {
       mark.el.remove();
       marks.delete(key);
     }
-    for (const [key, square] of want) {
+    for (const [key, { square, above }] of want) {
       const mark = marks.get(key);
       if (mark) {
         if (mark.square !== square) mark.el.style.transform = spot((mark.square = square));
@@ -123,7 +132,7 @@ export function lightsquare(host: HTMLElement, options: Options = {}): Board {
       const el = document.createElement("div");
       el.className = `ls-mark ls-mark-${key.split(" ")[0]}`;
       el.style.transform = spot(square);
-      marksLayer.appendChild(el);
+      (above ? (overLayer ??= layer(host, "ls-over")) : marksLayer).appendChild(el);
       marks.set(key, { el, square });
     }
   }
@@ -210,6 +219,7 @@ export function lightsquare(host: HTMLElement, options: Options = {}): Board {
     if (o.targets !== undefined) s.targets = o.targets;
     if (o.lastMove !== undefined) s.lastMove = o.lastMove;
     if (o.check !== undefined) s.check = o.check;
+    if (o.marks !== undefined) s.marks = o.marks ?? [];
     if (o.onMove !== undefined) s.onMove = o.onMove;
     if (o.onSelect !== undefined) s.onSelect = o.onSelect;
     if (o.position !== undefined) {
@@ -245,6 +255,7 @@ export function lightsquare(host: HTMLElement, options: Options = {}): Board {
       piecesLayer.removeEventListener("transitionend", onFaded);
       marksLayer.remove();
       piecesLayer.remove();
+      overLayer?.remove();
       host.classList.remove("ls-board", "ls-interactive");
     },
   };

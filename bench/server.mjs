@@ -1,10 +1,13 @@
 // Serves the bench page on the local network and records what phones report.
 //   npm run bench -w lightsquare      then open the printed address on the phone
+//   PIECES=/path/to/sprite.svg npm run bench -w lightsquare
+//                                     use the pieces of a cm-chessboard sprite
 import { build } from "esbuild";
 import { appendFileSync, mkdirSync, readFileSync } from "node:fs";
 import { createServer } from "node:http";
 import { networkInterfaces } from "node:os";
 import { fileURLToPath } from "node:url";
+import { spriteToCss } from "../scripts/sprite-to-css.mjs";
 
 const root = fileURLToPath(new URL("../", import.meta.url));
 const logDir = fileURLToPath(new URL("../../../.tmp/lightsquare-bench/", import.meta.url));
@@ -39,6 +42,7 @@ createServer(async (req, res) => {
   }
   try {
     if (path === "/bench.js") return void res.writeHead(200, { "content-type": "text/javascript", "cache-control": "no-store" }).end(await bundle());
+    if (path === "/pieces.css" && process.env.PIECES) return void res.writeHead(200, { "content-type": "text/css", "cache-control": "no-store" }).end(spriteToCss(readFileSync(process.env.PIECES, "utf8")));
     const file = files[path];
     if (!file) return void res.writeHead(404).end();
     res.writeHead(200, { "content-type": file[1], "cache-control": "no-store" }).end(readFileSync(root + file[0]));
@@ -50,4 +54,5 @@ createServer(async (req, res) => {
   console.log(`Lightsquare bench: http://localhost:${port}`);
   for (const address of addresses) console.log(`  on the phone:    http://${address}:${port}`);
   console.log(`  results go to:   ${logDir}phone.jsonl`);
+  console.log(`  pieces:          ${process.env.PIECES ?? "Cburnett (src/pieces/cburnett.css)"}`);
 });

@@ -171,6 +171,26 @@ describe.each(PROFILES)("board in $name", (profile) => {
     expect(await page.evaluate(() => T.marks())).toEqual([]);
   });
 
+  it("shows the app's own marks: tints under the pieces, badges over them, moved with the same write", async () => {
+    await fresh(page, { position: AFTER_E4, marks: [{ square: "e4", name: "hint" }, { square: "e4", name: "brilliant", above: true }] });
+    const layers = await page.evaluate(() => {
+      const host = document.getElementById("board")!;
+      const order = [...host.children].map((el) => el.className.replace("ls-layer ", ""));
+      const parent = (name: string) => host.querySelector(`.ls-mark-${name}`)!.parentElement!.className.replace("ls-layer ", "");
+      return { order, hint: parent("hint"), badge: parent("brilliant"), marks: T.marks() };
+    });
+    expect(layers).toEqual({ order: ["ls-marks", "ls-pieces", "ls-over"], hint: "ls-marks", badge: "ls-over", marks: ["brilliant e4", "hint e4"] });
+    const log = await page.evaluate(() => {
+      const watch = P.watch(document.getElementById("board")!);
+      T.set({ position: "rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR", marks: [{ square: "e5", name: "best", above: true }] }, { animate: false });
+      return { log: watch.stop().sort(), marks: T.marks() };
+    });
+    expect(log.marks).toEqual(["best e5"]);
+    expect(log.log).toEqual(["attributes:class", "attributes:style", "childList:add", "childList:remove", "childList:remove"]);
+    await page.evaluate(() => T.set({ marks: null }));
+    expect(await page.evaluate(() => T.marks())).toEqual([]);
+  });
+
   it("resizing the board needs no script: no writes, pieces still on their squares", async () => {
     await fresh(page);
     const result = await page.evaluate(async () => {

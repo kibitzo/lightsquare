@@ -8,6 +8,9 @@ import { lightsquare } from "../src/index";
 
 const OPERA = "e4 e5 Nf3 d6 d4 Bg4 dxe5 Bxf3 Qxf3 dxe5 Bc4 Nf6 Qb3 Qe7 Nc3 c6 Bg5 b5 Nxb5 cxb5 Bxb5+ Nbd7 O-O-O Rd8 Rxd7 Rxd7 Rd1 Qe6 Bxd7+ Nxd7 Qb8+ Nxb8 Rd8#".split(" ");
 
+/** Move-quality badges for the replay, by ply. Their look is this page's CSS, not the library's. */
+const BADGES: Record<number, string> = { 19: "great", 25: "great", 31: "brilliant", 33: "great" };
+
 const $ = (id: string): HTMLElement => document.getElementById(id)!;
 const host = $("board");
 let chess = new Chess();
@@ -31,7 +34,7 @@ function targets(): Map<string, string[]> {
 
 function show(): void {
   const last = chess.history({ verbose: true }).at(-1);
-  const next = { position: chess.fen(), movable: chess.turn() === "w" ? "white" : "black", targets: targets(), lastMove: last ? ([last.from, last.to] as const) : null, check: kingSquare() } as const;
+  const next = { position: chess.fen(), movable: chess.turn() === "w" ? "white" : "black", targets: targets(), lastMove: last ? ([last.from, last.to] as const) : null, check: kingSquare(), marks: last && BADGES[ply] ? [{ square: last.to, name: BADGES[ply], above: true }] : null } as const;
   const began = performance.now();
   board.set(next);
   samples.set.push(performance.now() - began);

@@ -7,11 +7,11 @@
   --ls-dark: #c5a076;
   --ls-move-ms: 180ms;
   --ls-ease: cubic-bezier(0.2, 0.7, 0.25, 1);
-  --ls-last: rgba(255, 214, 64, 0.5);
-  --ls-select: rgba(245, 158, 11, 0.6);
+  --ls-last: rgba(255, 235, 0, 0.5);
+  --ls-select: rgba(30, 22, 14, 0.28);
   --ls-check: rgba(220, 38, 38, 0.78);
-  --ls-target: rgba(12, 17, 23, 0.24);
-  --ls-hover: rgba(12, 17, 23, 0.2);
+  --ls-target: rgba(0, 0, 0, 0.2);
+  --ls-hover: rgba(0, 0, 0, 0.16);
   position: relative;
   width: 100%;
   /* A whole number of pixels per square. Pieces stay sharp, and Safari,
