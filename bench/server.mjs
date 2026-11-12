@@ -1,7 +1,7 @@
 // Serves the bench page on the local network and records what phones report.
-//   npm run bench -w lightsquare      then open the printed address on the phone
-//   PIECES=/path/to/sprite.svg npm run bench -w lightsquare
-//                                     use the pieces of a cm-chessboard sprite
+//   npm run bench                         then open the printed address on the phone
+//   PIECES=/path/to/sprite.svg npm run bench
+//                                         use the pieces of a cm-chessboard sprite
 import { build } from "esbuild";
 import { appendFileSync, mkdirSync, readFileSync } from "node:fs";
 import { createServer } from "node:http";
@@ -10,7 +10,7 @@ import { fileURLToPath } from "node:url";
 import { spriteToCss } from "../scripts/sprite-to-css.mjs";
 
 const root = fileURLToPath(new URL("../", import.meta.url));
-const logDir = fileURLToPath(new URL("../../../.tmp/lightsquare-bench/", import.meta.url));
+const logDir = fileURLToPath(new URL("../.tmp/bench/", import.meta.url));
 const port = Number(process.env.PORT ?? 3055);
 mkdirSync(logDir, { recursive: true });
 
