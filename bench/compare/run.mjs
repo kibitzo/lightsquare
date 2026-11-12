@@ -370,6 +370,16 @@ its npm package.
 `;
 }
 
+// --sizes: measure only the download sizes again (they change with every edit of the source) and rewrite the report.
+if (process.argv.includes("--sizes")) {
+  const results = JSON.parse(readFileSync(`${here}results.json`, "utf8"));
+  for (const lib of LIBS) results.boards[lib.id].size = await sizes(lib);
+  writeFileSync(`${here}results.json`, `${JSON.stringify(results, null, 2)}\n`);
+  writeFileSync(`${root}BENCHMARK.md`, report(results));
+  console.log(LIBS.map((lib) => `${lib.name} ${kB(results.boards[lib.id].size.js)}`).join(", "));
+  process.exit(0);
+}
+
 if (process.argv.includes("--report")) {
   writeFileSync(`${root}BENCHMARK.md`, report(JSON.parse(readFileSync(`${here}results.json`, "utf8"))));
   console.log("BENCHMARK.md written from bench/compare/results.json");

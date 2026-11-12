@@ -69,7 +69,7 @@ that shows a static position downloads only the core.
 | Entry point | What | Replaces in cm-chessboard | Size, gzipped |
 |---|---|---|---|
 | `lightsquare` (core) | position, pieces, marks, coordinates, orientation, tap and drag, premove, events, module host | Chessboard, Markers, AutoBorderNone | 4.7 kB |
-| `lightsquare/shapes` | arrows, circles, arrow labels, drawing by the user | Arrows, RightClickAnnotator | 1.9 kB |
+| `lightsquare/shapes` | arrows, circles, arrow labels, drawing by the user | Arrows, RightClickAnnotator | 2.0 kB |
 | `lightsquare/promotion` | promotion picker | PromotionDialog | 0.6 kB |
 | `lightsquare/overlay` | HTML anchored to squares | HtmlLayer | 0.4 kB |
 | `lightsquare/a11y` | screen-reader description, move announcements, keyboard moves | Accessibility | 1.1 kB |
