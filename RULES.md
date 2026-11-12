@@ -28,16 +28,21 @@ unevenly (gaps of 33 and 50 ms).
 
 2. **No animation loop.** No `requestAnimationFrame` loop and no timer drives
    a piece animation, a fade, or anything that moves. Animations are CSS
-   transitions (or the Web Animations API on `transform`/`opacity`). A single
-   `requestAnimationFrame` to start a transition after a style change is
-   allowed; a loop is not.
+   transitions on `transform` and `opacity`. The core calls neither
+   `requestAnimationFrame` nor `setTimeout`: a slide starts because the
+   class that carries the transition and the new transform arrive in the
+   same write.
 
 3. **Nothing animates when nothing moves.** No infinite animation, no idle
    timer, no polling. A board at rest does no work: zero paints, zero frames.
 
 4. **Positions in percent.** A piece is placed with `translate(N * 100%,
    M * 100%)` relative to its own size. Resizing the board needs no script,
-   no measuring, no re-render.
+   no measuring, no re-render. The stylesheet keeps the board's width a
+   multiple of 8 pixels, so a square is a whole number of pixels (Safari
+   needs this to place percent transforms exactly). Never add the separate
+   `scale`, `rotate` or `translate` properties to a piece or a mark: they
+   multiply the transform that places it.
 
 5. **One background for the squares.** The 64 squares are one CSS background,
    not 64 elements and not an SVG. Highlights and markers are a few
@@ -66,6 +71,18 @@ unevenly (gaps of 33 and 50 ms).
     only after it was measured on a real phone in Low Power Mode (or a
     weaker phone) against the previous version, with the numbers in the pull
     request. A desktop profile is not evidence for this library.
+
+12. **Our own work only.** No code, stylesheet values, class names or
+    pictures from a GPL project (chessground and most of Lichess are GPL) or
+    from anything with a non-commercial licence. Read other boards to learn
+    how they behave; write what you learned in your own words and code.
+    Every picture in the package has a NOTICE file that names its author and
+    licence. See ARCHITECTURE.md, section 13.
+
+13. **Every rule has a test.** `tests/unit/rules.test.ts` reads the source
+    against this file and `tests/browser/perf.test.ts` counts the work asked
+    of the browser. A new rule comes with its test; a change that needs a
+    test weakened is a change to this file first.
 
 ## When a rule seems to be in the way
 

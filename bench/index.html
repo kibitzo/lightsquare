@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0c1117">
+<title>Lightsquare bench</title>
+<link rel="stylesheet" href="/lightsquare.css">
+<link rel="stylesheet" href="/pieces.css">
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: #0c1117; color: #cbd5e1; font: 15px/1.4 -apple-system, system-ui, sans-serif; -webkit-text-size-adjust: 100%; }
+  main { max-width: 520px; margin: 0 auto; padding: 12px 12px 40px; }
+  header { display: flex; align-items: baseline; justify-content: space-between; margin: 4px 2px 10px; }
+  h1 { margin: 0; font-size: 17px; font-weight: 600; color: #f59e0b; letter-spacing: 0.01em; }
+  header span { font-size: 12px; color: #64748b; font-variant-numeric: tabular-nums; }
+  #board { margin: 0 auto; border-radius: 4px; overflow: visible; }
+  .row { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 8px; margin-top: 10px; }
+  button { height: 48px; border-radius: 12px; border: 1px solid rgba(148, 163, 184, 0.22); background: rgba(148, 163, 184, 0.08); color: #e2e8f0; font: inherit; font-weight: 500; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+  button:active { background: rgba(148, 163, 184, 0.2); }
+  button[aria-pressed="true"] { background: rgba(245, 158, 11, 0.16); border-color: rgba(245, 158, 11, 0.55); color: #fbbf24; }
+  button.good { border-color: rgba(34, 197, 94, 0.5); color: #86efac; }
+  button.bad { border-color: rgba(239, 68, 68, 0.5); color: #fca5a5; }
+  .card { margin-top: 12px; padding: 12px 14px; border-radius: 16px; border: 1px solid rgba(148, 163, 184, 0.14); background: rgba(148, 163, 184, 0.05); }
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; text-align: center; }
+  .stats b { display: block; font-size: 19px; font-weight: 600; color: #f8fafc; font-variant-numeric: tabular-nums; }
+  .stats small { font-size: 11px; color: #94a3b8; }
+  p { margin: 8px 2px 0; font-size: 13px; color: #94a3b8; }
+  a { color: #fbbf24; }
+  #sent { min-height: 18px; }
+</style>
+</head>
+<body>
+<main>
+  <header><h1>Lightsquare bench</h1><span id="where"></span></header>
+  <div id="board"></div>
+  <div class="row">
+    <button id="back" aria-label="Back one move">◀</button>
+    <button id="play" aria-pressed="false">Auto</button>
+    <button id="next" aria-label="Forward one move">▶</button>
+    <button id="flip">Flip</button>
+  </div>
+  <div class="row">
+    <button id="measure" aria-pressed="false">Measure</button>
+    <button id="stress" aria-pressed="false">Stuck script</button>
+    <button id="lpm" aria-pressed="false">Low Power</button>
+  </div>
+  <div class="card">
+    <div class="stats">
+      <div><b id="s-fps">–</b><small>script fps</small></div>
+      <div><b id="s-gap">–</b><small>worst gap ms</small></div>
+      <div><b id="s-set">–</b><small>move cost ms</small></div>
+      <div><b id="s-input">–</b><small>finger delay ms</small></div>
+    </div>
+  </div>
+  <div class="row">
+    <button id="smooth" class="good">Feels smooth</button>
+    <button id="rough" class="bad">Not smooth</button>
+  </div>
+  <p id="sent"></p>
+  <p>Drag or tap to play both sides. ◀ ▶ step through Morphy's Opera game. "Stuck script" freezes the page's script on and off: slides should keep moving. Tell me how it feels with the two buttons, once in Low Power Mode and once without (set the "Low Power" switch to match).</p>
+  <p>Compare: <a id="lichess" href="https://lichess.org/analysis" target="_blank" rel="noopener">Lichess board</a> · <a id="old" href="#">the current Kibitzo board</a></p>
+</main>
+<script type="module" src="/bench.js"></script>
+</body>
+</html>

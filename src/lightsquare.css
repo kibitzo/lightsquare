@@ -1,25 +1,38 @@
 /* Lightsquare. Every rule here follows RULES.md: pieces move by transform
-   only, positions in percent, one background for the squares. */
+   only, positions in percent, one background for the squares, nothing
+   animates at rest. */
 
 .ls-board {
-  --ls-light: #f0d9b5;
-  --ls-dark: #b58863;
-  --ls-move-ms: 160ms;
-  --ls-select: rgba(20, 85, 30, 0.5);
-  --ls-last: rgba(155, 199, 0, 0.41);
-  --ls-check: radial-gradient(ellipse at center, rgba(255, 0, 0, 1) 0%, rgba(231, 0, 0, 1) 25%, rgba(169, 0, 0, 0) 89%, rgba(158, 0, 0, 0) 100%);
-  --ls-dot: rgba(20, 85, 30, 0.5);
+  --ls-light: #ecdab9;
+  --ls-dark: #c5a076;
+  --ls-move-ms: 180ms;
+  --ls-ease: cubic-bezier(0.2, 0.7, 0.25, 1);
+  --ls-last: rgba(255, 214, 64, 0.5);
+  --ls-select: rgba(245, 158, 11, 0.6);
+  --ls-check: rgba(220, 38, 38, 0.78);
+  --ls-target: rgba(12, 17, 23, 0.24);
+  --ls-hover: rgba(12, 17, 23, 0.2);
   position: relative;
   width: 100%;
+  /* A whole number of pixels per square. Pieces stay sharp, and Safari,
+     which measures a percent transform on the pixel-snapped box, puts
+     every piece exactly on its square. */
+  width: round(down, 100%, 8px);
   aspect-ratio: 1;
-  /* One background for 64 squares: a8 (top-left from White) is light. */
-  background: repeating-conic-gradient(var(--ls-light) 0 25%, var(--ls-dark) 0 50%) 0 0 / 25% 25%;
-  touch-action: none;
+  /* One background for 64 squares. The top-left square is always light. */
+  background: repeating-conic-gradient(var(--ls-dark) 0 25%, var(--ls-light) 0 50%) 0 0 / 25% 25%;
   user-select: none;
   -webkit-user-select: none;
   -webkit-touch-callout: none;
   -webkit-tap-highlight-color: transparent;
-  contain: layout paint;
+  contain: layout style;
+  isolation: isolate;
+}
+
+/* Only a board the user can move pieces on takes the touch for itself;
+   a board to look at lets the page scroll. */
+.ls-board.ls-interactive {
+  touch-action: none;
 }
 
 .ls-layer {
@@ -39,28 +52,80 @@
 }
 
 .ls-piece {
-  background-size: 100% 100%;
-  background-repeat: no-repeat;
-  will-change: transform;
-  transition: transform var(--ls-move-ms) ease, opacity var(--ls-move-ms) ease;
+  background: center / 100% 100% no-repeat;
 }
 
-.ls-board.ls-instant .ls-piece,
-.ls-piece.ls-dragging {
-  transition: none;
+/* A move. The class and the new transform arrive in the same write, so the
+   browser starts the slide by itself. The class stays until the piece is
+   placed again; at rest it does nothing. */
+.ls-piece.ls-slide {
+  transition: transform var(--ls-move-ms) var(--ls-ease);
 }
 
-.ls-piece.ls-dragging {
-  z-index: 2;
-  scale: 1.12;
+/* The pieces of the latest move pass over the others. */
+.ls-piece.ls-top {
+  z-index: 1;
 }
 
+/* A captured piece. Removed from the page when the fade ends, or by the
+   next change at the latest. */
 .ls-piece.ls-gone {
   opacity: 0;
+  transition: opacity var(--ls-move-ms) linear;
 }
 
-.ls-mark-select { background: var(--ls-select); }
-.ls-mark-last { background: var(--ls-last); }
-.ls-mark-check { background: var(--ls-check); }
-.ls-mark-dot { background: radial-gradient(var(--ls-dot) 19%, transparent 21%); }
-.ls-mark-capture { background: radial-gradient(transparent 0 79%, var(--ls-dot) 80%); }
+/* Under the pointer. The only time a piece asks for its own GPU layer. */
+.ls-piece.ls-dragging {
+  --ls-grow: 1.1;
+  z-index: 2;
+  will-change: transform;
+}
+
+/* Held by a finger: larger, and raised above the fingertip by the script. */
+.ls-piece.ls-lifted {
+  --ls-grow: 1.7;
+}
+
+.ls-mark-last {
+  background: var(--ls-last);
+}
+
+.ls-mark-select {
+  background: var(--ls-select);
+}
+
+.ls-mark-check {
+  background: radial-gradient(circle, var(--ls-check) 0 30%, transparent 70%);
+}
+
+.ls-mark-dot {
+  background: radial-gradient(circle, var(--ls-target) 0 15%, transparent 16.5%);
+}
+
+.ls-mark-ring {
+  background: radial-gradient(circle, transparent 0 39%, var(--ls-target) 40.5% 47%, transparent 48.5%);
+}
+
+.ls-mark-hover {
+  box-shadow: inset 0 0 0 0.22em var(--ls-hover);
+}
+
+/* A finger covers the square it is on: show a halo around it instead. */
+@media (pointer: coarse) {
+  .ls-mark-hover {
+    box-shadow: none;
+  }
+  .ls-mark-hover::after {
+    content: "";
+    position: absolute;
+    inset: -55%;
+    border-radius: 50%;
+    background: var(--ls-hover);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ls-board {
+    --ls-move-ms: 0ms;
+  }
+}

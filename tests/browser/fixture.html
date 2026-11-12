@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lightsquare test page</title>
+<link rel="stylesheet" href="/src/lightsquare.css">
+<link rel="stylesheet" href="/src/pieces/cburnett.css">
+<style>
+  html, body { margin: 0; background: #0c1117; }
+  #wrap { width: min(100vw, 480px); }
+</style>
+</head>
+<body>
+<div id="wrap"><div id="board"></div></div>
+<script type="module">
+import { lightsquare } from "/lightsquare.js";
+
+const host = document.getElementById("board");
+const FILES = "abcdefgh";
+
+/** Test helpers. They read the page the way a user sees it: by where things are. */
+window.T = {
+  events: [],
+  board: null,
+  make(options = {}) {
+    T.events = [];
+    T.board = lightsquare(host, { ...T.revive(options), onMove: (m) => T.events.push({ type: "move", ...m }), onSelect: (s) => T.events.push({ type: "select", square: s }) });
+  },
+  revive(options) {
+    return options.targets ? { ...options, targets: new Map(Object.entries(options.targets)) } : options;
+  },
+  set(options, how) {
+    T.board.set(T.revive(options), how);
+  },
+  cellOf(el) {
+    const box = host.getBoundingClientRect();
+    const r = el.getBoundingClientRect();
+    const size = box.width / 8;
+    return { col: (r.left - box.left) / size, row: (r.top - box.top) / size, w: r.width / size, h: r.height / size };
+  },
+  squareOf(el, orientation = "white") {
+    const { col, row, w, h } = T.cellOf(el);
+    const c = Math.floor(col + w / 2), r = Math.floor(row + h / 2);
+    return orientation === "white" ? `${FILES[c]}${8 - r}` : `${FILES[7 - c]}${r + 1}`;
+  },
+  /** Every visible piece: which picture, on which square, how far off the grid. */
+  pieces(orientation = "white") {
+    return [...host.querySelectorAll(".ls-piece:not(.ls-gone)")].map((el) => {
+      const cell = T.cellOf(el);
+      const off = Math.max(Math.abs(cell.col - Math.round(cell.col)), Math.abs(cell.row - Math.round(cell.row)), Math.abs(cell.w - 1), Math.abs(cell.h - 1));
+      return { code: [...el.classList].find((c) => /^ls-[wb][kqrbnp]$/.test(c)).slice(3), square: T.squareOf(el, orientation), off };
+    });
+  },
+  /** The FEN placement a user would read off the screen. */
+  seen(orientation = "white") {
+    const grid = new Map(T.pieces(orientation).map((p) => [p.square, p.code]));
+    const rows = [];
+    for (let rank = 8; rank >= 1; rank--) {
+      let row = "", gap = 0;
+      for (const file of FILES) {
+        const code = grid.get(`${file}${rank}`);
+        if (!code) { gap++; continue; }
+        if (gap) row += gap;
+        gap = 0;
+        row += code[0] === "w" ? code[1].toUpperCase() : code[1];
+      }
+      rows.push(gap ? row + gap : row);
+    }
+    return rows.join("/");
+  },
+  marks(orientation = "white") {
+    return [...host.querySelectorAll(".ls-mark")].map((el) => `${[...el.classList].find((c) => c.startsWith("ls-mark-")).slice(8)} ${T.squareOf(el, orientation)}`).sort();
+  },
+  pieceAt(square, orientation = "white") {
+    return [...host.querySelectorAll(".ls-piece:not(.ls-gone)")].find((el) => T.squareOf(el, orientation) === square) ?? null;
+  },
+  /** Mark an element so a later check can prove it is the same one. */
+  tag(square, name) {
+    T.pieceAt(square).dataset.tag = name;
+  },
+  tagAt(square, orientation = "white") {
+    return T.pieceAt(square, orientation)?.dataset.tag ?? null;
+  },
+  /** Viewport point at the centre of a square. */
+  point(square, orientation = "white") {
+    const box = host.getBoundingClientRect();
+    const size = box.width / 8;
+    const file = FILES.indexOf(square[0]), rank = Number(square[1]);
+    const [col, row] = orientation === "white" ? [file, 8 - rank] : [7 - file, rank - 1];
+    return { x: box.left + (col + 0.5) * size, y: box.top + (row + 0.5) * size, size };
+  },
+  /** A synthetic finger or mouse, for browsers where no real one can be driven. */
+  pointer(type, x, y, kind = "touch") {
+    host.dispatchEvent(new PointerEvent(type, { pointerId: 7, pointerType: kind, isPrimary: true, clientX: x, clientY: y, button: 0, bubbles: true, cancelable: true }));
+  },
+  settled() {
+    return document.getAnimations().length === 0 && !host.querySelector(".ls-gone");
+  },
+};
+window.ready = true;
+</script>
+</body>
+</html>

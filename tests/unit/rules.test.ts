@@ -1,0 +1,79 @@
+/**
+ * RULES.md, enforced. These read the source and the built bundle, so a rule
+ * cannot be broken quietly.
+ */
+import { build } from "esbuild";
+import { readFileSync, readdirSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+import { gzipSync } from "node:zlib";
+import { describe, expect, it } from "vitest";
+
+const root = fileURLToPath(new URL("../../", import.meta.url));
+const files = readdirSync(`${root}src`).filter((f) => f.endsWith(".ts"));
+const source = Object.fromEntries(files.map((f) => [f, readFileSync(`${root}src/${f}`, "utf8")]));
+const code = Object.values(source).join("\n");
+const css = readFileSync(`${root}src/lightsquare.css`, "utf8").replace(/\/\*[\s\S]*?\*\//g, "");
+const count = (text: string, pattern: RegExp): number => (text.match(pattern) ?? []).length;
+
+describe("RULES.md", () => {
+  it("rule 2: no animation loop and no timers in the core", () => {
+    expect(count(code, /requestAnimationFrame|setInterval|setTimeout|\.animate\(/g)).toBe(0);
+  });
+
+  it("rule 3: the stylesheet has no keyframes and no infinite animation", () => {
+    expect(count(css, /@keyframes|animation\s*:|infinite/g)).toBe(0);
+  });
+
+  it("rules 1 and 4: script places things with transform only, pieces in percent", () => {
+    expect(count(code, /\.style\.(left|top|width|height|right|bottom|margin|padding)/g)).toBe(0);
+    expect(source["board.ts"]).toContain("translate(${col * 100}%,${row * 100}%)");
+  });
+
+  it("rule 1: the stylesheet transitions transform and opacity, nothing else", () => {
+    const transitions = [...css.matchAll(/transition\s*:\s*([^;]+);/g)].map((m) => m[1].trim().split(/\s+/)[0]);
+    expect(transitions.length).toBeGreaterThan(0);
+    for (const property of transitions) expect(["transform", "opacity"]).toContain(property);
+  });
+
+  it("nothing is placed with a transform and then scaled or turned by a separate property", () => {
+    // `scale` and `rotate` multiply the translate that puts a piece on its square.
+    expect(count(css, /(^|[;{\s])(scale|rotate|translate)\s*:/g)).toBe(0);
+  });
+
+  it("no will-change at rest: only a dragged piece asks for a layer", () => {
+    const rules = [...css.matchAll(/([^{}]+)\{([^{}]*will-change[^{}]*)\}/g)].map((m) => m[1].trim());
+    expect(rules).toEqual([".ls-piece.ls-dragging"]);
+  });
+
+  it("rule 6: one set of listeners, on the board, not per piece or square", () => {
+    expect(count(source["input.ts"], /addEventListener\(/g)).toBe(4);
+    expect(count(source["board.ts"], /addEventListener\(/g)).toBe(1);
+    expect(count(code, /addEventListener\(/g)).toBe(5);
+  });
+
+  it("rules 6 and 8: the board is measured in exactly one place, at pointer down", () => {
+    expect(count(code, /getBoundingClientRect|getClientRects/g)).toBe(1);
+    expect(source["input.ts"]).toMatch(/function down\([^)]*\): void \{[\s\S]{0,200}getBoundingClientRect/);
+    expect(count(code, /offset(Width|Height|Left|Top)|client(Width|Height)|getComputedStyle|scroll(Width|Height|Top|Left)/g)).toBe(0);
+  });
+
+  it("rule 9: no imports from outside the package", () => {
+    const imports = [...code.matchAll(/from\s+"([^"]+)"/g)].map((m) => m[1]);
+    expect(imports.length).toBeGreaterThan(0);
+    for (const from of imports) expect(from.startsWith("./")).toBe(true);
+    const pkg = JSON.parse(readFileSync(`${root}package.json`, "utf8"));
+    expect(pkg.dependencies ?? {}).toEqual({});
+    expect(pkg.peerDependencies ?? {}).toEqual({});
+  });
+
+  it("rule 10: the core is under 6 kB minified and gzipped", async () => {
+    const out = await build({ absWorkingDir: root, entryPoints: ["src/index.ts"], bundle: true, format: "esm", minify: true, target: "es2020", write: false });
+    const gzipped = gzipSync(out.outputFiles[0].contents, { level: 9 }).length;
+    expect(gzipped).toBeLessThan(6 * 1024);
+  });
+
+  it("rule 12: nothing borrowed from GPL boards", () => {
+    const everything = code + css;
+    expect(count(everything, /chessground|cg-wrap|cg-board|cg-container/gi)).toBe(0);
+  });
+});
