@@ -109,6 +109,28 @@ describe.each(PROFILES)("modules in $name", (profile) => {
       expect(paint).toEqual({ colour: "rgb(234, 88, 12)", red: "rgb(185, 28, 28)", grows: true, filled: true });
     });
 
+    it("the shape layer is clipped to the board, and that cuts nothing: every shape lies inside it", async () => {
+      // Clipped because Safari left thin lines of an arrow's edge on the board when the layer could draw outside
+      // its box (lightsquare.css, .ls-shapes). So the clip must never hide part of a real shape.
+      await fresh(page, { position: "empty" });
+      const seen = await page.evaluate(async () => {
+        const corners = ["a1", "a8", "h1", "h8"];
+        const arrows = corners.flatMap((from) => corners.filter((to) => to !== from).map((to) => ({ from, to, label: "8" })));
+        const shapes = T.board.use(M.shapes({ arrows, circles: corners.map((square) => ({ square })), look: { width: 0.3, headLength: 0.6, headWidth: 0.8 } }));
+        await new Promise((r) => setTimeout(r, 400));
+        const board = document.getElementById("board")!.getBoundingClientRect();
+        const outside = [...document.querySelectorAll(".ls-arrow path, .ls-arrow text, .ls-circle")].filter((el) => {
+          const r = el.getBoundingClientRect();
+          const pad = 0.5;
+          return r.left < board.left - pad || r.top < board.top - pad || r.right > board.right + pad || r.bottom > board.bottom + pad;
+        }).length;
+        const overflow = getComputedStyle(document.querySelector(".ls-shapes")!).overflow;
+        (shapes as unknown as { destroy(): void }).destroy();
+        return { overflow, outside };
+      });
+      expect(seen).toEqual({ overflow: "hidden", outside: 0 });
+    });
+
     it("an arrow runs from the centre of its first square to the centre of its last, in every direction", async () => {
       await fresh(page, { position: "empty" });
       const far = await page.evaluate(async () => {

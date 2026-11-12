@@ -251,10 +251,17 @@
    appears; an arrow still being aimed is slimmer and lighter. The script
    gives each shape its colour as --_shape: the public --ls-shape or
    --ls-shape-<name>, or the built-in tone. */
+/* Clipped to the board. Every shape lies inside it anyway; with the layer
+   allowed to draw outside its box, Safari (26.1, macOS) did not repaint
+   all of a shape's edge when the shape changed, and thin lines stayed on
+   the board at an arrow's tip and tail until the next move repainted it
+   (seen on kibitzo.com and on the demo, 2026-11-12; measured in the
+   founder's Safari: leftover pixels after 9 of 15 clean switches as it
+   was, after none of 29 with the layer clipped). */
 .ls-shapes {
   width: 100%;
   height: 100%;
-  overflow: visible;
+  overflow: hidden;
 }
 
 .ls-arrow,
