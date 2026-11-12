@@ -11,7 +11,6 @@ import { premoveTargets } from "../src/modules/premove";
 import { overlay } from "../src/modules/overlay";
 import { promotion } from "../src/modules/promotion";
 import { shapes, type Arrow, type Circle } from "../src/modules/shapes";
-import { sounds } from "../src/modules/sounds";
 import { applyTheme, themes, type Theme } from "../src/modules/theme";
 
 const OPERA = "e4 e5 Nf3 d6 d4 Bg4 dxe5 Bxf3 Qxf3 dxe5 Bc4 Nf6 Qb3 Qe7 Nc3 c6 Bg5 b5 Nxb5 cxb5 Bxb5+ Nbd7 O-O-O Rd8 Rxd7 Rxd7 Rd1 Qe6 Bxd7+ Nxd7 Qb8+ Nxb8 Rd8#".split(" ");
@@ -101,11 +100,8 @@ function badges(to: string | undefined): BoardMark[] {
 let mateAt: string | null = null;
 function showMate(to: string | undefined): void {
   const square = badgePlaces(to).find(([name]) => name === "mate")?.[1] ?? null;
-  const reached = lastChange;
-  lastChange = null;
   if (square === mateAt) return;
   mateAt = square;
-  if (square && reached && reached !== "position") audio.play("end");
   if (!square) return html.remove("mate");
   const el = document.createElement("div");
   el.className = "mate";
@@ -133,11 +129,7 @@ function reply(): void {
   board.playPremove();
 }
 
-/** What the pieces last did, until the checkmate sound has asked: a mate reached by a move has its sound, one reached by a jump has not. */
-let lastChange: string | null = null;
-
 const board = lightsquare(host, {
-  onChange: (change) => (lastChange = change.kind),
   async onMove({ from, to, piece }) {
     let promoteTo: string | undefined;
     if (piece[1] === "p" && (to[1] === "8" || to[1] === "1")) {
@@ -159,7 +151,6 @@ const board = lightsquare(host, {
 const picker = board.use(promotion());
 const drawing = board.use(shapes({ draw: true }));
 const html = board.use(overlay());
-const audio = board.use(sounds());
 board.use(a11y({ label: "Lightsquare playground board" }));
 
 function goTo(target: number): void {
@@ -193,7 +184,6 @@ toggle("versus", () => {
   show();
 });
 toggle("hints", showShapes, true);
-toggle("sound", (on) => audio.set({ muted: !on }), true);
 toggle("samples", showShapes);
 
 /** ← → step through the game, ↑ or Home goes to the start, ↓ or End to the end. Keys used by a slider or by the board's own keyboard cursor are left alone. */

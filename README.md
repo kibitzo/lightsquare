@@ -6,7 +6,7 @@ A chessboard for the web that stays smooth on every phone, including old
 ones and phones in Low Power Mode.
 
 **[Try the demo](https://kibitzo.github.io/lightsquare/)**: play on it,
-change its looks, hear it, and measure it on your own phone.
+change its looks, and measure it on your own phone.
 
 - Pieces are moved by the browser, not by script: a move is one style change
   and a CSS transition. A slide keeps going even while the page's script is

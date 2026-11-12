@@ -313,7 +313,7 @@ describe.each([PROFILES[0], PROFILES[2]])("the published demo in $name", (profil
 
   it("leaves out what needs the computer that serves the page: the verdict buttons and the Low Power label", async () => {
     expect(await page.evaluate(() => ["smooth", "rough", "lpm", "sent"].filter((id) => document.getElementById(id)))).toEqual([]);
-    expect(await page.evaluate(() => ["measure", "stress", "layers", "sound"].filter((id) => !document.getElementById(id)))).toEqual([]);
+    expect(await page.evaluate(() => ["measure", "stress", "layers"].filter((id) => !document.getElementById(id)))).toEqual([]);
   });
 
   it("offers only the piece set that is the library's own", async () => {
