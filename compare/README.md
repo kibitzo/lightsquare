@@ -33,6 +33,13 @@ the times.
 
 - `npm run sizes`: measure only the download sizes again.
 - `npm run report`: write `RESULTS.md` again from `results.json`.
+- `node run.mjs --only perMove`: measure one group again (`atRest`,
+  `perMove`, `whileStuck`, `whileBusy`, `replay` or `drag`) and keep the
+  rest of the last run.
+- `node run.mjs --paints`: where each board's rendering time goes for a
+  move (painting, rastering, compositing), with a trial of Lightsquare
+  keeping every piece on a layer of its own. A diagnosis tool; it writes
+  nothing.
 
 ## Layout
 

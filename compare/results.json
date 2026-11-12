@@ -29,20 +29,23 @@
         "layoutReads": 0,
         "domWrites": 4,
         "scriptMs": 0.05,
-        "styleAndLayoutMs": 0.71,
+        "styleAndLayoutMs": 0.79,
         "styleRecalcs": 8,
         "layouts": 0,
-        "paints": 7.3
+        "paints": 7.3,
+        "paintMs": 0.65,
+        "rasterMs": 4.23,
+        "compositeMs": 5.4
       },
-      "whileStuck": 50,
-      "whileBusy": 245,
+      "whileStuck": 51,
+      "whileBusy": 246,
       "replay": {
-        "workMs": 0,
-        "wallMs": 0.09
+        "workMs": 0.009,
+        "wallMs": 0.093
       },
       "drag": {
-        "scriptMs": 3.22,
-        "styleAndLayoutMs": 2.77,
+        "scriptMs": 3.75,
+        "styleAndLayoutMs": 3.26,
         "layoutReads": 1,
         "frameCallbacks": 0,
         "domWrites": 53,
@@ -72,21 +75,24 @@
         "timers": 0,
         "layoutReads": 0,
         "domWrites": 51,
-        "scriptMs": 2.33,
-        "styleAndLayoutMs": 1.3,
+        "scriptMs": 2.31,
+        "styleAndLayoutMs": 1.29,
         "styleRecalcs": 25,
         "layouts": 0,
-        "paints": 4.3
+        "paints": 4.3,
+        "paintMs": 0.12,
+        "rasterMs": 0.03,
+        "compositeMs": 13.33
       },
       "whileStuck": 0,
-      "whileBusy": 171,
+      "whileBusy": 172,
       "replay": {
-        "workMs": 0,
-        "wallMs": 0.05
+        "workMs": 0.005,
+        "wallMs": 0.043
       },
       "drag": {
-        "scriptMs": 4.09,
-        "styleAndLayoutMs": 1.59,
+        "scriptMs": 4.05,
+        "styleAndLayoutMs": 1.8,
         "layoutReads": 0,
         "frameCallbacks": 45,
         "domWrites": 51,
@@ -116,21 +122,24 @@
         "timers": 0,
         "layoutReads": 0,
         "domWrites": 162,
-        "scriptMs": 2.1,
-        "styleAndLayoutMs": 3.2,
+        "scriptMs": 1.87,
+        "styleAndLayoutMs": 3.13,
         "styleRecalcs": 25,
         "layouts": 24,
-        "paints": 48.5
+        "paints": 48.4,
+        "paintMs": 7.64,
+        "rasterMs": 9.55,
+        "compositeMs": 9.57
       },
       "whileStuck": 0,
-      "whileBusy": 170,
+      "whileBusy": 166,
       "replay": {
-        "workMs": 3.51,
-        "wallMs": 16.79
+        "workMs": 3.365,
+        "wallMs": 16.709
       },
       "drag": {
-        "scriptMs": 4.69,
-        "styleAndLayoutMs": 4.19,
+        "scriptMs": 4.94,
+        "styleAndLayoutMs": 4.38,
         "layoutReads": 0,
         "frameCallbacks": 2,
         "domWrites": 163,

@@ -93,6 +93,8 @@
   /* Notes in the panel are set thin and in the fixed-width face, like the comments of a listing. */
   .hint { margin: 0; padding: 10px 12px 12px; font: 300 11.5px/1.65 var(--mono); letter-spacing: 0.01em; color: var(--dim); }
   .hint:empty { display: none; }
+  /* The answer to a verdict must be seen at once on a phone. */
+  #sent { color: var(--bright); font-weight: 400; }
 
   /* A property and its value, one per ruled row. */
   .field { display: grid; grid-template-columns: 84px minmax(0, 1fr) auto; align-items: center; gap: 10px; min-height: 40px; padding: 3px 12px; border-top: 1px solid rgba(148, 163, 184, 0.09); }
@@ -206,6 +208,11 @@
   }
   .ls-mark.ls-at-top::after { top: 0.5cqw; }
   .ls-mark.ls-at-right::after { right: 0.5cqw; }
+  /* The trial of the "Measure" panel: every piece keeps a layer of its own,
+     as some other boards have it. The library gives a layer only to a piece
+     that is held (RULES.md); this is here to be measured against that on a
+     real phone, not to be copied. */
+  .own-layers .ls-piece { will-change: transform; }
   @keyframes badge-pop { from { transform: scale(0.4); opacity: 0; } }
 
   /* Check: a red blush under the king that breathes, as in Kibitzo and of
@@ -364,11 +371,15 @@
           <button id="lpm" aria-pressed="false">Low Power</button>
         </div>
         <div class="bar">
+          <button id="layers" aria-pressed="false">Trial: every piece on its own layer</button>
+        </div>
+        <div class="bar">
           <button id="smooth" class="good">Feels smooth</button>
           <button id="rough" class="bad">Not smooth</button>
         </div>
         <p class="hint" id="sent"></p>
         <p class="hint">"Stuck script" freezes this page's script on and off. The slides keep moving, because the browser moves them, not the script.</p>
+        <p class="hint">The trial keeps all 32 pieces on layers of their own all the time, instead of only the piece that moves. On a desktop it costs about the same; a phone decides. Each verdict sends what was measured since the one before.</p>
       </section>
     </aside>
   </div>

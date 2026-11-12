@@ -120,13 +120,26 @@ async function metrics(cdp) {
   return Object.fromEntries(list.map((m) => [m.name, m.value]));
 }
 
+/**
+ * Rendering work after the page's own script, style and layout, in ms, by
+ * where it is done. A count of paints alone does not compare boards: a board
+ * that keeps every piece on a layer of its own paints less often and pays
+ * for it in compositing on every frame.
+ */
+const RENDER = {
+  paint: /^Paint$/,
+  raster: /^RasterTask$/,
+  composite: /^(Layerize|ProxyImpl::ReadyToCommit|ProxyImpl::ScheduledActionDraw)$/,
+};
+
 async function traced(browser, page, run) {
-  await browser.startTracing(page, { categories: ["devtools.timeline", "disabled-by-default-devtools.timeline"] });
+  await browser.startTracing(page, { categories: ["devtools.timeline", "disabled-by-default-devtools.timeline", "cc"] });
   await run();
   const events = JSON.parse((await browser.stopTracing()).toString()).traceEvents;
   const counts = { Paint: 0, Layout: 0, UpdateLayoutTree: 0, FireAnimationFrame: 0, TimerFire: 0, FunctionCall: 0 };
   for (const e of events) if (e.name in counts && e.ph !== "E") counts[e.name]++;
-  return counts;
+  const ms = Object.fromEntries(Object.entries(RENDER).map(([key, name]) => [key, events.filter((e) => e.ph === "X" && name.test(e.name)).reduce((t, e) => t + e.dur, 0) / 1000]));
+  return { ...counts, ms };
 }
 
 /** At rest for two seconds: what the browser still does. */
@@ -162,7 +175,7 @@ async function perMove(browser, origin, lib) {
   });
   await context.close();
   const mid = (key) => median(rows.map((r) => r[key]));
-  return { frameCallbacks: mid("raf"), timers: mid("timers"), layoutReads: mid("reads"), domWrites: mid("writes"), scriptMs: round(mid("script")), styleAndLayoutMs: round(median(rows.map((r) => r.style + r.layout))), styleRecalcs: mid("styles"), layouts: mid("layouts"), paints: round(painted.Paint / 20, 1) };
+  return { frameCallbacks: mid("raf"), timers: mid("timers"), layoutReads: mid("reads"), domWrites: mid("writes"), scriptMs: round(mid("script")), styleAndLayoutMs: round(median(rows.map((r) => r.style + r.layout))), styleRecalcs: mid("styles"), layouts: mid("layouts"), paints: round(painted.Paint / 20, 1), paintMs: round(painted.ms.paint / 20), rasterMs: round(painted.ms.raster / 20), compositeMs: round(painted.ms.composite / 20) };
 }
 
 /** Pictures the browser still draws of a slide while the page's script is frozen for 600 ms. */
@@ -240,7 +253,7 @@ async function replay(browser, origin, lib) {
   await cdp.send("Emulation.setCPUThrottlingRate", { rate: 1 });
   await context.close();
   const work = (after.ScriptDuration - before.ScriptDuration + after.RecalcStyleDuration - before.RecalcStyleDuration + after.LayoutDuration - before.LayoutDuration) * 1000;
-  return { workMs: round(work / fens.length), wallMs: round(wall / fens.length) };
+  return { workMs: round(work / fens.length, 3), wallMs: round(wall / fens.length, 3) };
 }
 
 /** One piece dragged two squares with a real mouse, in 40 steps. */
@@ -293,11 +306,14 @@ const ROWS = [
   ["Script time", (b) => b.perMove.scriptMs, ms(2), "low"],
   ["Style and layout time", (b) => b.perMove.styleAndLayoutMs, ms(2), "low"],
   ["Paints", (b) => b.perMove.paints, (n) => n.toFixed(1), "low"],
+  ["Paint time", (b) => b.perMove.paintMs, ms(2), "low"],
+  ["Raster time, off the main thread", (b) => b.perMove.rasterMs, ms(2), "low"],
+  ["Compositing time: layers, commit, drawing", (b) => b.perMove.compositeMs, ms(2), "low"],
   "When the page's script is not free",
   ["Pictures drawn of a 900 ms slide while the script is frozen for 600 ms", (b) => b.whileStuck, String, "high"],
   ["Pictures drawn of 12 moves while the script is busy half the time", (b) => b.whileBusy, String, "high"],
   "A processor slowed six times",
-  ["Main-thread work to show one position, no slide", (b) => b.replay.workMs, ms(2), "low"],
+  ["Main-thread work to show one position, no slide", (b) => b.replay.workMs, ms(3), "low"],
   "One piece dragged two squares with the mouse, in 42 steps",
   ["Script time", (b) => b.drag.scriptMs, ms(1), "low"],
   ["Style and layout time", (b) => b.drag.styleAndLayoutMs, ms(1), "low"],
@@ -347,7 +363,9 @@ ${behind.length ? behind.join("\n") : "In this run, nowhere."}
   Morphy's Opera game. Everything else is the board's own default.
 - **Each number** is the middle one of ${results.runs} runs.
 - **Counters:** script, style and layout time and counts come from the
-  browser's performance metrics; paints from its trace; frames asked of the
+  browser's performance metrics; paints and the times of painting,
+  rastering and compositing from its trace (compositing is the layer
+  update, the commit and the drawing of each frame); frames asked of the
   script, timers, layout reads and writes to the page from counters placed
   in the page before the board loads. "Pictures drawn" are the distinct
   frames the browser sent to a screen recording.
@@ -368,6 +386,9 @@ ${behind.length ? behind.join("\n") : "In this run, nowhere."}
   They are not a measurement of one. How a board feels on a real phone is
   judged on a real phone.
 - **One browser engine.** The counters used here exist only in Chromium.
+- **No real graphics chip.** Headless Chromium draws in software, so the
+  compositing times are larger than on a device; compare them between
+  boards, not with a phone.
 - **One machine, one day.** Times in milliseconds will differ elsewhere;
   the counts (frames, writes, pictures) should not.
 - **Defaults.** Each board runs as it comes. A board tuned by hand may do
@@ -396,13 +417,48 @@ if (process.argv.includes("--report")) {
   process.exit(0);
 }
 
+// --paints: where each board's rendering time goes, move by move, and a trial
+// of Lightsquare with every piece on a layer of its own all the time (as
+// chessground has it). A diagnosis tool, not part of the report.
+if (process.argv.includes("--paints")) {
+  const { server, origin } = await serve();
+  const browser = await chromium.launch();
+  const trial = { ...LIBS[0], name: "Lightsquare, trial: every piece on its own layer", style: "#board .ls-piece { will-change: transform; }" };
+  for (const lib of [...LIBS, trial]) {
+    const { context, page } = await open(browser, origin, lib);
+    if (lib.style) await page.addStyleTag({ content: lib.style });
+    await page.waitForTimeout(500);
+    const seen = await traced(browser, page, async () => {
+      for (const fen of GAME.slice(0, 10)) {
+        await page.evaluate((f) => void window.handle.set(f, true), fen);
+        await page.waitForTimeout(SLIDE_MS + 250);
+      }
+    });
+    await context.close();
+    const per = (n) => (n / 10).toFixed(2);
+    console.log(`${lib.name.padEnd(48)} per move: ${per(seen.Paint)} paints, paint ${per(seen.ms.paint)} ms, raster ${per(seen.ms.raster)} ms, compositing ${per(seen.ms.composite)} ms`);
+  }
+  await browser.close();
+  server.close();
+  process.exit(0);
+}
+
 const { server, origin } = await serve();
 const browser = await chromium.launch();
+// --only <name>: measure one group again (atRest, perMove, whileStuck, whileBusy, replay or drag) and keep the rest of the last run.
+const only = process.argv.includes("--only") ? process.argv[process.argv.indexOf("--only") + 1] : null;
+const MEASURES = { atRest, perMove, whileStuck, whileBusy, replay, drag };
+if (only && !(only in MEASURES)) {
+  console.error(`--only takes one of: ${Object.keys(MEASURES).join(", ")}`);
+  process.exit(1);
+}
+const last = only ? JSON.parse(readFileSync(`${here}results.json`, "utf8")) : null;
 const results = { date: new Date().toISOString().slice(0, 10), browser: `Chromium ${browser.version()} (headless), phone profile (Pixel 7: 412 by 915, 2.6x, touch)`, machine: `${cpus()[0].model}, ${cpus().length} cores`, slideMs: SLIDE_MS, runs: RUNS, boards: {} };
 for (const lib of LIBS) {
   process.stdout.write(`${lib.name} ${lib.version}: `);
-  const board = { name: lib.name, version: lib.version, licence: lib.licence, size: await sizes(lib) };
-  for (const [key, measure] of Object.entries({ atRest, perMove, whileStuck, whileBusy, replay, drag })) {
+  const board = { ...last?.boards[lib.id], name: lib.name, version: lib.version, licence: lib.licence, size: await sizes(lib) };
+  for (const [key, measure] of Object.entries(MEASURES)) {
+    if (only && key !== only) continue;
     board[key] = await steady(() => measure(browser, origin, lib));
     process.stdout.write(`${key} `);
   }

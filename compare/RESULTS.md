@@ -20,24 +20,30 @@ in bold; where every board has the same number, none is.
 | Frames asked of the script | **0** | 25 | 25 |
 | Writes to the page | **4** | 51 | 162 |
 | Layout reads | 0 | 0 | 0 |
-| Script time | **0.05 ms** | 2.33 ms | 2.10 ms |
-| Style and layout time | **0.71 ms** | 1.30 ms | 3.20 ms |
-| Paints | 7.3 | **4.3** | 48.5 |
+| Script time | **0.05 ms** | 2.31 ms | 1.87 ms |
+| Style and layout time | **0.79 ms** | 1.29 ms | 3.13 ms |
+| Paints | 7.3 | **4.3** | 48.4 |
+| Paint time | 0.65 ms | **0.12 ms** | 7.64 ms |
+| Raster time, off the main thread | 4.23 ms | **0.03 ms** | 9.55 ms |
+| Compositing time: layers, commit, drawing | **5.40 ms** | 13.33 ms | 9.57 ms |
 | **When the page's script is not free** |  |  |  |
-| Pictures drawn of a 900 ms slide while the script is frozen for 600 ms | **50** | 0 | 0 |
-| Pictures drawn of 12 moves while the script is busy half the time | **245** | 171 | 170 |
+| Pictures drawn of a 900 ms slide while the script is frozen for 600 ms | **51** | 0 | 0 |
+| Pictures drawn of 12 moves while the script is busy half the time | **246** | 172 | 166 |
 | **A processor slowed six times** |  |  |  |
-| Main-thread work to show one position, no slide | **under 0.01 ms** | **under 0.01 ms** | 3.51 ms |
+| Main-thread work to show one position, no slide | 0.009 ms | **0.005 ms** | 3.365 ms |
 | **One piece dragged two squares with the mouse, in 42 steps** |  |  |  |
-| Script time | **3.2 ms** | 4.1 ms | 4.7 ms |
-| Style and layout time | 2.8 ms | **1.6 ms** | 4.2 ms |
+| Script time | **3.8 ms** | 4.0 ms | 4.9 ms |
+| Style and layout time | 3.3 ms | **1.8 ms** | 4.4 ms |
 | Layout reads | 1 | **0** | **0** |
 
 ## Where another board is ahead
 
 - **To download, styles, gzipped, without piece pictures:** cm-chessboard has 1.0 kB, Lightsquare 1.9 kB.
 - **One sliding move, paints:** chessground (Lichess) has 4.3, Lightsquare 7.3.
-- **One piece dragged two squares with the mouse, in 42 steps, style and layout time:** chessground (Lichess) has 1.6 ms, Lightsquare 2.8 ms.
+- **One sliding move, paint time:** chessground (Lichess) has 0.12 ms, Lightsquare 0.65 ms.
+- **One sliding move, raster time, off the main thread:** chessground (Lichess) has 0.03 ms, Lightsquare 4.23 ms.
+- **A processor slowed six times, main-thread work to show one position, no slide:** chessground (Lichess) has 0.005 ms, Lightsquare 0.009 ms.
+- **One piece dragged two squares with the mouse, in 42 steps, style and layout time:** chessground (Lichess) has 1.8 ms, Lightsquare 3.3 ms.
 - **One piece dragged two squares with the mouse, in 42 steps, layout reads:** chessground (Lichess) and cm-chessboard have 0, Lightsquare 1.
 
 ## How it was measured
@@ -49,7 +55,9 @@ in bold; where every board has the same number, none is.
   Morphy's Opera game. Everything else is the board's own default.
 - **Each number** is the middle one of 3 runs.
 - **Counters:** script, style and layout time and counts come from the
-  browser's performance metrics; paints from its trace; frames asked of the
+  browser's performance metrics; paints and the times of painting,
+  rastering and compositing from its trace (compositing is the layer
+  update, the commit and the drawing of each frame); frames asked of the
   script, timers, layout reads and writes to the page from counters placed
   in the page before the board loads. "Pictures drawn" are the distinct
   frames the browser sent to a screen recording.
@@ -70,6 +78,9 @@ in bold; where every board has the same number, none is.
   They are not a measurement of one. How a board feels on a real phone is
   judged on a real phone.
 - **One browser engine.** The counters used here exist only in Chromium.
+- **No real graphics chip.** Headless Chromium draws in software, so the
+  compositing times are larger than on a device; compare them between
+  boards, not with a phone.
 - **One machine, one day.** Times in milliseconds will differ elsewhere;
   the counts (frames, writes, pictures) should not.
 - **Defaults.** Each board runs as it comes. A board tuned by hand may do

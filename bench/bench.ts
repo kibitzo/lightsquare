@@ -219,6 +219,7 @@ toggle("stress", (on) => {
   }, 320);
 });
 toggle("lpm", () => {});
+toggle("layers", (on) => $("page").classList.toggle("own-layers", on));
 
 // ── looks ──────────────────────────────────────────────────────────────
 
@@ -385,9 +386,17 @@ function wireResize(): void {
 
 // ── measuring ──────────────────────────────────────────────────────────
 
+/** A round of measuring starts clean: when "Measure" is switched on, and after each verdict. */
+function newRound(): void {
+  for (const list of Object.values(samples)) list.length = 0;
+  counts.moves = 0;
+  counts.presses = 0;
+  lastFrame = 0;
+}
+
 let lastFrame = 0;
 toggle("measure", (on) => {
-  lastFrame = 0;
+  newRound();
   if (on) requestAnimationFrame(frame);
 });
 function frame(now: number): void {
@@ -425,6 +434,7 @@ function summary(): Record<string, unknown> {
     presses: counts.presses,
     lowPower: toggles.lpm,
     stuckScript: toggles.stress,
+    ownLayers: toggles.layers,
     measuring: toggles.measure,
     board: Math.round(host.getBoundingClientRect().width),
     dpr: devicePixelRatio,
@@ -435,7 +445,9 @@ function summary(): Record<string, unknown> {
 }
 
 function send(kind: string): void {
-  void fetch("/log", { method: "POST", body: JSON.stringify({ kind, ...summary() }), keepalive: true })
+  const body = JSON.stringify({ kind, ...summary() });
+  newRound();
+  void fetch("/log", { method: "POST", body, keepalive: true })
     .then(() => ($("sent").textContent = `Sent "${kind}" at ${new Date().toLocaleTimeString()}.`))
     .catch(() => ($("sent").textContent = "Could not reach the computer that serves this page."));
 }
@@ -457,7 +469,7 @@ interface Measured {
   licence: string;
   size: { js: number; jsWith: number | null; css: number };
   atRest: { elements: number; paints: number; scriptCalls: number; frames: number; timers: number };
-  perMove: { frameCallbacks: number; domWrites: number; scriptMs: number; styleAndLayoutMs: number; paints: number };
+  perMove: { frameCallbacks: number; domWrites: number; scriptMs: number; styleAndLayoutMs: number; paints: number; paintMs?: number; rasterMs?: number; compositeMs?: number };
   whileStuck: number;
   whileBusy: number;
   replay: { workMs: number };
@@ -480,11 +492,13 @@ const ROWS: Array<string | [string, string, (b: Measured) => number, (n: number)
   ["Script time", "", (b) => b.perMove.scriptMs, (n) => `${n.toFixed(2)} ms`, "low"],
   ["Style and layout time", "", (b) => b.perMove.styleAndLayoutMs, (n) => `${n.toFixed(2)} ms`, "low"],
   ["Paints", "", (b) => b.perMove.paints, (n) => n.toFixed(1), "low"],
+  ["Raster time", "turning painted shapes into pixels, off the main thread", (b) => b.perMove.rasterMs ?? 0, (n) => `${n.toFixed(2)} ms`, "low"],
+  ["Compositing time", "layers, commit and drawing of every frame; software drawing, so compare boards only", (b) => b.perMove.compositeMs ?? 0, (n) => `${n.toFixed(2)} ms`, "low"],
   "When the page's script is not free",
   ["Pictures drawn of a slide while the script is frozen", "600 ms frozen, a 900 ms slide", (b) => b.whileStuck, String, "high"],
   ["Pictures drawn of 12 moves while the script is busy half the time", "more means smoother", (b) => b.whileBusy, String, "high"],
   "A slow processor",
-  ["Work to show a position, six times slowed", "main-thread time for each of 300 positions, no slide", (b) => b.replay.workMs, (n) => (n < 0.01 ? "under 0.01 ms" : `${n.toFixed(2)} ms`), "low"],
+  ["Work to show a position, six times slowed", "main-thread time for each of 300 positions, no slide", (b) => b.replay.workMs, (n) => `${n.toFixed(3)} ms`, "low"],
   "A drag with the mouse",
   ["Script time", "one piece, two squares, 42 steps", (b) => b.drag.scriptMs, (n) => `${n.toFixed(1)} ms`, "low"],
   ["Style and layout time", "", (b) => b.drag.styleAndLayoutMs, (n) => `${n.toFixed(1)} ms`, "low"],
