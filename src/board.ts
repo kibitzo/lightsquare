@@ -1,261 +1,254 @@
-import { attachInput } from "./input";
-import { EMPTY, START, pairPieces, readFen, screenCell, writeFen, type Color, type PieceCode, type Placed, type Square } from "./position";
-import type { Board, Options, SquareMark, Targets, UserMove } from "./types";
+import { attachInput, type Input } from "./input";
+import { coordView, layer, markView, type CoordView, type MarkView } from "./marks";
+import { pieceView, type PieceView } from "./pieces";
+import { EMPTY, START, cellSquare, readFen, screenCell, writeFen, type Placed, type Square } from "./position";
+import { allows, at, canMove, canPremove, initial, wantedMarks, type State } from "./state";
+import type { Board, ModuleHooks, Options, Surface } from "./types";
 
-interface State {
-  pieces: Placed[];
-  orientation: Color;
-  movable: Color | "both" | "none";
-  targets: Targets | null;
-  lastMove: readonly [Square, Square] | null;
-  check: Square | null;
-  marks: readonly SquareMark[];
-  selected: Square | null;
-  hover: Square | null;
-  onMove: ((move: UserMove) => void) | null;
-  onSelect: ((square: Square | null) => void) | null;
+interface Core {
+  s: State;
+  host: HTMLElement;
+  piecesLayer: HTMLElement;
+  pieces: PieceView;
+  marks: MarkView;
+  coords: CoordView;
+  modules: ModuleHooks[];
+  spot(square: Square): string;
+  renderMarks(): void;
+  /** Tell the modules that the board changed. */
+  notify(): void;
 }
 
-interface Mark {
-  el: HTMLElement;
-  square: Square;
+interface Acts {
+  /** Change the selection. Returns the callback to run once the page is written. */
+  choose(square: Square | null): () => void;
+  select(square: Square | null): void;
+  /** A move of the user, or a premove if the piece's turn has not come. */
+  play(from: Square, to: Square, slide: boolean): void;
+  dropPremove(): void;
+  /** The same as a tap on the square. */
+  tap(square: Square): void;
 }
 
-interface Wanted {
-  square: Square;
-  above?: boolean;
+const pickable = (s: State, p: Placed): boolean => canMove(s, p) || canPremove(s, p);
+
+/** Copy the plain options into the state. Returns whether the board was flipped. */
+function take(s: State, o: Options): boolean {
+  const flipped = o.orientation !== undefined && o.orientation !== s.orientation;
+  if (flipped) s.orientation = o.orientation!;
+  if (o.movable !== undefined) s.movable = o.movable;
+  if (o.targets !== undefined) s.targets = o.targets;
+  if (o.premovable !== undefined) s.premovable = o.premovable;
+  if (o.premoveTargets !== undefined) s.premoveTargets = o.premoveTargets;
+  if (o.premove !== undefined) s.premove = o.premove;
+  if (o.lastMove !== undefined) s.lastMove = o.lastMove;
+  if (o.check !== undefined) s.check = o.check;
+  if (o.marks !== undefined) s.marks = o.marks ?? [];
+  if (o.coordinates !== undefined) s.coordinates = o.coordinates;
+  if (o.onMove !== undefined) s.onMove = o.onMove;
+  if (o.onSelect !== undefined) s.onSelect = o.onSelect;
+  if (o.onPremove !== undefined) s.onPremove = o.onPremove;
+  if (o.onTap !== undefined) s.onTap = o.onTap;
+  return flipped;
 }
 
-function layer(host: HTMLElement, name: string): HTMLElement {
-  const el = document.createElement("div");
-  el.className = `ls-layer ${name}`;
-  host.appendChild(el);
-  return el;
-}
-
-export function lightsquare(host: HTMLElement, options: Options = {}): Board {
-  const s: State = { pieces: [], orientation: "white", movable: "none", targets: null, lastMove: null, check: null, marks: [], selected: null, hover: null, onMove: null, onSelect: null };
+function makeCore(host: HTMLElement): Core {
+  const s = initial();
   host.classList.add("ls-board");
   const marksLayer = layer(host, "ls-marks");
   const piecesLayer = layer(host, "ls-pieces");
-  /** For marks drawn over the pieces. Made when the first one is shown. */
-  let overLayer: HTMLElement | null = null;
-  const elements = new Map<number, HTMLElement>();
-  const marks = new Map<string, Mark>();
-  const fading = new Set<Element>();
-  /** The pieces of the latest move: drawn above the others while they slide. */
-  const onTop = new Set<Element>();
-  let lastId = 0;
-
   const spot = (square: Square): string => {
     const [col, row] = screenCell(square, s.orientation);
     return `translate(${col * 100}%,${row * 100}%)`;
   };
-  const at = (square: Square): Placed | undefined => s.pieces.find((p) => p.square === square);
-  const canPick = (p: Placed): boolean => s.movable === "both" || s.movable[0] === p.code[0];
+  const marks = markView(host, marksLayer, spot);
+  const modules: ModuleHooks[] = [];
+  return {
+    s,
+    host,
+    piecesLayer,
+    pieces: pieceView(piecesLayer, spot),
+    marks,
+    coords: coordView(host, piecesLayer),
+    modules,
+    spot,
+    renderMarks: () => marks.render(wantedMarks(s)),
+    notify: () => modules.forEach((m) => m.update?.()),
+  };
+}
 
-  function allows(from: Square, to: Square): boolean {
-    if (s.targets) return s.targets.get(from)?.includes(to) ?? false;
-    const mover = at(from);
-    return !!mover && from !== to && at(to)?.code[0] !== mover.code[0];
-  }
+function makeActs(c: Core): Acts {
+  const { s } = c;
 
-  function put(p: Placed, slide: boolean): void {
-    const el = elements.get(p.id)!;
-    el.className = `ls-piece ls-${p.code}${slide ? " ls-slide ls-top" : ""}`;
-    el.style.transform = spot(p.square);
-    if (slide) onTop.add(el);
-  }
-
-  function add(p: Placed): void {
-    const el = document.createElement("div");
-    elements.set(p.id, el);
-    put(p, false);
-    piecesLayer.appendChild(el);
-  }
-
-  function remove(p: Placed, fade: boolean): void {
-    const el = elements.get(p.id)!;
-    elements.delete(p.id);
-    if (!fade) return el.remove();
-    el.className = `ls-piece ls-${p.code} ls-gone`;
-    fading.add(el);
-  }
-
-  /** Before every change: finish what the change before it left behind. */
-  function sweep(): void {
-    for (const el of fading) el.remove();
-    fading.clear();
-    for (const el of onTop) el.classList.remove("ls-top");
-    onTop.clear();
-  }
-
-  function show(next: ReadonlyMap<Square, PieceCode>, animate: boolean): void {
-    sweep();
-    const pairing = pairPieces(s.pieces, next, () => ++lastId);
-    for (const p of pairing.removed) remove(p, animate);
-    for (const p of pairing.moved) put(p, animate);
-    for (const p of pairing.added) add(p);
-    s.pieces = pairing.placed;
-  }
-
-  /**
-   * Every mark to show, by key: "kind" or "kind name". A mark whose key
-   * stays keeps its element; if only its square changed, it is moved.
-   */
-  function wantedMarks(): Map<string, Wanted> {
-    const want = new Map<string, Wanted>();
-    s.lastMove?.forEach((square, i) => want.set(`last ${i}`, { square }));
-    if (s.check) want.set("check", { square: s.check });
-    for (const m of s.marks) want.set(`${m.name} ${m.square}${m.above ? " above" : ""}`, m);
-    if (s.selected) {
-      want.set("select", { square: s.selected });
-      for (const t of s.targets?.get(s.selected) ?? []) want.set(`${at(t) ? "ring" : "dot"} ${t}`, { square: t });
-    }
-    if (s.hover) want.set("hover", { square: s.hover });
-    return want;
-  }
-
-  function renderMarks(): void {
-    const want = wantedMarks();
-    for (const [key, mark] of marks) {
-      if (want.has(key)) continue;
-      mark.el.remove();
-      marks.delete(key);
-    }
-    for (const [key, { square, above }] of want) {
-      const mark = marks.get(key);
-      if (mark) {
-        if (mark.square !== square) mark.el.style.transform = spot((mark.square = square));
-        continue;
-      }
-      const el = document.createElement("div");
-      el.className = `ls-mark ls-mark-${key.split(" ")[0]}`;
-      el.style.transform = spot(square);
-      (above ? (overLayer ??= layer(host, "ls-over")) : marksLayer).appendChild(el);
-      marks.set(key, { el, square });
-    }
-  }
-
-  function choose(square: Square | null): boolean {
-    if (s.selected === square) return false;
+  function choose(square: Square | null): () => void {
+    if (s.selected === square) return () => {};
     s.selected = square;
-    return true;
+    return () => s.onSelect?.(square);
   }
 
   function select(square: Square | null): void {
-    if (!choose(square)) return;
-    renderMarks();
-    s.onSelect?.(square);
-  }
-
-  function shift(from: Square, to: Square, slide: boolean): Placed | undefined {
-    const mover = at(from);
-    if (!mover || from === to) return undefined;
-    sweep();
-    const taken = at(to);
-    if (taken) {
-      remove(taken, slide);
-      s.pieces.splice(s.pieces.indexOf(taken), 1);
-    }
-    const moved = { ...mover, square: to };
-    s.pieces[s.pieces.indexOf(mover)] = moved;
-    put(moved, slide);
-    return taken;
+    const tell = choose(square);
+    c.renderMarks();
+    tell();
   }
 
   function play(from: Square, to: Square, slide: boolean): void {
-    const piece = at(from)!.code;
-    const taken = shift(from, to, slide);
-    const unselected = choose(null);
+    const mover = at(s, from)!;
+    const tell = choose(null);
     s.hover = null;
+    if (!canMove(s, mover)) {
+      s.premove = [from, to];
+      if (!slide) c.pieces.put(mover, true);
+      c.renderMarks();
+      tell();
+      s.onPremove?.(s.premove);
+      return;
+    }
+    const taken = c.pieces.shift(s.pieces, from, to, slide);
     s.lastMove = [from, to];
-    renderMarks();
-    if (unselected) s.onSelect?.(null);
-    s.onMove?.({ from, to, piece, ...(taken && { captured: taken.code }) });
+    c.renderMarks();
+    c.notify();
+    tell();
+    s.onMove?.({ from, to, piece: mover.code, ...(taken && { captured: taken.code }) });
   }
 
-  const input = attachInput({
-    host,
-    grid: piecesLayer,
+  function dropPremove(): void {
+    if (!s.premove) return;
+    s.premove = null;
+    c.renderMarks();
+    s.onPremove?.(null);
+  }
+
+  function tap(square: Square): void {
+    dropPremove();
+    const piece = at(s, square);
+    if (s.selected && s.selected !== square && allows(s, s.selected, square)) play(s.selected, square, true);
+    else select(piece && pickable(s, piece) && s.selected !== square ? square : null);
+  }
+
+  return { choose, select, play, dropPremove, tap };
+}
+
+function makeInput(c: Core, acts: Acts): Input {
+  const { s } = c;
+  return attachInput({
+    host: c.host,
+    grid: c.piecesLayer,
     orientation: () => s.orientation,
-    enabled: () => s.movable !== "none",
+    enabled: () => s.movable !== "none" || s.premovable !== "none" || !!s.onTap,
     selected: () => s.selected,
-    at,
+    at: (square) => at(s, square),
     holds: (p) => s.pieces.includes(p),
-    element: (p) => elements.get(p.id)!,
-    canPick,
-    allows,
-    select,
+    element: c.pieces.element,
+    canPick: (p) => pickable(s, p),
+    allows: (from, to) => allows(s, from, to),
+    select: acts.select,
     hover(square) {
       if (s.hover === square) return;
       s.hover = square;
-      renderMarks();
+      c.renderMarks();
     },
-    settle: put,
-    play,
+    settle: c.pieces.put,
+    play: acts.play,
+    lift: (on) => c.piecesLayer.classList.toggle("ls-lift", on),
+    pressed: acts.dropPremove,
+    tapped: (square) => s.onTap?.(square),
   });
+}
 
-  function onFaded(e: TransitionEvent): void {
-    const el = e.target as Element;
-    if (fading.delete(el)) el.remove();
-  }
-  piecesLayer.addEventListener("transitionend", onFaded);
-
+function makeSet(c: Core, acts: Acts, input: Input): Board["set"] {
+  const { s, pieces } = c;
   let drawn = false;
-
-  function flip(orientation: Color): void {
-    s.orientation = orientation;
-    input.abort();
-    sweep();
-    for (const p of s.pieces) put(p, false);
-    for (const mark of marks.values()) mark.el.style.transform = spot(mark.square);
-  }
-
-  function set(o: Options, how?: { animate?: boolean }): void {
-    const flipped = o.orientation !== undefined && o.orientation !== s.orientation;
-    if (flipped) flip(o.orientation!);
-    if (o.movable !== undefined) s.movable = o.movable;
-    if (o.targets !== undefined) s.targets = o.targets;
-    if (o.lastMove !== undefined) s.lastMove = o.lastMove;
-    if (o.check !== undefined) s.check = o.check;
-    if (o.marks !== undefined) s.marks = o.marks ?? [];
-    if (o.onMove !== undefined) s.onMove = o.onMove;
-    if (o.onSelect !== undefined) s.onSelect = o.onSelect;
+  return (o, how) => {
+    const flipped = take(s, o);
+    if (flipped) {
+      input.abort();
+      pieces.sweep();
+      for (const p of s.pieces) pieces.put(p, false);
+      c.marks.replace();
+    }
     if (o.position !== undefined) {
       const fen = o.position === "start" ? START : o.position === "empty" ? EMPTY : o.position;
-      show(readFen(fen), drawn && !flipped && how?.animate !== false);
+      s.pieces = pieces.show(s.pieces, readFen(fen), drawn && !flipped && how?.animate !== false);
       input.sync();
     }
-    const chosen = s.selected && at(s.selected);
-    const unselected = !!s.selected && !(chosen && canPick(chosen)) && choose(null);
-    if (s.movable === "none") input.abort();
-    host.classList.toggle("ls-interactive", s.movable !== "none");
-    renderMarks();
+    const chosen = s.selected && at(s, s.selected);
+    const tell = chosen && pickable(s, chosen) ? () => {} : acts.choose(null);
+    const lostPremove = !!s.premove && !at(s, s.premove[0]);
+    if (lostPremove) s.premove = null;
+    const active = s.movable !== "none" || s.premovable !== "none";
+    if (!active) input.abort();
+    c.host.classList.toggle("ls-interactive", active);
+    c.coords.render(s.coordinates, s.orientation);
+    c.renderMarks();
     drawn = true;
-    if (unselected) s.onSelect?.(null);
-  }
+    c.notify();
+    tell();
+    if (lostPremove) s.onPremove?.(null);
+  };
+}
 
+function makeSurface(c: Core, acts: Acts): Surface {
+  const { s } = c;
+  return {
+    host: c.host,
+    orientation: () => s.orientation,
+    cell: (square) => screenCell(square, s.orientation),
+    square: (col, row) => cellSquare(col, row, s.orientation),
+    spot: c.spot,
+    pieces: () => s.pieces,
+    lastMove: () => s.lastMove,
+    selected: () => s.selected,
+    tap: acts.tap,
+  };
+}
+
+export function lightsquare(host: HTMLElement, options: Options = {}): Board {
+  const c = makeCore(host);
+  const { s, pieces } = c;
+  const acts = makeActs(c);
+  const input = makeInput(c, acts);
+  const set = makeSet(c, acts, input);
+  const surface = makeSurface(c, acts);
   set({ position: "start", ...options });
 
   return {
     set,
     move(from, to) {
-      shift(from, to, true);
+      pieces.shift(s.pieces, from, to, true);
       input.sync();
-      renderMarks();
+      c.renderMarks();
+      c.notify();
     },
     select(square) {
-      const piece = square && at(square);
-      select(piece ? square : null);
+      acts.select(square && at(s, square) ? square : null);
     },
     position: () => writeFen(s.pieces),
+    playPremove() {
+      const queued = s.premove;
+      if (!queued) return false;
+      s.premove = null;
+      const mover = at(s, queued[0]);
+      if (mover && canMove(s, mover) && allows(s, queued[0], queued[1])) {
+        acts.play(queued[0], queued[1], true);
+        return true;
+      }
+      c.renderMarks();
+      return false;
+    },
+    use(module) {
+      const made = module(surface);
+      c.modules.push(made);
+      made.update?.();
+      return made;
+    },
     destroy() {
+      for (const m of c.modules) m.destroy?.();
       input.detach();
-      piecesLayer.removeEventListener("transitionend", onFaded);
-      marksLayer.remove();
-      piecesLayer.remove();
-      overLayer?.remove();
+      pieces.destroy();
+      c.marks.destroy();
+      c.coords.render(false, s.orientation);
+      for (const el of [...host.querySelectorAll(":scope > .ls-layer")]) el.remove();
       host.classList.remove("ls-board", "ls-interactive");
     },
   };

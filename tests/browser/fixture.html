@@ -25,10 +25,19 @@ window.T = {
   board: null,
   make(options = {}) {
     T.events = [];
-    T.board = lightsquare(host, { ...T.revive(options), onMove: (m) => T.events.push({ type: "move", ...m }), onSelect: (s) => T.events.push({ type: "select", square: s }) });
+    T.board = lightsquare(host, {
+      ...T.revive(options),
+      onMove: (m) => T.events.push({ type: "move", ...m }),
+      onSelect: (s) => T.events.push({ type: "select", square: s }),
+      onPremove: (p) => T.events.push({ type: "premove", squares: p }),
+      onTap: options.taps ? (s) => T.events.push({ type: "tap", square: s }) : null,
+    });
   },
   revive(options) {
-    return options.targets ? { ...options, targets: new Map(Object.entries(options.targets)) } : options;
+    const out = { ...options };
+    delete out.taps;
+    for (const key of ["targets", "premoveTargets"]) if (out[key]) out[key] = new Map(Object.entries(out[key]));
+    return out;
   },
   set(options, how) {
     T.board.set(T.revive(options), how);
@@ -89,6 +98,9 @@ window.T = {
     const file = FILES.indexOf(square[0]), rank = Number(square[1]);
     const [col, row] = orientation === "white" ? [file, 8 - rank] : [7 - file, rank - 1];
     return { x: box.left + (col + 0.5) * size, y: box.top + (row + 0.5) * size, size };
+  },
+  coords() {
+    return [...host.querySelectorAll(".ls-coord")].map((el) => `${el.textContent}@${T.squareOf(el, "white")}`);
   },
   /** A synthetic finger or mouse, for browsers where no real one can be driven. */
   pointer(type, x, y, kind = "touch") {

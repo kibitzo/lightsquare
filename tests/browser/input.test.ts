@@ -388,6 +388,124 @@ describe.each(PROFILES)("moving pieces in $name", (profile) => {
     expect(await moves()).toEqual([]);
   });
 
+  it("reports a tap on any square, on a look-only board too, without taking the touch from the page", async () => {
+    await fresh(page, { taps: true });
+    await hand.tap(await at("e4"));
+    await hand.tap(await at("a8"));
+    expect(await events()).toEqual([
+      { type: "tap", square: "e4" },
+      { type: "tap", square: "a8" },
+    ]);
+    expect(await page.evaluate(() => getComputedStyle(document.getElementById("board")!).touchAction)).toBe("auto");
+  });
+
+  it("a drag to another square is not a tap; a tap that moves a piece is", async () => {
+    await fresh(page, { ...OPENING, taps: true });
+    await hand.down(await at("e2"));
+    await hand.move(await at("e4"));
+    await hand.up();
+    expect((await events()).filter((e) => e.type === "tap")).toEqual([]);
+    await hand.tap(await at("g1"));
+    await hand.tap(await at("f3"));
+    expect((await events()).filter((e) => e.type === "tap")).toEqual([
+      { type: "tap", square: "g1" },
+      { type: "tap", square: "f3" },
+    ]);
+  });
+
+  it("premove by taps: the piece stays, the two squares are marked, nothing is played", async () => {
+    await fresh(page, { movable: "none", premovable: "white" });
+    expect(await page.evaluate(() => getComputedStyle(document.getElementById("board")!).touchAction)).toBe("none");
+    await hand.tap(await at("e2"));
+    await hand.tap(await at("e4"));
+    expect(await events()).toEqual([
+      { type: "select", square: "e2" },
+      { type: "select", square: null },
+      { type: "premove", squares: ["e2", "e4"] },
+    ]);
+    expect(await marks()).toEqual(["premove e2", "premove e4"]);
+    expect(await seen()).toBe(START);
+  });
+
+  it("premove by drag: the piece slides back and the premove waits", async () => {
+    await fresh(page, { movable: "black", premovable: "white" });
+    await hand.down(await at("g1"));
+    await hand.move(await at("f3"));
+    await hand.up();
+    await settle(page);
+    expect(await seen()).toBe(START);
+    expect(await marks()).toEqual(["premove f3", "premove g1"]);
+    expect(await moves()).toEqual([]);
+  });
+
+  it("a press on the board cancels the premove", async () => {
+    await fresh(page, { movable: "none", premovable: "white" });
+    await hand.tap(await at("e2"));
+    await hand.tap(await at("e4"));
+    await hand.tap(await at("a5"));
+    expect(await marks()).toEqual([]);
+    expect((await events()).filter((e) => e.type === "premove")).toEqual([
+      { type: "premove", squares: ["e2", "e4"] },
+      { type: "premove", squares: null },
+    ]);
+  });
+
+  it("premove targets limit a premove and show as dots", async () => {
+    await fresh(page, { movable: "none", premovable: "white", premoveTargets: { e2: ["e3", "e4", "d3", "f3"] } });
+    await hand.tap(await at("e2"));
+    expect(await marks()).toEqual(["dot d3", "dot e3", "dot e4", "dot f3", "select e2"]);
+    await hand.tap(await at("e5"));
+    expect((await events()).filter((e) => e.type === "premove")).toEqual([]);
+    await hand.tap(await at("e2"));
+    await hand.tap(await at("d3"));
+    expect(await marks()).toEqual(["premove d3", "premove e2"]);
+  });
+
+  it("when its turn comes, the premove is played as a move of the user", async () => {
+    await fresh(page, { movable: "none", premovable: "white" });
+    await hand.tap(await at("e2"));
+    await hand.tap(await at("e4"));
+    const played = await page.evaluate(() => {
+      T.set({ position: "rnbqkbnr/pppp1ppp/8/4p3/8/8/PPPPPPPP/RNBQKBNR", lastMove: ["e7", "e5"], movable: "white", premovable: "none", targets: { e2: ["e3", "e4"] } });
+      return T.board.playPremove();
+    });
+    expect(played).toBe(true);
+    await settle(page);
+    expect(await moves()).toEqual([{ type: "move", from: "e2", to: "e4", piece: "wp" }]);
+    expect(await seen()).toBe("rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR");
+    expect(await marks()).toEqual(["last e2", "last e4"]);
+    expect(await page.evaluate(() => T.board.playPremove())).toBe(false);
+  });
+
+  it("a premove that is no longer allowed is dropped, not played", async () => {
+    await fresh(page, { movable: "none", premovable: "white" });
+    await hand.tap(await at("e2"));
+    await hand.tap(await at("e4"));
+    const played = await page.evaluate(() => {
+      T.set({ movable: "white", premovable: "none", targets: { e2: ["e3"] } });
+      return T.board.playPremove();
+    });
+    expect(played).toBe(false);
+    expect(await moves()).toEqual([]);
+    expect(await marks()).toEqual([]);
+    expect(await seen()).toBe(START);
+  });
+
+  it("a premove whose piece is taken is cancelled; the app can also drop one quietly", async () => {
+    await fresh(page, { movable: "none", premovable: "white" });
+    await hand.tap(await at("e2"));
+    await hand.tap(await at("e4"));
+    await page.evaluate(() => T.set({ position: "rnbqkbnr/pppppppp/8/8/8/8/PPPP1PPP/RNBQKBNR" }, { animate: false }));
+    expect(await marks()).toEqual([]);
+    expect((await events()).filter((e) => e.type === "premove").at(-1)).toEqual({ type: "premove", squares: null });
+    await hand.tap(await at("d2"));
+    await hand.tap(await at("d4"));
+    const before = (await events()).length;
+    await page.evaluate(() => T.set({ premove: null }));
+    expect(await marks()).toEqual([]);
+    expect((await events()).length).toBe(before);
+  });
+
   it("switching the board to look-only in the middle of a drag lets go", async () => {
     await fresh(page, OPENING);
     await hand.down(await at("e2"));

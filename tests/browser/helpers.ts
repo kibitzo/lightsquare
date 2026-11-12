@@ -119,12 +119,13 @@ declare global {
   // eslint-disable-next-line no-var
   var T: {
     events: Array<Record<string, unknown>>;
-    board: { set(o: unknown, how?: unknown): void; move(a: string, b: string): void; select(s: string | null): void; position(): string; destroy(): void };
+    board: { set(o: unknown, how?: unknown): void; move(a: string, b: string): void; select(s: string | null): void; position(): string; playPremove(): boolean; use<M>(module: (surface: unknown) => M): M; destroy(): void };
     make(o?: unknown): void;
     set(o: unknown, how?: unknown): void;
     pieces(orientation?: string): Array<{ code: string; square: string; off: number }>;
     seen(orientation?: string): string;
     marks(orientation?: string): string[];
+    coords(): string[];
     pieceAt(square: string, orientation?: string): HTMLElement | null;
     tag(square: string, name: string): void;
     tagAt(square: string, orientation?: string): string | null;

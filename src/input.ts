@@ -17,15 +17,30 @@ export interface InputHost {
   hover(square: Square | null): void;
   /** Put a piece back on its square. */
   settle(piece: Placed, slide: boolean): void;
+  /** A move or a premove; `slide` is false when the piece is already under the pointer. */
   play(from: Square, to: Square, slide: boolean): void;
+  /** Draw the pieces above everything else while one is dragged. */
+  lift(on: boolean): void;
+  /** A press began on the board. */
+  pressed(): void;
+  /** A press and release on one square. */
+  tapped(square: Square): void;
 }
 
-interface Gesture {
-  pointer: number;
-  piece: Placed;
+interface Frame {
   left: number;
   top: number;
   size: number;
+}
+
+interface Press extends Frame {
+  pointer: number;
+  square: Square;
+}
+
+interface Gesture extends Frame {
+  pointer: number;
+  piece: Placed;
   x: number;
   y: number;
   touch: boolean;
@@ -33,11 +48,6 @@ interface Gesture {
   /** The piece was already selected when the press began: a tap unselects it. */
   again: boolean;
 }
-
-const DRAG_AFTER_MOUSE = 4;
-const DRAG_AFTER_TOUCH = 8;
-/** A finger hides the piece it holds: lift the piece above it, in squares. */
-const TOUCH_LIFT = 0.75;
 
 export interface Input {
   /** Drop the gesture in progress and put its piece back. */
@@ -47,10 +57,16 @@ export interface Input {
   detach(): void;
 }
 
+const DRAG_AFTER_MOUSE = 4;
+const DRAG_AFTER_TOUCH = 8;
+/** A finger hides the piece it holds: lift the piece above it, in squares. */
+const TOUCH_LIFT = 0.75;
+
 export function attachInput(b: InputHost): Input {
   let g: Gesture | null = null;
+  let press: Press | null = null;
 
-  const squareAt = (e: PointerEvent, f: { left: number; top: number; size: number }): Square | null =>
+  const squareAt = (e: PointerEvent, f: Frame): Square | null =>
     cellSquare(Math.floor((e.clientX - f.left) / f.size), Math.floor((e.clientY - f.top) / f.size), b.orientation());
 
   function down(e: PointerEvent): void {
@@ -59,6 +75,8 @@ export function attachInput(b: InputHost): Input {
     const frame = { left: box.left, top: box.top, size: box.width / 8 };
     const square = squareAt(e, frame);
     if (!square) return;
+    press = { ...frame, pointer: e.pointerId, square };
+    b.pressed();
     const chosen = b.selected();
     if (chosen && chosen !== square && b.allows(chosen, square)) {
       b.play(chosen, square, true);
@@ -84,6 +102,7 @@ export function attachInput(b: InputHost): Input {
     if (!g.dragging) {
       if (Math.hypot(e.clientX - g.x, e.clientY - g.y) < (g.touch ? DRAG_AFTER_TOUCH : DRAG_AFTER_MOUSE)) return;
       g.dragging = true;
+      b.lift(true);
       el.className = `ls-piece ls-${g.piece.code} ls-dragging${g.touch ? " ls-lifted" : ""}`;
     }
     const x = e.clientX - g.left - g.size / 2;
@@ -93,12 +112,13 @@ export function attachInput(b: InputHost): Input {
     b.hover(over && b.allows(g.piece.square, over) ? over : null);
   }
 
-  function up(e: PointerEvent): void {
+  function release(e: PointerEvent): void {
     if (!g || e.pointerId !== g.pointer) return;
     const { piece, dragging, again } = g;
     const from = piece.square;
     const to = dragging ? squareAt(e, g) : null;
     g = null;
+    if (dragging) b.lift(false);
     if (to && to !== from && b.allows(from, to)) {
       b.play(from, to, false);
       return;
@@ -110,15 +130,26 @@ export function attachInput(b: InputHost): Input {
     } else if (again) b.select(null);
   }
 
+  function up(e: PointerEvent): void {
+    const tapped = press && e.pointerId === press.pointer && squareAt(e, press) === press.square ? press.square : null;
+    if (press && e.pointerId === press.pointer) press = null;
+    release(e);
+    if (tapped) b.tapped(tapped);
+  }
+
   function abort(): void {
+    press = null;
     if (!g) return;
     const { piece, dragging } = g;
     g = null;
     b.hover(null);
-    if (dragging && b.holds(piece)) b.settle(piece, false);
+    if (!dragging) return;
+    b.lift(false);
+    if (b.holds(piece)) b.settle(piece, false);
   }
 
   const cancel = (e: PointerEvent): void => {
+    if (press && e.pointerId === press.pointer) press = null;
     if (g && e.pointerId === g.pointer) abort();
   };
 

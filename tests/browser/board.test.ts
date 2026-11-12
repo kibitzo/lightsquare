@@ -179,7 +179,7 @@ describe.each(PROFILES)("board in $name", (profile) => {
       const parent = (name: string) => host.querySelector(`.ls-mark-${name}`)!.parentElement!.className.replace("ls-layer ", "");
       return { order, hint: parent("hint"), badge: parent("brilliant"), marks: T.marks() };
     });
-    expect(layers).toEqual({ order: ["ls-marks", "ls-pieces", "ls-over"], hint: "ls-marks", badge: "ls-over", marks: ["brilliant e4", "hint e4"] });
+    expect(layers).toEqual({ order: ["ls-marks", "ls-coords", "ls-pieces", "ls-over"], hint: "ls-marks", badge: "ls-over", marks: ["brilliant e4", "hint e4"] });
     const log = await page.evaluate(() => {
       const watch = P.watch(document.getElementById("board")!);
       T.set({ position: "rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR", marks: [{ square: "e5", name: "best", above: true }] }, { animate: false });
@@ -189,6 +189,71 @@ describe.each(PROFILES)("board in $name", (profile) => {
     expect(log.log).toEqual(["attributes:class", "attributes:style", "childList:add", "childList:remove", "childList:remove"]);
     await page.evaluate(() => T.set({ marks: null }));
     expect(await page.evaluate(() => T.marks())).toEqual([]);
+  });
+
+  it("shows coordinates on the edge squares, and turns them with the board", async () => {
+    await fresh(page);
+    const white = await page.evaluate(() => T.coords());
+    expect(white).toEqual(["8@a8", "7@a7", "6@a6", "5@a5", "4@a4", "3@a3", "2@a2", "1@a1", "a@a1", "b@b1", "c@c1", "d@d1", "e@e1", "f@f1", "g@g1", "h@h1"]);
+    const flipped = await page.evaluate(() => {
+      const watch = P.watch(document.querySelector(".ls-coords")!);
+      T.set({ orientation: "black" });
+      return { log: watch.stop(), coords: T.coords().map((c) => c.split("@")[0]).join("") };
+    });
+    expect(flipped.coords).toBe("12345678hgfedcba");
+    expect(flipped.log.filter((l) => l.startsWith("attributes"))).toEqual([]);
+    const colours = await page.evaluate(() => {
+      const host = document.getElementById("board")!;
+      const style = getComputedStyle(host);
+      const probe = document.createElement("div");
+      host.appendChild(probe);
+      const resolve = (v: string) => ((probe.style.color = v), getComputedStyle(probe).color);
+      const out = { light: resolve(style.getPropertyValue("--ls-light")), dark: resolve(style.getPropertyValue("--ls-dark")), first: getComputedStyle(host.querySelector(".ls-coord")!).color, second: getComputedStyle(host.querySelectorAll(".ls-coord")[1]).color };
+      probe.remove();
+      return out;
+    });
+    expect(colours.first).toBe(colours.dark);
+    expect(colours.second).toBe(colours.light);
+    await page.evaluate(() => T.set({ coordinates: false }));
+    expect(await page.evaluate(() => document.querySelectorAll(".ls-coords, .ls-coord").length)).toBe(0);
+    await page.evaluate(() => T.set({ coordinates: true }));
+    expect(await page.evaluate(() => T.coords().length)).toBe(16);
+  });
+
+  it("setting the position it already shows touches nothing, even in the middle of a slide", async () => {
+    await fresh(page);
+    const result = await page.evaluate(async (fen) => {
+      T.set({ position: fen, lastMove: ["e2", "e4"] });
+      await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+      const watch = P.watch(document.getElementById("board")!);
+      for (let i = 0; i < 5; i++) T.set({ position: fen, lastMove: ["e2", "e4"], movable: "none", marks: [] });
+      return { log: watch.stop(), running: document.getAnimations().length, top: document.querySelectorAll(".ls-top").length };
+    }, AFTER_E4);
+    expect(result).toEqual({ log: [], running: 1, top: 1 });
+  });
+
+  it("a module joins the board: it is updated after every change and destroyed with it", async () => {
+    await fresh(page);
+    const calls = await page.evaluate((fen) => {
+      const log: string[] = [];
+      const api = T.board.use((surface: unknown) => {
+        const s = surface as { orientation(): string; cell(q: string): number[]; square(c: number, r: number): string | null; spot(q: string): string; pieces(): unknown[]; lastMove(): unknown };
+        return {
+          hello: () => `${s.orientation()} ${s.cell("e2")} ${s.square(4, 6)} ${s.square(8, 0)} ${s.spot("h1")} ${s.pieces().length}`,
+          update: () => log.push(`update ${s.orientation()} ${JSON.stringify(s.lastMove())}`),
+          destroy: () => log.push("destroy"),
+        };
+      });
+      const hello = api.hello();
+      T.set({ position: fen, lastMove: ["e2", "e4"] });
+      T.set({ orientation: "black" });
+      T.board.move("g8", "f6");
+      T.board.destroy();
+      T.make();
+      return { hello, log };
+    }, AFTER_E4);
+    expect(calls.hello).toBe("white 4,6 e2 null translate(700%,700%) 32");
+    expect(calls.log).toEqual(["update white null", 'update white ["e2","e4"]', 'update black ["e2","e4"]', 'update black ["e2","e4"]', "destroy"]);
   });
 
   it("resizing the board needs no script: no writes, pieces still on their squares", async () => {

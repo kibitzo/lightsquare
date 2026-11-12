@@ -148,7 +148,9 @@ describe.each(PROFILES)("work done in $name", (profile) => {
       const host = document.getElementById("board")!;
       return { all: host.querySelectorAll("*").length, pieces: host.querySelectorAll(".ls-piece").length, marks: host.querySelectorAll(".ls-mark").length, layers: host.children.length };
     });
-    expect(counts).toEqual({ all: 36, pieces: 32, marks: 2, layers: 2 });
+    expect(counts).toEqual({ all: 53, pieces: 32, marks: 2, layers: 3 });
+    await page.evaluate(() => T.set({ coordinates: false }));
+    expect(await page.evaluate(() => document.getElementById("board")!.querySelectorAll("*").length)).toBe(36);
   });
 
   it("300 moves of a game leave no element behind", async () => {
@@ -162,7 +164,7 @@ describe.each(PROFILES)("work done in $name", (profile) => {
     await settle(page);
     const all = await page.evaluate(() => document.getElementById("board")!.querySelectorAll("*").length);
     expect(result.fen).toBe(plies[plies.length - 1].fen);
-    expect(all).toBe(result.pieces + 2 + 2);
+    expect(all).toBe(result.pieces + 2 + 3 + 16);
   });
 });
 
@@ -178,20 +180,27 @@ describe("work measured inside Chromium", () => {
   });
   afterAll(() => browser.close());
 
-  async function traced(run: () => Promise<void>): Promise<Record<string, number>> {
+  /** Counts of the browser's work during `run`, and when (ms after the first one) it painted. */
+  async function traced(run: () => Promise<void>): Promise<Record<string, number> & { paintedAt: number[] }> {
     await browser.startTracing(page, { categories: ["devtools.timeline", "disabled-by-default-devtools.timeline"] });
     await run();
-    const events = JSON.parse((await browser.stopTracing()).toString()).traceEvents as Array<{ name: string; ph: string }>;
+    const events = JSON.parse((await browser.stopTracing()).toString()).traceEvents as Array<{ name: string; ph: string; ts: number }>;
     const counts: Record<string, number> = { Paint: 0, Layout: 0, UpdateLayoutTree: 0, FunctionCall: 0, TimerFire: 0, FireAnimationFrame: 0 };
-    for (const e of events) if (e.name in counts && e.ph !== "E") counts[e.name]++;
-    return counts;
+    const paints: number[] = [];
+    for (const e of events) {
+      if (!(e.name in counts) || e.ph === "E") continue;
+      counts[e.name]++;
+      if (e.name === "Paint") paints.push(e.ts / 1000);
+    }
+    const first = Math.min(...paints);
+    return Object.assign(counts, { paintedAt: paints.map((t) => Math.round(t - first)).sort((a, b) => a - b) }) as Record<string, number> & { paintedAt: number[] };
   }
 
   it("rule 3: at rest the browser paints nothing, lays out nothing, runs nothing", async () => {
     await fresh(page, { movable: "white", lastMove: ["e2", "e4"], check: "e8", position: AFTER_E4 });
     await page.waitForTimeout(500);
     const counts = await traced(async () => void (await page.waitForTimeout(2000)));
-    expect(counts).toEqual({ Paint: 0, Layout: 0, UpdateLayoutTree: 0, FunctionCall: 0, TimerFire: 0, FireAnimationFrame: 0 });
+    expect(counts).toEqual({ Paint: 0, Layout: 0, UpdateLayoutTree: 0, FunctionCall: 0, TimerFire: 0, FireAnimationFrame: 0, paintedAt: [] });
   });
 
   it("a slide is painted when it starts and when it ends, not once per frame", async () => {
@@ -201,7 +210,9 @@ describe("work measured inside Chromium", () => {
       await page.evaluate((fen) => T.set({ position: fen, lastMove: ["e2", "e4"] }), AFTER_E4);
       await page.waitForTimeout(700);
     });
-    expect(counts.Paint).toBeLessThanOrEqual(3);
+    const slide = 180;
+    expect(counts.paintedAt.filter((ms) => ms > 40 && ms < slide - 40), `painted at ${counts.paintedAt} ms`).toEqual([]);
+    expect(counts.Paint).toBeLessThanOrEqual(6);
     expect(counts.Layout).toBeLessThanOrEqual(1);
     expect(counts.FireAnimationFrame).toBe(0);
     expect(counts.TimerFire).toBe(0);
