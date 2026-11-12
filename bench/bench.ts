@@ -180,6 +180,23 @@ toggle("versus", () => {
 toggle("hints", showShapes, true);
 toggle("samples", showShapes);
 
+/** ← → step through the game, ↑ or Home goes to the start, ↓ or End to the end. Keys used by a slider or by the board's own keyboard cursor are left alone. */
+const KEYS: Record<string, () => void> = {
+  ArrowRight: () => goTo(ply < 0 ? 1 : ply + 1),
+  ArrowLeft: () => goTo(ply < 0 ? 0 : ply - 1),
+  ArrowUp: () => goTo(0),
+  Home: () => goTo(0),
+  ArrowDown: () => goTo(OPERA.length),
+  End: () => goTo(OPERA.length),
+  f: () => $("flip").click(),
+};
+document.addEventListener("keydown", (e) => {
+  const step = KEYS[e.key];
+  if (!step || e.defaultPrevented || e.metaKey || e.ctrlKey || e.altKey || (e.target as HTMLElement).closest("input, textarea, select")) return;
+  e.preventDefault();
+  step();
+});
+
 let autoTimer = 0;
 toggle("play", (on) => {
   clearInterval(autoTimer);

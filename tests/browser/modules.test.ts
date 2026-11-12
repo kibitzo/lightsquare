@@ -90,12 +90,13 @@ describe.each(PROFILES)("modules in $name", (profile) => {
         return {
           text: group.querySelector("text")!.textContent,
           discs: group.querySelectorAll("circle").length,
-          fill: getComputedStyle(group.querySelector("text")!).fill,
+          light: (getComputedStyle(group.querySelector("text")!).fill.match(/[\d.]+/g) ?? []).slice(0, 3).map(Number).every((v, _i, all) => v > (Math.max(...all) <= 1 ? 0.8 : 205)),
+          softEdge: Number(getComputedStyle(group.querySelector("text")!).strokeOpacity) < 0.6,
           inHead: Math.hypot(centre.x - tip.x, centre.y - tip.y) / size < 0.5 && centre.x > head.left && centre.x < head.right && centre.y > head.top && centre.y < head.bottom,
           fits: text.height / size < 0.42 && text.width / size < 0.34,
         };
       });
-      expect(label).toEqual({ text: "1", discs: 0, fill: "rgb(255, 255, 255)", inHead: true, fits: true });
+      expect(label).toEqual({ text: "1", discs: 0, light: true, softEdge: true, inHead: true, fits: true });
       const circle = await box(".ls-circle-green");
       expect((circle.left + circle.right) / 2).toBeCloseTo(3.5, 1);
       expect((circle.top + circle.bottom) / 2).toBeCloseTo(4.5, 1);
@@ -424,6 +425,41 @@ describe.each(PROFILES)("modules in $name", (profile) => {
       await page.keyboard.press("ArrowLeft");
       await page.keyboard.press("ArrowLeft");
       expect(await page.evaluate(() => document.querySelector("[aria-live]")!.textContent)).toBe("a4, empty");
+    });
+
+    it("after a press with the mouse or a finger, the arrow keys are left to the page", async () => {
+      await fresh(page, { movable: "white" });
+      await page.evaluate(() => {
+        T.board.use(M.a11y());
+        const w = window as unknown as { pageKeys: string[] };
+        w.pageKeys = [];
+        document.addEventListener("keydown", (e) => !e.defaultPrevented && w.pageKeys.push(e.key));
+        document.getElementById("board")!.focus();
+      });
+      await page.keyboard.press("ArrowUp");
+      expect(await page.evaluate(() => [document.querySelectorAll(".ls-cursor").length, (window as unknown as { pageKeys: string[] }).pageKeys.length])).toEqual([1, 0]);
+      await press("a5");
+      await page.keyboard.press("ArrowLeft");
+      await page.keyboard.press("ArrowRight");
+      expect(await page.evaluate(() => [document.querySelectorAll(".ls-cursor").length, (window as unknown as { pageKeys: string[] }).pageKeys])).toEqual([0, ["ArrowLeft", "ArrowRight"]]);
+      await page.evaluate(() => {
+        document.getElementById("board")!.blur();
+        document.getElementById("board")!.focus();
+      });
+      await page.keyboard.press("ArrowUp");
+      expect(await page.evaluate(() => document.querySelectorAll(".ls-cursor").length)).toBe(1);
+    });
+
+    it("the keyboard cursor is four corner brackets in the selection's colour, not a browser-blue frame", async () => {
+      await fresh(page, { movable: "white" });
+      const look = await page.evaluate(() => {
+        T.board.use(M.a11y());
+        document.getElementById("board")!.focus();
+        document.getElementById("board")!.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowUp", bubbles: true }));
+        const style = getComputedStyle(document.querySelector(".ls-cursor")!);
+        return { layers: style.backgroundImage.split("linear-gradient").length - 1, amber: style.backgroundImage.includes("245, 158, 11"), border: style.borderTopWidth, outline: getComputedStyle(document.getElementById("board")!).outlineStyle };
+      });
+      expect(look).toEqual({ layers: 8, amber: true, border: "0px", outline: "none" });
     });
 
     it("Escape unselects, and the board is as it was once the module is gone", async () => {

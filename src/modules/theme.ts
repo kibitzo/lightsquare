@@ -26,6 +26,8 @@ export interface Theme {
   selectedEdge?: string;
   check?: string;
   premove?: string;
+  /** The keyboard cursor's corner brackets. */
+  cursor?: string;
   /** Move dots and rings. */
   target?: string;
   /** The square under a dragged piece. */
@@ -52,6 +54,7 @@ const PLAIN: Array<[keyof Theme, string, (value: never) => string]> = [
   ["lastMove", "--ls-last", String],
   ["selected", "--ls-select", String],
   ["selectedEdge", "--ls-select-edge", String],
+  ["cursor", "--ls-cursor", String],
   ["check", "--ls-check", String],
   ["premove", "--ls-premove", String],
   ["target", "--ls-target", String],

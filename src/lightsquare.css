@@ -236,18 +236,21 @@
   transition: none;
 }
 
-/* A label on an arrow ("1", "2") is set into its head: upright, light, with
-   a rim in a deeper tone of the arrow's own colour, so it reads as pressed
-   into the arrow, not laid on top. The script sets its size to fit. */
+/* A label on an arrow ("1", "2") is set into its head: upright, in a light
+   tint of the arrow's own colour, with a soft, see-through edge in a
+   deeper tone of it. No hard outline: it should read as part of the arrow.
+   The script sets its size to fit. */
 .ls-arrow text {
-  fill: var(--ls-label-text, #fff);
+  fill: #fff;
+  fill: var(--ls-label-text, color-mix(in srgb, var(--_shape) 12%, #fff));
   stroke: #000;
-  stroke: var(--ls-label-rim, color-mix(in srgb, var(--_shape) 58%, #000));
-  stroke-width: 0.034;
+  stroke: var(--ls-label-rim, color-mix(in srgb, var(--_shape) 72%, #000));
+  stroke-opacity: 0.4;
+  stroke-width: 0.045;
   stroke-linejoin: round;
   paint-order: stroke;
   font-family: ui-rounded, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
-  font-weight: 800;
+  font-weight: 700;
   font-variant-numeric: tabular-nums;
   text-anchor: middle;
 }
@@ -343,21 +346,34 @@
   white-space: nowrap;
 }
 
+/* The keyboard cursor: four corner brackets in the colour of the selection
+   frame, so it belongs to the board and still cannot be taken for a
+   selected square. It exists only while the keyboard is in use. */
 .ls-cursor {
-  display: none;
+  --_c: var(--ls-cursor, var(--_select-edge));
+  --_w: max(2px, 0.6cqw);
   position: absolute;
   left: 0;
   top: 0;
   z-index: 6;
   width: 12.5%;
   height: 12.5%;
-  box-sizing: border-box;
-  border: 0.2em solid #2563eb;
+  background:
+    linear-gradient(var(--_c) 0 0) left top / 30% var(--_w),
+    linear-gradient(var(--_c) 0 0) left top / var(--_w) 30%,
+    linear-gradient(var(--_c) 0 0) right top / 30% var(--_w),
+    linear-gradient(var(--_c) 0 0) right top / var(--_w) 30%,
+    linear-gradient(var(--_c) 0 0) left bottom / 30% var(--_w),
+    linear-gradient(var(--_c) 0 0) left bottom / var(--_w) 30%,
+    linear-gradient(var(--_c) 0 0) right bottom / 30% var(--_w),
+    linear-gradient(var(--_c) 0 0) right bottom / var(--_w) 30%;
+  background-repeat: no-repeat;
   pointer-events: none;
 }
 
-.ls-board:focus-visible .ls-cursor {
-  display: block;
+/* The board shows its own cursor, so it needs no focus ring around it. */
+.ls-board:focus {
+  outline: none;
 }
 
 @media (prefers-reduced-motion: reduce) {

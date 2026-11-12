@@ -153,7 +153,7 @@ export function shapes(options: ShapesOptions = {}): Module<Shapes> {
       fade.appendChild(svg("stop", { offset: 1 }));
       group.appendChild(svg("path", { d, fill: `url(#${id})` }));
       if (a.label) {
-        const size = n((room * 1.55) / Math.max(1, a.label.length * 0.62));
+        const size = n((room * 1.28) / Math.max(1, a.label.length * 0.62));
         group.appendChild(svg("text", { x: label[0], y: label[1], dy: "0.35em", style: `font-size:${size}px` })).textContent = a.label;
       }
       return group;

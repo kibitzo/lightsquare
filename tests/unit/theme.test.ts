@@ -29,7 +29,7 @@ describe("themes", () => {
   });
 
   it("every variable a theme can set is read by the stylesheet or the shapes module", () => {
-    const all = themeVariables({ light: "a", dark: "a", boardImage: "a", lastMove: "a", selected: "a", selectedEdge: "a", check: "a", premove: "a", target: "a", hover: "a", pieceSize: 1, moveMs: 1, arrowTail: 1, arrowHead: 1 });
+    const all = themeVariables({ light: "a", dark: "a", boardImage: "a", lastMove: "a", selected: "a", selectedEdge: "a", cursor: "a", check: "a", premove: "a", target: "a", hover: "a", pieceSize: 1, moveMs: 1, arrowTail: 1, arrowHead: 1 });
     for (const name of Object.keys(all)) expect(css, name).toContain(`var(${name}`);
     const shapes = readFileSync(fileURLToPath(new URL("../../src/modules/shapes.ts", import.meta.url)), "utf8");
     expect(shapes).toContain("var(--ls-shape,");

@@ -137,8 +137,8 @@ drawing.clear();
 also carries the class `ls-arrow-<name>` or `ls-circle-<name>`.
 
 A label is set into the arrow's head, which grows a little to hold it:
-upright, light, with a rim in a deeper tone of the arrow's colour
-(`--ls-label-text`, `--ls-label-rim`).
+upright, in a light tint of the arrow's colour, with a soft edge in a
+deeper tone of it (`--ls-label-text`, `--ls-label-rim`).
 
 An arrow runs from the centre of its first square to the centre of its
 last one, where its point stops. Its colour grows from faint at the tail, so
@@ -178,7 +178,11 @@ board.use(a11y({ label: "Puzzle board", words: { white: "Blanc" } }));
 ```
 
 Names the board, lists every piece for screen readers, announces each move,
-and lets a keyboard user move: arrow keys, Enter or Space, Escape.
+and lets a keyboard user move: arrow keys, Enter or Space, Escape. The keys
+belong to the board only for someone who reached it by keyboard (Tab). After
+a press with a mouse or a finger they are left to the page, so an app's own
+arrow keys can step through the moves. The cursor is four corner brackets in
+the selection's colour (`--ls-cursor`).
 
 ### React: `lightsquare/react`
 

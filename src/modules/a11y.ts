@@ -5,8 +5,10 @@
  *
  * - The board gets a name and a description that lists every piece.
  * - Each move is announced ("White knight, g1 to f3").
- * - With the board focused, the arrow keys move a cursor, Enter or Space
- *   presses the square under it (select, then move), Escape unselects.
+ * - For someone who reaches the board by keyboard (Tab), the arrow keys
+ *   move a cursor, Enter or Space presses the square under it (select,
+ *   then move), Escape unselects. After a press with a mouse or a finger
+ *   the keys are left to the page.
  *
  * All words can be replaced for other languages.
  */
@@ -90,7 +92,23 @@ export function a11y(options: A11yOptions = {}): Module<A11y> {
       live.textContent = `${to}, ${on ? piece(on) : words.empty}${surface.selected() === to ? `, ${words.selected}` : ""}`;
     }
 
+    /**
+     * The keys belong to the board only for someone who came to it by
+     * keyboard. After a press with a mouse or a finger they are left to the
+     * page (an app's own arrow keys step through the moves), until the board
+     * loses focus and gets it back.
+     */
+    let byKeyboard = true;
+    function onPress(): void {
+      byKeyboard = false;
+      cursor = null;
+      cursorEl?.remove();
+      cursorEl = null;
+    }
+    const onBlur = (): void => void (byKeyboard = true);
+
     function onKey(e: KeyboardEvent): void {
+      if (!byKeyboard) return;
       const step = STEPS[e.key];
       if (step) {
         const [col, row] = cursor ? surface.cell(cursor) : [4 - step[0], 6 - step[1]];
@@ -105,6 +123,8 @@ export function a11y(options: A11yOptions = {}): Module<A11y> {
     if (options.keyboard !== false) {
       host.tabIndex = 0;
       host.addEventListener("keydown", onKey);
+      host.addEventListener("pointerdown", onPress);
+      host.addEventListener("blur", onBlur);
     }
 
     return {
@@ -124,6 +144,8 @@ export function a11y(options: A11yOptions = {}): Module<A11y> {
       },
       destroy() {
         host.removeEventListener("keydown", onKey);
+        host.removeEventListener("pointerdown", onPress);
+        host.removeEventListener("blur", onBlur);
         text.remove();
         live.remove();
         cursorEl?.remove();
