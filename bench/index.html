@@ -73,26 +73,27 @@
   /* ── the inspector: one instrument panel with ruled rows ── */
   .panel { min-width: 0; border: 1px solid var(--line-strong); border-radius: 6px; background: #0d131a; overflow: hidden; }
   .sec + .sec { border-top: 1px solid var(--line-strong); }
-  .sec-h { display: flex; align-items: center; gap: 10px; height: 32px; margin: 0; padding: 0 12px; background: rgba(148, 163, 184, 0.06); border-bottom: 1px solid var(--line); font: 600 11px/1 var(--mono); letter-spacing: 0.14em; text-transform: uppercase; color: var(--dim); }
+  .sec-h { display: flex; align-items: center; gap: 10px; height: 32px; margin: 0; padding: 0 12px; background: rgba(148, 163, 184, 0.06); border-bottom: 1px solid var(--line); font: 500 11px/1 var(--mono); letter-spacing: 0.14em; text-transform: uppercase; color: var(--dim); }
   .sec-h i { font-style: normal; color: var(--amber); }
-  .sec-h span { margin-left: auto; font-weight: 400; letter-spacing: 0.02em; text-transform: none; color: var(--faint); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .sec-h span { margin-left: auto; font-weight: 300; letter-spacing: 0.02em; text-transform: none; color: var(--faint); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .bar { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 6px; padding: 10px 12px 0; }
   .bar:last-child { padding-bottom: 12px; }
-  button { height: 36px; padding: 0 8px; border-radius: 4px; border: 1px solid var(--line-strong); background: transparent; color: #e2e8f0; font: 500 12px/1 var(--mono); letter-spacing: 0.02em; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+  button { height: 36px; padding: 0 8px; border-radius: 4px; border: 1px solid var(--line-strong); background: transparent; color: #e2e8f0; font: 400 12px/1 var(--mono); letter-spacing: 0.03em; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
   button:hover { background: rgba(148, 163, 184, 0.1); }
   button:active { background: rgba(148, 163, 184, 0.18); }
   button[aria-pressed="true"] { background: rgba(245, 158, 11, 0.12); border-color: var(--amber); color: var(--amber-soft); }
   button.good { border-color: rgba(34, 197, 94, 0.5); color: #86efac; }
   button.bad { border-color: rgba(239, 68, 68, 0.5); color: #fca5a5; }
   kbd { display: inline-block; min-width: 1.7em; padding: 1px 5px; border: 1px solid var(--line-strong); border-bottom-width: 2px; border-radius: 4px; font: 11px/1.5 var(--mono); color: #e2e8f0; text-align: center; }
-  .hint { margin: 0; padding: 10px 12px 12px; font-size: 12.5px; line-height: 1.55; color: var(--faint); }
+  /* Notes in the panel are set thin and in the fixed-width face, like the comments of a listing. */
+  .hint { margin: 0; padding: 10px 12px 12px; font: 300 11.5px/1.65 var(--mono); letter-spacing: 0.01em; color: var(--dim); }
   .hint:empty { display: none; }
 
   /* A property and its value, one per ruled row. */
   .field { display: grid; grid-template-columns: 84px minmax(0, 1fr) auto; align-items: center; gap: 10px; min-height: 40px; padding: 3px 12px; border-top: 1px solid rgba(148, 163, 184, 0.09); }
   .sec-h + .field { border-top: 0; }
-  .field > span:first-child { font: 11px/1.2 var(--mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--dim); }
-  .field output { font: 12px var(--mono); color: var(--bright); font-variant-numeric: tabular-nums; min-width: 52px; text-align: right; }
+  .field > span:first-child { font: 300 11px/1.2 var(--mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--dim); }
+  .field output { font: 300 12px var(--mono); color: var(--bright); font-variant-numeric: tabular-nums; min-width: 52px; text-align: right; }
   input[type="range"] { width: 100%; height: 28px; margin: 0; accent-color: var(--amber); background: transparent; }
   .swatches, .wells, .badges { display: flex; flex-wrap: wrap; gap: 4px; grid-column: 2 / -1; }
   .swatch { width: 32px; height: 32px; padding: 3px; border-color: transparent; }
@@ -107,7 +108,7 @@
   .well input::-webkit-color-swatch-wrapper { padding: 0; }
   .well input::-webkit-color-swatch { border: 1px solid rgba(255, 255, 255, 0.28); border-radius: 3px; }
   .well input::-moz-color-swatch { border: 1px solid rgba(255, 255, 255, 0.28); border-radius: 3px; }
-  .well small { font: 10px/1 var(--mono); color: var(--faint); }
+  .well small { font: 300 10px/1 var(--mono); color: var(--dim); }
   .badges button { height: 32px; min-width: 32px; padding: 0 8px; }
   .badges .pick { padding: 0; border-color: transparent; }
   .badges .pick i { display: grid; place-items: center; width: 22px; height: 22px; margin: auto; border-radius: 50%; background: var(--badge); color: #fff; font: 900 11px/1 var(--sans); font-style: normal; letter-spacing: -0.06em; }
@@ -123,15 +124,15 @@
   }
 
   pre { margin: 0; padding: 14px 16px; border-radius: 12px; background: #0a0f15; border: 1px solid var(--line); color: #cbd5e1; font: 12.5px/1.6 var(--mono); overflow-x: auto; }
-  pre.out { border: 0; border-top: 1px solid var(--line); border-radius: 0; color: var(--dim); white-space: pre-wrap; word-break: break-word; font-size: 11.5px; }
+  pre.out { border: 0; border-top: 1px solid var(--line); border-radius: 0; color: var(--dim); white-space: pre-wrap; word-break: break-word; font-size: 11px; font-weight: 300; line-height: 1.65; }
   pre .c { color: var(--faint); } pre .k { color: #f0abfc; } pre .s { color: #86efac; } pre .f { color: var(--amber-soft); }
 
   /* The readout: four numbers, ruled apart. */
   .stats { display: grid; grid-template-columns: repeat(4, 1fr); text-align: center; border-bottom: 1px solid var(--line); }
   .stats div { padding: 10px 4px 9px; border-left: 1px solid var(--line); }
   .stats div:first-child { border-left: 0; }
-  .stats b { display: block; font: 600 20px/1.15 var(--mono); color: var(--bright); font-variant-numeric: tabular-nums; }
-  .stats small { font: 10px/1.3 var(--mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--faint); }
+  .stats b { display: block; font: 300 22px/1.15 var(--mono); color: var(--bright); font-variant-numeric: tabular-nums; }
+  .stats small { font: 300 10px/1.3 var(--mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--dim); }
 
   /* ── how it works ── */
   .flow { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 0; border: 1px solid var(--line); border-radius: 14px; overflow: hidden; background: var(--panel); counter-reset: step; }
@@ -197,17 +198,17 @@
   @keyframes badge-pop { from { transform: scale(0.4); opacity: 0; } }
 
   /* Check: a red blush under the king that breathes, as in Kibitzo and of
-     the same size, a little stronger because the king hides the middle of
-     it.
-     Kibitzo's breathes for as long as the king is in check; here it
-     breathes three times and then holds still, unless the "Check" switch
-     says forever (--check-loops). */
+     about the same size. It sits under the piece, so the king hides its
+     middle: the colour is full at the centre and --glow (the "Glow" slider)
+     says how strong the whole of it is. Kibitzo's breathes for as long as
+     the king is in check; here it breathes three times and then holds
+     still, unless the "Check" switch says forever (--check-loops). */
   .ls-mark-check {
-    background: radial-gradient(circle, rgba(239, 68, 68, 0.72) 0%, rgba(239, 68, 68, 0.52) 40%, rgba(239, 68, 68, 0.16) 60%, rgba(239, 68, 68, 0) 75%);
-    opacity: 0.9;
+    background: radial-gradient(circle, rgba(239, 68, 68, 1) 0%, rgba(239, 68, 68, 0.86) 42%, rgba(239, 68, 68, 0.36) 64%, rgba(239, 68, 68, 0) 80%);
+    opacity: var(--glow, 0.82);
     animation: check-pulse 1.4s ease-in-out var(--check-loops, 3);
   }
-  @keyframes check-pulse { 0%, 100% { opacity: 0.9; transform: scale(1); } 50% { opacity: 1; transform: scale(1.06); } }
+  @keyframes check-pulse { 50% { transform: scale(1.07); } }
 
   /* Checkmate, as in Kibitzo. Under the king: one crimson core that lands
      with an impact and then holds still. Over it: a rose "#" on the
@@ -217,10 +218,11 @@
      The glow is a mark; the "#" and its sparks are HTML put on the square
      with the overlay module. */
   .ls-mark-mated {
-    background: radial-gradient(circle, rgba(159, 18, 18, 0.8) 0%, rgba(159, 18, 18, 0.58) 40%, rgba(159, 18, 18, 0.18) 64%, rgba(159, 18, 18, 0) 80%);
+    background: radial-gradient(circle, rgba(159, 18, 18, 1) 0%, rgba(159, 18, 18, 0.88) 44%, rgba(159, 18, 18, 0.4) 66%, rgba(159, 18, 18, 0) 84%);
+    opacity: var(--glow, 0.82);
     animation: mated-impact 0.55s cubic-bezier(0.34, 1.56, 0.64, 1);
   }
-  @keyframes mated-impact { 0% { opacity: 0; transform: scale(1.6); } 55% { opacity: 1; transform: scale(0.94); } 100% { opacity: 1; transform: scale(1); } }
+  @keyframes mated-impact { 0% { opacity: 0; transform: scale(1.6); } 55% { opacity: var(--glow, 0.82); transform: scale(0.94); } }
   .mate { position: absolute; inset: 0; container-type: inline-size; pointer-events: none; }
   .mate-badge {
     position: absolute; left: 100%; top: 0; width: 46%; height: 46%; transform: translate(-50%, -50%);
@@ -331,6 +333,7 @@
         <div class="field"><span>Strength</span><input id="arrowHead" type="range" min="40" max="100" step="2" aria-label="Arrow strength"><output id="arrowHeadOut"></output></div>
         <div class="field"><span>Badges</span><div class="badges" id="badges"></div></div>
         <div class="field"><span>Check</span><div class="segments" id="checks"></div></div>
+        <div class="field"><span>Glow</span><input id="glow" type="range" min="40" max="100" step="2" aria-label="Strength of the check and checkmate glow"><output id="glowOut"></output></div>
         <pre class="out" id="theme" aria-label="The theme as data"></pre>
       </section>
 

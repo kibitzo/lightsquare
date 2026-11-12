@@ -236,13 +236,15 @@ interface Look {
   checkLoops: string;
   /** The board's size, as a share of the largest that fits: 0.4 to 1. */
   boardScale: number;
+  /** How strong the glow under a king in check or mated is, in percent. */
+  glow: number;
   arrowColours: Record<string, string>;
   circleColours: Record<string, string>;
 }
 
 const LOOK_KEY = "lightsquare-playground-look-2";
 const plainColours = (): Record<string, string> => Object.fromEntries(SHAPE_NAMES.map(([name, , colour]) => [name, colour]));
-const look: Look = { board: "wood", pieces: "cburnett", labels: "on", pieceSize: 100, moveMs: 180, arrowWidth: 20, arrowHead: 82, badge: "auto", checkLoops: "3", boardScale: 1, arrowColours: plainColours(), circleColours: plainColours() };
+const look: Look = { board: "wood", pieces: "cburnett", labels: "on", pieceSize: 100, moveMs: 180, arrowWidth: 20, arrowHead: 82, badge: "auto", checkLoops: "3", boardScale: 1, glow: 82, arrowColours: plainColours(), circleColours: plainColours() };
 
 /** The look as the theme an app would store for a user. */
 function themeOf(l: Look): Theme {
@@ -269,11 +271,12 @@ function applyLook(): void {
   board.set({ coordinates: look.labels === "on", marks: badges(lastTo) });
   showMate(lastTo);
   $("page").style.setProperty("--check-loops", look.checkLoops);
+  $("page").style.setProperty("--glow", String(look.glow / 100));
   const width = look.arrowWidth / 100;
   drawing.set({ look: { width, headWidth: width * 2.7, headLength: width * 2.3 } });
   $("theme").textContent = `applyTheme(element, ${JSON.stringify(theme, null, 1).replace(/\n\s*/g, " ")})`;
   for (const el of document.querySelectorAll<HTMLElement>("[data-look]")) el.setAttribute("aria-pressed", String(String(look[el.dataset.look as keyof Look]) === el.dataset.value));
-  for (const id of ["pieceSize", "moveMs", "arrowWidth", "arrowHead"] as const) {
+  for (const id of ["pieceSize", "moveMs", "arrowWidth", "arrowHead", "glow"] as const) {
     ($(id) as HTMLInputElement).value = String(look[id]);
     $(`${id}Out`).textContent = id === "moveMs" ? `${look[id]} ms` : `${look[id]}%`;
   }
@@ -315,7 +318,7 @@ async function buildLooks(): Promise<void> {
   }
   if (!(look.board in themes)) look.board = "wood";
   if (look.pieces === "extra" && !config.extraPieces) look.pieces = "cburnett";
-  for (const id of ["pieceSize", "moveMs", "arrowWidth", "arrowHead"] as const) {
+  for (const id of ["pieceSize", "moveMs", "arrowWidth", "arrowHead", "glow"] as const) {
     $(id).oninput = () => {
       look[id] = Number(($(id) as HTMLInputElement).value);
       applyLook();
