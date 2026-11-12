@@ -74,6 +74,10 @@ function show(): void {
   counts.moves++;
   showMate(last?.to);
   showShapes();
+  // Against the computer, Black answers whenever it is Black's turn: after a move of the player, and also when
+  // the computer is switched on, or a step through the game ends, on Black's turn.
+  clearTimeout(replyTimer);
+  if (versus && !whiteToMove && !chess.isGameOver()) replyTimer = window.setTimeout(reply, 900);
 }
 
 /** Where the badges go: the replay's own, one kind on the last move, or all of them at once. */
@@ -144,8 +148,6 @@ const board = lightsquare(host, {
       /* not legal: show() puts the piece back */
     }
     show();
-    clearTimeout(replyTimer);
-    if (toggles.versus && chess.turn() === "b") replyTimer = window.setTimeout(reply, 900);
   },
 });
 const picker = board.use(promotion());
@@ -179,10 +181,7 @@ function toggle(id: string, onChange: (on: boolean) => void, start = false): voi
 $("next").onclick = () => goTo(ply < 0 ? 1 : ply + 1);
 $("back").onclick = () => goTo(ply < 0 ? 0 : ply - 1);
 $("flip").onclick = () => board.set({ orientation: (orientation = orientation === "white" ? "black" : "white") });
-toggle("versus", () => {
-  clearTimeout(replyTimer);
-  show();
-});
+toggle("versus", show);
 toggle("hints", showShapes, true);
 toggle("samples", showShapes);
 

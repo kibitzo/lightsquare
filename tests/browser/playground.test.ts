@@ -229,6 +229,26 @@ describe.each([PROFILES[0], PROFILES[1], PROFILES[2]])("the page in $name", (pro
     expect(Math.abs((await width()) - full)).toBeLessThan(1.5);
   });
 
+  it("against the computer, Black answers also when the computer is switched on after White has moved", async () => {
+    const lastMove = (): Promise<string[]> =>
+      page.evaluate(() => {
+        const host = document.getElementById("board")!.getBoundingClientRect();
+        const size = host.width / 8;
+        return [...document.querySelectorAll(".ls-mark-last")].map((el) => {
+          const r = el.getBoundingClientRect();
+          return `${"abcdefgh"[Math.floor((r.left + r.width / 2 - host.left) / size)]}${8 - Math.floor((r.top + r.height / 2 - host.top) / size)}`;
+        }).sort();
+      });
+    await page.evaluate(() => document.getElementById("next")!.click());
+    await page.waitForTimeout(300);
+    expect(await lastMove()).toEqual(["e2", "e4"]);
+    await page.evaluate(() => document.getElementById("versus")!.click());
+    await expect.poll(lastMove, { timeout: 3000 }).not.toEqual(["e2", "e4"]);
+    const reply = await lastMove();
+    expect(reply.every((square) => Number(square[1]) >= 5), `Black moved: ${reply.join(" ")}`).toBe(true);
+    await page.evaluate(() => document.getElementById("versus")!.click());
+  });
+
   it("at rest the page animates nothing and asks for no frame", async () => {
     await page.waitForTimeout(700);
     await page.evaluate(() => P.reset());
