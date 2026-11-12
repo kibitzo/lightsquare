@@ -34,10 +34,21 @@ export function promotion(options: PromotionOptions = {}): Module<Promotion> {
   return (surface) => {
     let open: { layer: HTMLElement; done(piece: PromotionPiece | null): void; orientation: Color } | null = null;
 
+    /**
+     * Escape cancels wherever the focus is. The picker takes the focus when
+     * it opens, but when it is opened by a press on the board (the move that
+     * promotes), the browser gives the focus back to the board right after:
+     * a key listener on the picker alone would then never hear the key.
+     */
+    function onKey(e: KeyboardEvent): void {
+      if (e.key === "Escape") close(null);
+    }
+
     function close(piece: PromotionPiece | null): void {
       if (!open) return;
       const { layer, done } = open;
       open = null;
+      removeEventListener("keydown", onKey, true);
       layer.remove();
       done(piece);
     }
@@ -59,9 +70,20 @@ export function promotion(options: PromotionOptions = {}): Module<Promotion> {
         button.dataset.piece = piece;
         button.setAttribute("aria-label", options.labels?.[piece] ?? LABELS[piece]);
       }
-      layer.addEventListener("pointerdown", (e) => e.stopPropagation());
-      layer.addEventListener("click", (e) => close(((e.target as Element).closest<HTMLElement>(".ls-choice")?.dataset.piece as PromotionPiece) ?? null));
-      layer.addEventListener("keydown", (e) => e.key === "Escape" && close(null));
+      // A click counts only if its press began on the picker (or it comes
+      // from the keyboard, detail 0). A finger's tap on the promotion square
+      // makes the move, which opens the picker under the finger, and then
+      // ends with a click on that same spot: without this, that click chose
+      // the first piece before the player had seen the picker.
+      let pressed = false;
+      layer.addEventListener("pointerdown", (e) => {
+        pressed = true;
+        e.stopPropagation();
+      });
+      layer.addEventListener("click", (e) => {
+        if (pressed || !e.detail) close(((e.target as Element).closest<HTMLElement>(".ls-choice")?.dataset.piece as PromotionPiece) ?? null);
+      });
+      addEventListener("keydown", onKey, true);
       surface.host.appendChild(layer);
       open = { layer, done, orientation: surface.orientation() };
       layer.querySelector<HTMLElement>(".ls-choice")?.focus({ preventScroll: true });

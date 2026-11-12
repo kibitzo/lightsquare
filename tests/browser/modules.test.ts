@@ -311,6 +311,24 @@ describe.each(PROFILES)("modules in $name", (profile) => {
       expect(await page.evaluate(() => T.marks())).toEqual([]);
     });
 
+    it("Escape cancels also when the picker was opened by the press that made the move, which leaves the focus on the board", async () => {
+      await fresh(page, { position: "8/4P3/8/8/8/8/8/k3K3", movable: "white" });
+      await page.evaluate(() => {
+        const w = window as unknown as W;
+        w.picked = [];
+        w.A = T.board.use(M.promotion());
+        T.board.set({ onMove: ({ to }: { to: string }) => void w.A.ask(to, "white").then((piece: unknown) => w.picked.push(piece)) });
+      });
+      await press("e7");
+      await press("e8");
+      // A finger's tap ends with a click on the same spot, where the picker has just opened: that click must not choose a piece.
+      expect(await picked(), "the press that opened the picker chose nothing").toEqual([]);
+      expect(await page.evaluate(() => document.querySelectorAll(".ls-choice").length)).toBe(4);
+      await page.keyboard.press("Escape");
+      expect(await picked()).toEqual([null]);
+      expect(await page.evaluate(() => document.querySelectorAll(".ls-choice").length)).toBe(0);
+    });
+
     it("Escape cancels, a second question cancels the first, a flip cancels, destroy cancels", async () => {
       await fresh(page);
       await use();
