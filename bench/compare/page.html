@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Board comparison</title>
+<style>
+  html, body { margin: 0; background: #0c1117; }
+  /* Every board gets the same box: 400 by 400 pixels. */
+  #board { width: 400px; height: 400px; }
+</style>
+</head>
+<body>
+<div id="board"></div>
+<script type="module">
+const lib = new URLSearchParams(location.search).get("lib");
+const CSS = {
+  lightsquare: ["/src/lightsquare.css", "/src/pieces/cburnett.css"],
+  chessground: ["/compare/node_modules/@lichess-org/chessground/assets/chessground.base.css", "/compare/node_modules/@lichess-org/chessground/assets/chessground.brown.css", "/compare/node_modules/@lichess-org/chessground/assets/chessground.cburnett.css"],
+  "cm-chessboard": ["/compare/node_modules/cm-chessboard/assets/chessboard.css"],
+};
+await Promise.all(CSS[lib].map((href) => new Promise((resolve, reject) => {
+  const link = document.head.appendChild(document.createElement("link"));
+  link.rel = "stylesheet";
+  link.onload = resolve;
+  link.onerror = reject;
+  link.href = href;
+})));
+const { create } = await import(`/compare/${lib}.js`);
+window.make = async (setup) => {
+  window.handle?.destroy();
+  document.getElementById("board").replaceChildren();
+  window.handle = create(document.getElementById("board"), setup);
+  await window.handle.ready;
+  await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+};
+window.ready = true;
+</script>
+</body>
+</html>

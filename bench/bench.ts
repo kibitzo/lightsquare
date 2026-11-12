@@ -27,7 +27,8 @@ const SHAPE_NAMES: Array<[string, string, string]> = [["default", "plan", "#ea58
 const SAMPLE_ARROWS: Arrow[] = [{ from: "b1", to: "c3" }, { from: "c8", to: "g4", name: "red" }, { from: "d1", to: "d4", name: "green", label: "1" }, { from: "f1", to: "b5", name: "blue", label: "2" }, { from: "h7", to: "h5", name: "yellow" }];
 const SAMPLE_CIRCLES: Circle[] = [{ square: "e5", name: "red" }, { square: "a4" }, { square: "g6", name: "green" }];
 
-const $ = (id: string): HTMLElement => document.getElementById(id)!;
+/** An element by its id, or by a selector that starts with a dot. */
+const $ = (id: string): HTMLElement => (id.startsWith(".") ? document.querySelector<HTMLElement>(id)! : document.getElementById(id)!);
 const host = $("board");
 let chess = new Chess();
 let ply = 0;
@@ -85,7 +86,12 @@ function badgePlaces(to: string | undefined): Array<[string, string]> {
   return places;
 }
 
-/** The board's marks for the badges. Checkmate is a glow under the king; its "#" is HTML (showMate). */
+/**
+ * The board's marks for the badges. Checkmate is a glow under the king; its
+ * "#" is HTML (showMate). The blush of a king in check is the board's own
+ * check mark. Both sit under the piece, so the king stays crisp; the page's
+ * stylesheet makes them strong enough to show around it.
+ */
 function badges(to: string | undefined): BoardMark[] {
   return badgePlaces(to).map(([name, square]) => (name === "mate" ? { square, name: "mated" } : { square, name, above: true }));
 }
@@ -228,13 +234,15 @@ interface Look {
   badge: string;
   /** How often the halo under a king in check breathes: "3" times, or "infinite". */
   checkLoops: string;
+  /** The board's size, as a share of the largest that fits: 0.4 to 1. */
+  boardScale: number;
   arrowColours: Record<string, string>;
   circleColours: Record<string, string>;
 }
 
 const LOOK_KEY = "lightsquare-playground-look-2";
 const plainColours = (): Record<string, string> => Object.fromEntries(SHAPE_NAMES.map(([name, , colour]) => [name, colour]));
-const look: Look = { board: "wood", pieces: "cburnett", labels: "on", pieceSize: 100, moveMs: 180, arrowWidth: 20, arrowHead: 82, badge: "auto", checkLoops: "3", arrowColours: plainColours(), circleColours: plainColours() };
+const look: Look = { board: "wood", pieces: "cburnett", labels: "on", pieceSize: 100, moveMs: 180, arrowWidth: 20, arrowHead: 82, badge: "auto", checkLoops: "3", boardScale: 1, arrowColours: plainColours(), circleColours: plainColours() };
 
 /** The look as the theme an app would store for a user. */
 function themeOf(l: Look): Theme {
@@ -313,6 +321,8 @@ async function buildLooks(): Promise<void> {
       applyLook();
     };
   }
+  boardScale(look.boardScale);
+  wireResize();
   wells("arrowColours", look.arrowColours);
   wells("circleColours", look.circleColours);
   applyLook();
@@ -330,6 +340,44 @@ function wells(parent: string, colours: Record<string, string>): void {
       applyLook();
     };
   }
+}
+
+// ── the board's size ───────────────────────────────────────────────────
+
+/** The dimension line under the board follows its width as it changes. */
+new ResizeObserver(() => ($("where").textContent = `${Math.round(host.getBoundingClientRect().width)} px · ${devicePixelRatio}x`)).observe(host);
+
+/** The grip at the board's corner: drag to make the board smaller or larger, double-click for full size, arrow keys step 5%. */
+function boardScale(scale: number): void {
+  look.boardScale = Math.round(Math.min(1, Math.max(0.4, scale)) * 100) / 100;
+  ($(".board-side") as HTMLElement).style.setProperty("--board-scale", String(look.boardScale));
+  $("resize").setAttribute("aria-valuenow", String(Math.round(look.boardScale * 100)));
+  localStorage.setItem(LOOK_KEY, JSON.stringify(look));
+}
+
+function wireResize(): void {
+  const grip = $("resize");
+  let pull: { x: number; y: number; start: number; full: number } | null = null;
+  grip.addEventListener("pointerdown", (e) => {
+    if (e.button !== 0) return;
+    e.preventDefault();
+    grip.setPointerCapture(e.pointerId);
+    const width = grip.parentElement!.getBoundingClientRect().width;
+    pull = { x: e.clientX, y: e.clientY, start: width, full: width / look.boardScale };
+  });
+  grip.addEventListener("pointermove", (e) => {
+    if (!pull) return;
+    // A corner is pulled along both axes: take the mean of the two.
+    boardScale((pull.start + (e.clientX - pull.x + (e.clientY - pull.y)) / 2) / pull.full);
+  });
+  for (const end of ["pointerup", "pointercancel", "lostpointercapture"]) grip.addEventListener(end, () => (pull = null));
+  grip.addEventListener("dblclick", () => boardScale(1));
+  grip.addEventListener("keydown", (e) => {
+    const step = e.key === "ArrowUp" || e.key === "ArrowRight" ? 0.05 : e.key === "ArrowDown" || e.key === "ArrowLeft" ? -0.05 : 0;
+    if (!step) return;
+    e.preventDefault();
+    boardScale(look.boardScale + step);
+  });
 }
 
 // ── measuring ──────────────────────────────────────────────────────────
@@ -395,13 +443,71 @@ setInterval(() => {
   $("s-gap").textContent = s.fps === null ? "–" : String(s.worstGap);
   $("s-set").textContent = counts.moves > 1 ? String(s.setMedian) : "–";
   $("s-input").textContent = samples.input.length ? String(s.inputMedian) : "–";
-  $("where").textContent = `${s.board} px · ${devicePixelRatio}x`;
   for (const list of Object.values(samples)) if (list.length > 600) list.splice(0, list.length - 600);
 }, 1000);
+
+// ── the comparison ─────────────────────────────────────────────────────
+
+interface Measured {
+  name: string;
+  version: string;
+  licence: string;
+  size: { js: number; jsWith: number | null; css: number };
+  atRest: { elements: number; paints: number; scriptCalls: number; frames: number; timers: number };
+  perMove: { frameCallbacks: number; domWrites: number; scriptMs: number; styleAndLayoutMs: number; paints: number };
+  whileStuck: number;
+  whileBusy: number;
+  replay: { workMs: number };
+  drag: { scriptMs: number; styleAndLayoutMs: number; frameCallbacks: number };
+}
+
+const kB = (bytes: number): string => `${(bytes / 1024).toFixed(1)} kB`;
+/** The rows of the table: a heading, or what is shown, why it matters, how to read it, and which way is better. */
+const ROWS: Array<string | [string, string, (b: Measured) => number, (n: number) => string, "low" | "high"]> = [
+  "To download",
+  ["Script, gzipped", "the board as it ships", (b) => b.size.js, kB, "low"],
+  ["Script with arrows, drawing and premove", "Lightsquare and cm-chessboard need extra parts for these; chessground ships them in one", (b) => b.size.jsWith ?? b.size.js, kB, "low"],
+  ["Styles, gzipped", "without the piece pictures", (b) => b.size.css, kB, "low"],
+  "At rest",
+  ["Elements on the page", "the starting position, with coordinates", (b) => b.atRest.elements, String, "low"],
+  ["Work in two seconds", "paints, script calls, frames and timers, added up", (b) => b.atRest.paints + b.atRest.scriptCalls + b.atRest.frames + b.atRest.timers, String, "low"],
+  "One sliding move",
+  ["Frames asked of the script", "how often the board's script must run during a slide", (b) => b.perMove.frameCallbacks, String, "low"],
+  ["Writes to the page", "", (b) => b.perMove.domWrites, String, "low"],
+  ["Script time", "", (b) => b.perMove.scriptMs, (n) => `${n.toFixed(2)} ms`, "low"],
+  ["Style and layout time", "", (b) => b.perMove.styleAndLayoutMs, (n) => `${n.toFixed(2)} ms`, "low"],
+  ["Paints", "", (b) => b.perMove.paints, (n) => n.toFixed(1), "low"],
+  "When the page's script is not free",
+  ["Pictures drawn of a slide while the script is frozen", "600 ms frozen, a 900 ms slide", (b) => b.whileStuck, String, "high"],
+  ["Pictures drawn of 12 moves while the script is busy half the time", "more means smoother", (b) => b.whileBusy, String, "high"],
+  "A slow processor",
+  ["Work to show a position, six times slowed", "main-thread time for each of 300 positions, no slide", (b) => b.replay.workMs, (n) => `${n.toFixed(2)} ms`, "low"],
+  "A drag with the mouse",
+  ["Script time", "one piece, two squares, 42 steps", (b) => b.drag.scriptMs, (n) => `${n.toFixed(1)} ms`, "low"],
+  ["Style and layout time", "", (b) => b.drag.styleAndLayoutMs, (n) => `${n.toFixed(1)} ms`, "low"],
+];
+
+async function showComparison(): Promise<void> {
+  const results = (await fetch("/results.json").then((r) => (r.ok ? r.json() : null)).catch(() => null)) as { date: string; browser: string; machine: string; slideMs: number; runs: number; boards: Record<string, Measured> } | null;
+  if (!results) return;
+  const boards = Object.values(results.boards);
+  const head = `<thead><tr><th></th>${boards.map((b, i) => `<th${i === 0 ? ' class="us"' : ""}>${b.name}<br>${b.version} · ${b.licence}</th>`).join("")}</tr></thead>`;
+  const body = ROWS.map((row) => {
+    if (typeof row === "string") return `<tr class="group"><td colspan="${boards.length + 1}">${row}</td></tr>`;
+    const [label, why, read, show, better] = row;
+    const values = boards.map(read);
+    const best = better === "low" ? Math.min(...values) : Math.max(...values);
+    return `<tr><td>${label}${why ? `<small>${why}</small>` : ""}</td>${values.map((v) => `<td${v === best ? ' class="best"' : ""}>${show(v)}</td>`).join("")}</tr>`;
+  }).join("");
+  $("bench").innerHTML = `${head}<tbody>${body}</tbody>`;
+  $("bench-note").textContent = `Measured ${results.date} in ${results.browser}, on a ${results.machine}. Every board had the same 400 pixel box, the same game and a ${results.slideMs} ms slide; each number is the middle one of ${results.runs} runs. The best in each row is marked. This is a desktop computer, not a phone: the frozen-script rows stand in for a phone that holds the script back, and are not a measurement of one.`;
+}
 
 $("smooth").onclick = () => send("feels smooth");
 $("rough").onclick = () => send("not smooth");
 addEventListener("pagehide", () => send("leaving"));
 
 show();
-void buildLooks();
+void showComparison();
+// The page says when it is fully built: its tests wait for this.
+void buildLooks().then(() => ((window as unknown as { ready: boolean }).ready = true));

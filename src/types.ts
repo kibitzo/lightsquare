@@ -77,6 +77,11 @@ export interface Surface {
   square(col: number, row: number): Square | null;
   /** The transform that puts a square-sized element on a square. */
   spot(square: Square): string;
+  /**
+   * Put a square-sized element on a square and leave its `transform` free,
+   * so a stylesheet may animate it (a pulse, a pop) without moving it.
+   */
+  anchor(el: HTMLElement, square: Square): void;
   pieces(): readonly Placed[];
   lastMove(): readonly [Square, Square] | null;
   selected(): Square | null;

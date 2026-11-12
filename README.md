@@ -49,6 +49,8 @@ page.
 - [docs/API.md](docs/API.md): everything the library offers.
 - `npm run bench`: the playground. Play, change the looks, measure on a
   phone.
+- [BENCHMARK.md](BENCHMARK.md): Lightsquare measured next to Lichess's
+  board and cm-chessboard, with the method and its limits.
 - [RULES.md](RULES.md): the hard rules every change obeys.
 - [ARCHITECTURE.md](ARCHITECTURE.md): the design, the comparison with other
   boards, how it is tested, the order of work.

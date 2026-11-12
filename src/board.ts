@@ -14,6 +14,7 @@ interface Core {
   coords: CoordView;
   modules: ModuleHooks[];
   spot(square: Square): string;
+  anchor(el: HTMLElement, square: Square): void;
   renderMarks(): void;
   /** Tell the modules that the board changed. */
   notify(): void;
@@ -65,7 +66,16 @@ function makeCore(host: HTMLElement): Core {
   const wide = typeof CSS !== "undefined" && CSS.supports("width", "1cqw");
   const place = (col: number, row: number): string => (wide ? `translate(${col * 12.5}cqw,${row * 12.5}cqw)` : `translate(${col * 100}%,${row * 100}%)`);
   const spot = (square: Square): string => place(...screenCell(square, s.orientation));
-  const marks = markView(host, marksLayer, spot, (square) => screenCell(square, s.orientation));
+  // Marks and an app's own HTML are placed with the separate `translate`
+  // property where the browser has it, so their `transform` stays free: an
+  // app's stylesheet can pulse or pop a mark without moving it off its square.
+  const free = typeof CSS !== "undefined" && CSS.supports("translate", "1px 1px");
+  const anchor = (el: HTMLElement, square: Square): void => {
+    if (!free) return void (el.style.transform = spot(square));
+    const [col, row] = screenCell(square, s.orientation);
+    el.style.translate = wide ? `${col * 12.5}cqw ${row * 12.5}cqw` : `${col * 100}% ${row * 100}%`;
+  };
+  const marks = markView(host, marksLayer, anchor, (square) => screenCell(square, s.orientation));
   const modules: ModuleHooks[] = [];
   return {
     s,
@@ -76,6 +86,7 @@ function makeCore(host: HTMLElement): Core {
     coords: coordView(host, piecesLayer, place),
     modules,
     spot,
+    anchor,
     renderMarks: () => marks.render(wantedMarks(s)),
     notify: () => modules.forEach((m) => m.update?.()),
   };
@@ -200,6 +211,7 @@ function makeSurface(c: Core, acts: Acts): Surface {
     cell: (square) => screenCell(square, s.orientation),
     square: (col, row) => cellSquare(col, row, s.orientation),
     spot: c.spot,
+    anchor: c.anchor,
     pieces: () => s.pieces,
     lastMove: () => s.lastMove,
     selected: () => s.selected,

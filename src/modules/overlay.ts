@@ -29,7 +29,7 @@ export function overlay(): Module<Overlay> {
     function place(box: HTMLElement, square: Square): void {
       const [col, row] = surface.cell(square);
       box.className = `ls-anchor${row === 0 ? " ls-at-top" : ""}${col === 7 ? " ls-at-right" : ""}`;
-      box.style.transform = surface.spot(square);
+      surface.anchor(box, square);
     }
 
     function remove(key: string): void {

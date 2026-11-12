@@ -100,7 +100,9 @@ The board places an element with the class `ls-mark-hint` (or
 as the move. A mark over the pieces that is on the top row or the right
 column of the screen also gets `ls-at-top` or `ls-at-right`, so a badge that
 hangs over its square's corner can stay inside the board there. Your
-stylesheet draws it:
+stylesheet draws it, and may animate the mark's `transform` (a pulse, a
+pop): the board places marks with the separate `translate` property, so an
+animation does not move a mark off its square.
 
 ```css
 .ls-mark-hint { background: rgba(16, 185, 129, 0.28); }

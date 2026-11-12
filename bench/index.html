@@ -4,79 +4,169 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0c1117">
-<title>Lightsquare playground</title>
+<title>Lightsquare: a chessboard that stays smooth on every phone</title>
+<meta name="description" content="Lightsquare is a small open-source chessboard for the web. Pieces are moved by the browser, not by script, so it stays smooth on old phones and in Low Power Mode.">
 <link rel="icon" type="image/svg+xml" href="/icon-small.svg">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <link rel="stylesheet" href="/lightsquare.css">
 <link rel="stylesheet" href="/pieces.css">
 <link rel="stylesheet" href="/pieces-extra.css">
 <style>
+  :root {
+    --bg: #0c1117; --line: rgba(148, 163, 184, 0.16); --line-strong: rgba(148, 163, 184, 0.3); --panel: rgba(148, 163, 184, 0.045);
+    --text: #cbd5e1; --dim: #94a3b8; --faint: #64748b; --bright: #f8fafc; --amber: #f59e0b; --amber-soft: #fbbf24;
+    --mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+    --sans: -apple-system, system-ui, "Segoe UI", Roboto, sans-serif;
+  }
   * { box-sizing: border-box; }
-  html, body { margin: 0; background: #0c1117; color: #cbd5e1; font: 15px/1.45 -apple-system, system-ui, "Segoe UI", sans-serif; -webkit-text-size-adjust: 100%; }
-  a { color: #fbbf24; text-decoration: none; }
+  html { scroll-behavior: smooth; }
+  /* A drawing sheet: a faint grid under everything. */
+  body { margin: 0; color: var(--text); font: 15px/1.5 var(--sans); -webkit-text-size-adjust: 100%; background: var(--bg) linear-gradient(rgba(148, 163, 184, 0.035) 1px, transparent 1px) 0 0 / 100% 32px, var(--bg) linear-gradient(90deg, rgba(148, 163, 184, 0.035) 1px, transparent 1px) 0 0 / 32px 100%; background-color: var(--bg); }
+  a { color: var(--amber-soft); text-decoration: none; }
   a:hover { text-decoration: underline; }
+  .page { max-width: 1240px; margin: 0 auto; padding: 18px 16px 64px; }
 
-  .page { max-width: 1240px; margin: 0 auto; padding: 14px 14px 48px; display: grid; gap: 16px; grid-template-columns: minmax(0, 1fr); }
-  header { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; }
-  /* The mark and the name as one unit: the letters as tall as the mark allows. */
-  .brand { display: flex; align-items: center; gap: 11px; }
-  .brand img { display: block; width: 44px; height: 44px; border-radius: 10px; }
-  h1 { margin: 0; font-size: 34px; line-height: 44px; font-weight: 700; letter-spacing: -0.025em; color: #f59e0b; }
-  header p { margin: 0; color: #94a3b8; font-size: 14px; }
-  .chips { display: flex; gap: 6px; margin-left: auto; }
-  .chip { padding: 3px 9px; border-radius: 999px; border: 1px solid rgba(148, 163, 184, 0.2); font-size: 12px; color: #94a3b8; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  /* ── top: the mark, the name, the line under it, the facts ── */
+  header { display: flex; flex-wrap: wrap; align-items: center; gap: 14px 24px; padding-bottom: 18px; border-bottom: 1px solid var(--line); }
+  /* The mark with the name and its line beside it, as one block: the tops
+     of the capitals level with the top of the mark, the line resting on its
+     bottom edge. The name takes the mark's parchment, not the page's amber. */
+  .brand { display: grid; grid-template-columns: auto minmax(0, 1fr); column-gap: 15px; }
+  .brand img { display: block; width: 60px; height: 60px; border-radius: 13px; box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45); }
+  .brand > div { display: flex; flex-direction: column; justify-content: space-between; height: 60px; }
+  /* The name is set heavy, in two tones taken from the mark: the bright
+     paper for "Light", the gold of its edge for "square". */
+  h1 { margin: -0.125em 0 0; font-size: 39px; line-height: 1; font-weight: 800; letter-spacing: -0.038em; color: #fdf3d8; }
+  h1 span { color: #d9ae5c; }
+  .tagline { margin: 0 0 -0.22em; font-size: 14.5px; line-height: 1.25; color: var(--dim); }
+  .tagline b { font-weight: 600; color: #e2e8f0; }
+  .facts { display: grid; grid-auto-flow: column; gap: 0; margin: 0 0 0 auto; padding: 0; list-style: none; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+  .facts li { padding: 7px 14px; border-left: 1px solid var(--line); }
+  .facts li:first-child { border-left: 0; }
+  .facts b { display: block; font: 600 15px/1.2 var(--mono); color: var(--bright); font-variant-numeric: tabular-nums; }
+  .facts small { font: 10.5px/1.3 var(--mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--faint); }
 
-  /* The board takes what the window gives it, and follows every pixel of a resize. */
-  .stage { display: flex; justify-content: center; min-width: 0; }
-  .frame { width: min(100%, calc(100vh - 120px)); min-width: 200px; padding: clamp(5px, 1.2vw, 12px); border-radius: 18px; background: linear-gradient(180deg, #17202b, #111821); border: 1px solid rgba(148, 163, 184, 0.14); box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5); }
-  #board, #board .ls-squares { border-radius: 6px; }
+  /* ── section headings: a number and a name, as on a drawing ── */
+  .eyebrow { display: flex; align-items: baseline; gap: 10px; margin: 0 0 12px; font: 600 11.5px/1 var(--mono); letter-spacing: 0.14em; text-transform: uppercase; color: var(--dim); }
+  .eyebrow i { font-style: normal; color: var(--amber); }
+  .eyebrow::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+  section.wide { margin-top: 44px; }
+  h2 { margin: 0 0 8px; font-size: 24px; line-height: 1.2; font-weight: 650; letter-spacing: -0.02em; color: var(--bright); }
+  .lede { margin: 0 0 20px; max-width: 68ch; color: var(--dim); }
 
-  .panel { display: grid; gap: 12px; align-content: start; min-width: 0; }
-  .card { padding: 14px; border-radius: 16px; border: 1px solid rgba(148, 163, 184, 0.14); background: rgba(148, 163, 184, 0.045); }
-  .card h2 { margin: 0 0 10px; font-size: 12px; font-weight: 600; letter-spacing: 0.09em; text-transform: uppercase; color: #f59e0b; }
-  .row { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 8px; }
-  .row + .row, .field + .row, .row + .field, .field + .field { margin-top: 10px; }
+  /* ── the stage: the board and its panel ── */
+  .stage { display: grid; gap: 18px; grid-template-columns: minmax(0, 1fr); margin-top: 22px; }
+  .board-side { min-width: 0; }
+  .frame { position: relative; width: calc(min(100%, calc(100vh - 190px)) * var(--board-scale)); min-width: 200px; margin: 0 auto; padding: clamp(5px, 1.2vw, 12px); border-radius: 16px; background: linear-gradient(180deg, #17202b, #111821); border: 1px solid var(--line); box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5); }
+  #board, #board .ls-squares { border-radius: 5px; }
+  /* A dimension line under the board, as on a technical drawing. */
+  .dimension { display: flex; align-items: center; gap: 10px; width: calc(min(100%, calc(100vh - 190px)) * var(--board-scale)); margin: 10px auto 0; padding: 0 clamp(5px, 1.2vw, 12px); font: 11.5px/1 var(--mono); color: var(--faint); font-variant-numeric: tabular-nums; }
+  .dimension::before, .dimension::after { content: ""; flex: 1; height: 7px; border: solid var(--line-strong); border-width: 0 1px; background: linear-gradient(var(--line-strong), var(--line-strong)) center / 100% 1px no-repeat; }
 
-  button { height: 44px; padding: 0 10px; border-radius: 12px; border: 1px solid rgba(148, 163, 184, 0.22); background: rgba(148, 163, 184, 0.08); color: #e2e8f0; font: inherit; font-size: 14px; font-weight: 500; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
-  button:hover { background: rgba(148, 163, 184, 0.14); }
-  button:active { background: rgba(148, 163, 184, 0.22); }
-  button[aria-pressed="true"] { background: rgba(245, 158, 11, 0.16); border-color: rgba(245, 158, 11, 0.55); color: #fbbf24; }
-  button.good { border-color: rgba(34, 197, 94, 0.45); color: #86efac; }
-  button.bad { border-color: rgba(239, 68, 68, 0.45); color: #fca5a5; }
+  /* The board can be made smaller with the grip at its corner, where there
+     is a mouse. On a phone it always takes the full width. */
+  .board-side { --board-scale: 1; }
+  .resize { position: absolute; right: -1px; bottom: -1px; display: none; align-items: center; justify-content: center; width: 22px; height: 22px; border: 1px solid var(--line-strong); border-radius: 5px 0 15px 0; background: #17202b; color: var(--dim); cursor: nwse-resize; touch-action: none; }
+  @media (hover: hover) and (pointer: fine) { .resize { display: flex; } }
+  .resize:hover, .resize:focus-visible { color: var(--amber-soft); border-color: var(--amber); outline: none; }
 
-  .field { display: grid; grid-template-columns: 76px minmax(0, 1fr) auto; align-items: center; gap: 10px; }
-  .field > span:first-child { font-size: 13px; color: #94a3b8; }
-  .field output { font-size: 12px; color: #94a3b8; font-variant-numeric: tabular-nums; min-width: 44px; text-align: right; }
-  input[type="range"] { width: 100%; height: 44px; margin: 0; accent-color: #f59e0b; background: transparent; }
-  .swatches { display: flex; flex-wrap: wrap; gap: 4px; grid-column: 2 / -1; }
-  .swatch { width: 44px; height: 44px; padding: 6px; border: 0; background: none; border-radius: 12px; }
-  .swatch:hover { background: rgba(148, 163, 184, 0.12); }
-  .swatch i { display: block; width: 100%; height: 100%; border-radius: 50%; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.18); }
-  .swatch[aria-pressed="true"] { background: rgba(245, 158, 11, 0.16); box-shadow: inset 0 0 0 1px rgba(245, 158, 11, 0.6); }
-  .segments { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 6px; grid-column: 2 / -1; }
-  pre { margin: 12px 0 0; padding: 10px 12px; border-radius: 12px; background: #0a0f15; border: 1px solid rgba(148, 163, 184, 0.12); color: #94a3b8; font: 12px/1.5 ui-monospace, "SF Mono", Menlo, monospace; white-space: pre-wrap; word-break: break-word; }
+  /* ── the inspector: one instrument panel with ruled rows ── */
+  .panel { min-width: 0; border: 1px solid var(--line-strong); border-radius: 6px; background: #0d131a; overflow: hidden; }
+  .sec + .sec { border-top: 1px solid var(--line-strong); }
+  .sec-h { display: flex; align-items: center; gap: 10px; height: 32px; margin: 0; padding: 0 12px; background: rgba(148, 163, 184, 0.06); border-bottom: 1px solid var(--line); font: 600 11px/1 var(--mono); letter-spacing: 0.14em; text-transform: uppercase; color: var(--dim); }
+  .sec-h i { font-style: normal; color: var(--amber); }
+  .sec-h span { margin-left: auto; font-weight: 400; letter-spacing: 0.02em; text-transform: none; color: var(--faint); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .bar { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 6px; padding: 10px 12px 0; }
+  .bar:last-child { padding-bottom: 12px; }
+  button { height: 36px; padding: 0 8px; border-radius: 4px; border: 1px solid var(--line-strong); background: transparent; color: #e2e8f0; font: 500 12px/1 var(--mono); letter-spacing: 0.02em; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+  button:hover { background: rgba(148, 163, 184, 0.1); }
+  button:active { background: rgba(148, 163, 184, 0.18); }
+  button[aria-pressed="true"] { background: rgba(245, 158, 11, 0.12); border-color: var(--amber); color: var(--amber-soft); }
+  button.good { border-color: rgba(34, 197, 94, 0.5); color: #86efac; }
+  button.bad { border-color: rgba(239, 68, 68, 0.5); color: #fca5a5; }
+  kbd { display: inline-block; min-width: 1.7em; padding: 1px 5px; border: 1px solid var(--line-strong); border-bottom-width: 2px; border-radius: 4px; font: 11px/1.5 var(--mono); color: #e2e8f0; text-align: center; }
+  .hint { margin: 0; padding: 10px 12px 12px; font-size: 12.5px; line-height: 1.55; color: var(--faint); }
+  .hint:empty { display: none; }
 
-  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; text-align: center; margin-bottom: 12px; }
-  .stats b { display: block; font-size: 19px; font-weight: 600; color: #f8fafc; font-variant-numeric: tabular-nums; }
-  .stats small { font-size: 11px; color: #94a3b8; }
-  .note { margin: 10px 0 0; font-size: 13px; color: #94a3b8; }
-  #sent { min-height: 18px; }
-
-  .wells { display: flex; flex-wrap: wrap; gap: 2px; grid-column: 2 / -1; }
-  .well { display: grid; justify-items: center; gap: 1px; width: 50px; padding: 4px 0 2px; border-radius: 10px; cursor: pointer; }
-  .well:hover { background: rgba(148, 163, 184, 0.12); }
-  .well input { width: 30px; height: 30px; padding: 0; border: 0; border-radius: 50%; background: none; cursor: pointer; -webkit-appearance: none; appearance: none; }
+  /* A property and its value, one per ruled row. */
+  .field { display: grid; grid-template-columns: 84px minmax(0, 1fr) auto; align-items: center; gap: 10px; min-height: 40px; padding: 3px 12px; border-top: 1px solid rgba(148, 163, 184, 0.09); }
+  .sec-h + .field { border-top: 0; }
+  .field > span:first-child { font: 11px/1.2 var(--mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--dim); }
+  .field output { font: 12px var(--mono); color: var(--bright); font-variant-numeric: tabular-nums; min-width: 52px; text-align: right; }
+  input[type="range"] { width: 100%; height: 28px; margin: 0; accent-color: var(--amber); background: transparent; }
+  .swatches, .wells, .badges { display: flex; flex-wrap: wrap; gap: 4px; grid-column: 2 / -1; }
+  .swatch { width: 32px; height: 32px; padding: 3px; border-color: transparent; }
+  .swatch i { display: block; width: 100%; height: 100%; border-radius: 2px; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.2); }
+  .swatch[aria-pressed="true"] { border-color: var(--amber); background: none; }
+  /* A switch with two or more positions: one ruled strip. */
+  .segments { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; grid-column: 2 / -1; border: 1px solid var(--line-strong); border-radius: 4px; overflow: hidden; }
+  .segments button { height: 30px; border: 0; border-left: 1px solid var(--line); border-radius: 0; }
+  .segments button:first-child { border-left: 0; }
+  .well { display: grid; justify-items: center; gap: 3px; width: 46px; padding: 4px 0 2px; cursor: pointer; }
+  .well input { width: 24px; height: 24px; padding: 0; border: 0; border-radius: 3px; background: none; cursor: pointer; -webkit-appearance: none; appearance: none; }
   .well input::-webkit-color-swatch-wrapper { padding: 0; }
-  .well input::-webkit-color-swatch { border: 1px solid rgba(255, 255, 255, 0.25); border-radius: 50%; }
-  .well input::-moz-color-swatch { border: 1px solid rgba(255, 255, 255, 0.25); border-radius: 50%; }
-  .well small { font-size: 10px; color: #94a3b8; }
-  .badges { display: flex; flex-wrap: wrap; gap: 4px; grid-column: 2 / -1; }
-  .badges button { height: 44px; min-width: 44px; padding: 0 8px; }
-  .badges .pick { padding: 0; border-color: transparent; background: none; }
-  .badges .pick:hover { background: rgba(148, 163, 184, 0.12); }
-  .badges .pick i { display: grid; place-items: center; width: 26px; height: 26px; margin: auto; border-radius: 50%; background: var(--badge); color: #fff; font: 900 12px/1 system-ui, sans-serif; font-style: normal; letter-spacing: -0.06em; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.45); }
+  .well input::-webkit-color-swatch { border: 1px solid rgba(255, 255, 255, 0.28); border-radius: 3px; }
+  .well input::-moz-color-swatch { border: 1px solid rgba(255, 255, 255, 0.28); border-radius: 3px; }
+  .well small { font: 10px/1 var(--mono); color: var(--faint); }
+  .badges button { height: 32px; min-width: 32px; padding: 0 8px; }
+  .badges .pick { padding: 0; border-color: transparent; }
+  .badges .pick i { display: grid; place-items: center; width: 22px; height: 22px; margin: auto; border-radius: 50%; background: var(--badge); color: #fff; font: 900 11px/1 var(--sans); font-style: normal; letter-spacing: -0.06em; }
   .badges .pick i::before { content: var(--glyph); }
-  .badges .pick[aria-pressed="true"] { background: rgba(245, 158, 11, 0.16); box-shadow: inset 0 0 0 1px rgba(245, 158, 11, 0.6); }
+  .badges .pick[aria-pressed="true"] { border-color: var(--amber); background: none; }
+  /* A finger needs larger targets than a mouse. */
+  @media (pointer: coarse) {
+    button, .segments button, .badges button { height: 44px; }
+    .swatch { width: 44px; height: 44px; padding: 6px; }
+    .badges button { min-width: 44px; }
+    input[type="range"] { height: 44px; }
+    .field { min-height: 50px; }
+  }
+
+  pre { margin: 0; padding: 14px 16px; border-radius: 12px; background: #0a0f15; border: 1px solid var(--line); color: #cbd5e1; font: 12.5px/1.6 var(--mono); overflow-x: auto; }
+  pre.out { border: 0; border-top: 1px solid var(--line); border-radius: 0; color: var(--dim); white-space: pre-wrap; word-break: break-word; font-size: 11.5px; }
+  pre .c { color: var(--faint); } pre .k { color: #f0abfc; } pre .s { color: #86efac; } pre .f { color: var(--amber-soft); }
+
+  /* The readout: four numbers, ruled apart. */
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); text-align: center; border-bottom: 1px solid var(--line); }
+  .stats div { padding: 10px 4px 9px; border-left: 1px solid var(--line); }
+  .stats div:first-child { border-left: 0; }
+  .stats b { display: block; font: 600 20px/1.15 var(--mono); color: var(--bright); font-variant-numeric: tabular-nums; }
+  .stats small { font: 10px/1.3 var(--mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--faint); }
+
+  /* ── how it works ── */
+  .flow { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 0; border: 1px solid var(--line); border-radius: 14px; overflow: hidden; background: var(--panel); counter-reset: step; }
+  .flow div { position: relative; padding: 16px 16px 18px; border-left: 1px solid var(--line); }
+  .flow div:first-child { border-left: 0; }
+  .flow div::before { counter-increment: step; content: "0" counter(step); display: block; margin-bottom: 8px; font: 600 11px var(--mono); letter-spacing: 0.1em; color: var(--amber); }
+  .flow b { display: block; margin-bottom: 4px; font-size: 15px; font-weight: 600; color: var(--bright); }
+  .flow p { margin: 0; font-size: 13.5px; color: var(--dim); }
+  .rules { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 10px 26px; margin: 20px 0 0; padding: 0; list-style: none; }
+  .rules li { padding-left: 16px; border-left: 2px solid rgba(245, 158, 11, 0.5); font-size: 13.5px; color: var(--dim); }
+  .rules b { display: block; font-weight: 600; color: #e2e8f0; }
+
+  /* ── numbers ── */
+  .table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 14px; background: var(--panel); }
+  table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+  th, td { padding: 10px 14px; text-align: right; border-top: 1px solid var(--line); white-space: nowrap; }
+  thead th { border-top: 0; font: 600 11px/1.3 var(--mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--dim); }
+  th:first-child, td:first-child { text-align: left; white-space: normal; }
+  td { font: 13px var(--mono); font-variant-numeric: tabular-nums; color: var(--text); }
+  td:first-child { font: 13.5px var(--sans); color: var(--text); }
+  td small { display: block; font: 12px/1.35 var(--sans); color: var(--faint); }
+  tr.group td { padding-top: 16px; font: 600 11px var(--mono); letter-spacing: 0.1em; text-transform: uppercase; color: var(--amber); }
+  td.best { color: var(--amber-soft); font-weight: 600; }
+  thead th.us { color: var(--amber); }
+  .small { margin: 12px 0 0; font-size: 12.5px; color: var(--faint); max-width: 80ch; }
+
+  .two { display: grid; grid-template-columns: minmax(0, 1fr); gap: 18px; }
+  .modules { margin: 0; padding: 0; list-style: none; border: 1px solid var(--line); border-radius: 14px; overflow: hidden; background: var(--panel); }
+  .modules li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 14px; padding: 10px 14px; border-top: 1px solid var(--line); }
+  .modules li:first-child { border-top: 0; }
+  .modules code { font: 13px var(--mono); color: var(--amber-soft); }
+  .modules span { grid-column: 1; font-size: 13px; color: var(--dim); }
+  .modules b { grid-row: 1 / 3; grid-column: 2; align-self: center; font: 600 13px var(--mono); color: var(--bright); font-variant-numeric: tabular-nums; }
+
+  footer { margin-top: 48px; padding-top: 18px; border-top: 1px solid var(--line); font: 12px/1.6 var(--mono); color: var(--faint); }
 
   /* Move-quality badges. Lightsquare places them (marks with above: true)
      and says when one is on the top row or the right column; this page
@@ -99,19 +189,21 @@
   }
   :is(.ls-mark-brilliant, .ls-mark-great, .ls-mark-excellent, .ls-mark-best, .ls-mark-inaccuracy, .ls-mark-mistake, .ls-mark-blunder, .ls-mark-book, .ls-mark-forced)::after {
     content: var(--glyph); position: absolute; top: calc(var(--bq) / -2); right: calc(var(--bq) / -2); width: var(--bq); height: var(--bq); border-radius: 50%; display: grid; place-items: center;
-    background: var(--badge); color: #fff; font: 900 calc(var(--bq) * 0.6)/1 system-ui, -apple-system, "Segoe UI", sans-serif; letter-spacing: -0.06em;
+    background: var(--badge); color: #fff; font: 900 calc(var(--bq) * 0.6)/1 var(--sans); letter-spacing: -0.06em;
     box-shadow: 0 0.25cqw 0.7cqw rgba(0, 0, 0, 0.45); animation: badge-pop 220ms cubic-bezier(0.2, 0.9, 0.3, 1.4);
   }
   .ls-mark.ls-at-top::after { top: 0.5cqw; }
   .ls-mark.ls-at-right::after { right: 0.5cqw; }
   @keyframes badge-pop { from { transform: scale(0.4); opacity: 0; } }
 
-  /* Check, as in Kibitzo: a soft red halo under the king that breathes.
+  /* Check: a red blush under the king that breathes, as in Kibitzo and of
+     the same size, a little stronger because the king hides the middle of
+     it.
      Kibitzo's breathes for as long as the king is in check; here it
      breathes three times and then holds still, unless the "Check" switch
      says forever (--check-loops). */
   .ls-mark-check {
-    background: radial-gradient(circle, rgba(239, 68, 68, 0.6) 0%, rgba(239, 68, 68, 0.4) 40%, rgba(239, 68, 68, 0) 75%);
+    background: radial-gradient(circle, rgba(239, 68, 68, 0.72) 0%, rgba(239, 68, 68, 0.52) 40%, rgba(239, 68, 68, 0.16) 60%, rgba(239, 68, 68, 0) 75%);
     opacity: 0.9;
     animation: check-pulse 1.4s ease-in-out var(--check-loops, 3);
   }
@@ -121,10 +213,11 @@
      with an impact and then holds still. Over it: a rose "#" on the
      square's top-right corner (inside the square at the board's edges)
      that grows out of its own centre, bounces and wobbles while eight
-     sparks fly out (Kibitzo's drops in from above). Every part runs once. The glow is a mark; the "#" and its sparks are HTML
-     put on the square with the overlay module. */
+     sparks fly out (Kibitzo's drops in from above). Every part runs once.
+     The glow is a mark; the "#" and its sparks are HTML put on the square
+     with the overlay module. */
   .ls-mark-mated {
-    background: radial-gradient(circle, rgba(159, 18, 18, 0.7) 0%, rgba(159, 18, 18, 0.45) 40%, rgba(159, 18, 18, 0.1) 68%, rgba(159, 18, 18, 0) 80%);
+    background: radial-gradient(circle, rgba(159, 18, 18, 0.8) 0%, rgba(159, 18, 18, 0.58) 40%, rgba(159, 18, 18, 0.18) 64%, rgba(159, 18, 18, 0) 80%);
     animation: mated-impact 0.55s cubic-bezier(0.34, 1.56, 0.64, 1);
   }
   @keyframes mated-impact { 0% { opacity: 0; transform: scale(1.6); } 55% { opacity: 1; transform: scale(0.94); } 100% { opacity: 1; transform: scale(1); } }
@@ -132,13 +225,17 @@
   .mate-badge {
     position: absolute; left: 100%; top: 0; width: 46%; height: 46%; transform: translate(-50%, -50%);
     display: flex; align-items: center; justify-content: center; border-radius: 9999px;
-    background: #be123c; color: #fff; font: 800 28cqw/1 system-ui, -apple-system, "Segoe UI", sans-serif;
+    background: #be123c; color: #fff; font: 800 28cqw/1 var(--sans);
     box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.3), 0 1px 2px rgba(0, 0, 0, 0.3); opacity: 0.85;
     animation: mate-badge 0.75s ease-in-out 0.2s backwards; pointer-events: none;
   }
   .ls-at-right > .mate .mate-badge { left: 77%; }
   .ls-at-top > .mate .mate-badge { top: 23%; }
-  @container lightsquare (max-width: 460px) { .ls-anchor .mate-badge { width: 56%; height: 56%; font-size: 34cqw; } }
+  @container lightsquare (max-width: 460px) {
+    .ls-anchor .mate-badge { width: 56%; height: 56%; font-size: 34cqw; }
+    .ls-at-right > .mate .mate-badge { left: 72%; }
+    .ls-at-top > .mate .mate-badge { top: 28%; }
+  }
   /* Kibitzo's bounce and wobble, but out of the badge's own centre: it never
      leaves its place. Each step eases in and out, so the swings flow into
      each other. */
@@ -160,79 +257,169 @@
     .ls-mark-check, .ls-mark-mated, [class*="ls-mark-"]::after { animation: none; }
     .mate-badge { animation: none; }
     .mate-sparks { display: none; }
+    html { scroll-behavior: auto; }
   }
 
+  @media (max-width: 919px) {
+    .facts { margin: 0; width: 100%; grid-auto-columns: 1fr; }
+    .facts li { padding: 7px 8px; text-align: center; }
+    .flow div { border-left: 0; border-top: 1px solid var(--line); }
+    .flow div:first-child { border-top: 0; }
+  }
   @media (min-width: 920px) {
-    .page { grid-template-columns: minmax(0, 1fr) 372px; align-items: start; padding-top: 20px; }
-    header { grid-column: 1 / -1; }
-    .stage { position: sticky; top: 16px; }
+    .page { padding-top: 24px; }
+    .stage { grid-template-columns: minmax(0, 1fr) 384px; align-items: start; }
+    .board-side { position: sticky; top: 16px; }
+    .two { grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); align-items: start; }
   }
 </style>
 </head>
 <body>
 <div class="page" id="page">
   <header>
-    <div class="brand"><img src="/icon.svg" width="44" height="44" alt=""><h1>Lightsquare</h1></div>
-    <p>A chessboard that stays smooth on every phone.</p>
-    <div class="chips"><span class="chip" id="where"></span><span class="chip">4.7 kB core</span></div>
+    <div class="brand">
+      <img src="/icon.svg" width="60" height="60" alt="">
+      <div>
+        <h1>Light<span>square</span></h1>
+        <p class="tagline">A chessboard that stays <b>smooth on every phone</b>.</p>
+      </div>
+    </div>
+    <ul class="facts" aria-label="Facts">
+      <li><b>4.7 kB</b><small>core, gzipped</small></li>
+      <li><b>0</b><small>dependencies</small></li>
+      <li><b>450+</b><small>tests</small></li>
+      <li><b>MIT</b><small>licence</small></li>
+    </ul>
   </header>
 
-  <div class="stage"><div class="frame"><div id="board"></div></div></div>
+  <div class="stage">
+    <div class="board-side">
+      <div class="frame">
+        <div id="board"></div>
+        <div class="resize" id="resize" role="slider" tabindex="0" aria-label="Board size" aria-valuemin="40" aria-valuemax="100" aria-valuenow="100" title="Drag to resize the board. Double-click for full size."><svg viewBox="0 0 12 12" width="12" height="12" aria-hidden="true"><path d="M11 4 4 11M11 8 8 11" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></div>
+      </div>
+      <div class="dimension" id="where" aria-hidden="true"></div>
+    </div>
 
-  <div class="panel">
-    <section class="card">
-      <h2>Play</h2>
-      <div class="row">
-        <button id="back" aria-label="Back one move">◀</button>
-        <button id="play" aria-pressed="false">Auto</button>
-        <button id="next" aria-label="Forward one move">▶</button>
-        <button id="flip">Flip</button>
-      </div>
-      <div class="row">
-        <button id="versus" aria-pressed="false">Vs computer</button>
-        <button id="hints" aria-pressed="false">Hint arrow</button>
-        <button id="samples" aria-pressed="false">Samples</button>
-      </div>
-      <p class="note">Drag or tap to play both sides. ◀ ▶ or the arrow keys step through Morphy's Opera game (↑ start, ↓ end, F flips). Against the computer you can premove while it thinks. On a computer, draw arrows with the right mouse button (Alt and Shift change the colour).</p>
-    </section>
+    <aside class="panel" aria-label="Controls">
+      <section class="sec">
+        <h3 class="sec-h"><i>01</i> Play <span>Morphy, Paris 1858</span></h3>
+        <div class="bar">
+          <button id="back" aria-label="Back one move">◀</button>
+          <button id="play" aria-pressed="false">Auto</button>
+          <button id="next" aria-label="Forward one move">▶</button>
+          <button id="flip">Flip</button>
+        </div>
+        <div class="bar">
+          <button id="versus" aria-pressed="false">Vs computer</button>
+          <button id="hints" aria-pressed="false">Hint arrow</button>
+          <button id="samples" aria-pressed="false">Samples</button>
+        </div>
+        <p class="hint">Drag or tap to play both sides. <kbd>←</kbd> <kbd>→</kbd> step through the Opera game, <kbd>↑</kbd> <kbd>↓</kbd> jump to its ends, <kbd>F</kbd> flips. Against the computer you can premove while it thinks. With a mouse, draw arrows with the right button; Alt and Shift change the colour.</p>
+      </section>
 
-    <section class="card">
-      <h2>Looks</h2>
-      <div class="field"><span>Board</span><div class="swatches" id="boards"></div></div>
-      <div class="field"><span>Pieces</span><div class="segments" id="sets"></div></div>
-      <div class="field"><span>Labels</span><div class="segments" id="labels"></div></div>
-      <div class="field"><span>Piece size</span><input id="pieceSize" type="range" min="70" max="100" step="1" aria-label="Piece size"><output id="pieceSizeOut"></output></div>
-      <div class="field"><span>Slide</span><input id="moveMs" type="range" min="0" max="400" step="10" aria-label="Slide time"><output id="moveMsOut"></output></div>
-      <div class="field"><span>Arrows</span><div class="wells" id="arrowColours"></div></div>
-      <div class="field"><span>Circles</span><div class="wells" id="circleColours"></div></div>
-      <div class="field"><span>Thickness</span><input id="arrowWidth" type="range" min="10" max="34" step="1" aria-label="Arrow thickness"><output id="arrowWidthOut"></output></div>
-      <div class="field"><span>Strength</span><input id="arrowHead" type="range" min="40" max="100" step="2" aria-label="Arrow strength"><output id="arrowHeadOut"></output></div>
-      <div class="field"><span>Badges</span><div class="badges" id="badges"></div></div>
-      <div class="field"><span>Check</span><div class="segments" id="checks"></div></div>
-      <pre id="theme" aria-label="The theme as data"></pre>
-    </section>
+      <section class="sec">
+        <h3 class="sec-h"><i>02</i> Looks <span>one object, for the whole page</span></h3>
+        <div class="field"><span>Board</span><div class="swatches" id="boards"></div></div>
+        <div class="field"><span>Pieces</span><div class="segments" id="sets"></div></div>
+        <div class="field"><span>Labels</span><div class="segments" id="labels"></div></div>
+        <div class="field"><span>Piece size</span><input id="pieceSize" type="range" min="70" max="100" step="1" aria-label="Piece size"><output id="pieceSizeOut"></output></div>
+        <div class="field"><span>Slide</span><input id="moveMs" type="range" min="0" max="400" step="10" aria-label="Slide time"><output id="moveMsOut"></output></div>
+        <div class="field"><span>Arrows</span><div class="wells" id="arrowColours"></div></div>
+        <div class="field"><span>Circles</span><div class="wells" id="circleColours"></div></div>
+        <div class="field"><span>Thickness</span><input id="arrowWidth" type="range" min="10" max="34" step="1" aria-label="Arrow thickness"><output id="arrowWidthOut"></output></div>
+        <div class="field"><span>Strength</span><input id="arrowHead" type="range" min="40" max="100" step="2" aria-label="Arrow strength"><output id="arrowHeadOut"></output></div>
+        <div class="field"><span>Badges</span><div class="badges" id="badges"></div></div>
+        <div class="field"><span>Check</span><div class="segments" id="checks"></div></div>
+        <pre class="out" id="theme" aria-label="The theme as data"></pre>
+      </section>
 
-    <section class="card">
-      <h2>Measure</h2>
-      <div class="stats">
-        <div><b id="s-fps">–</b><small>script fps</small></div>
-        <div><b id="s-gap">–</b><small>worst gap ms</small></div>
-        <div><b id="s-set">–</b><small>move cost ms</small></div>
-        <div><b id="s-input">–</b><small>finger delay ms</small></div>
-      </div>
-      <div class="row">
-        <button id="measure" aria-pressed="false">Measure</button>
-        <button id="stress" aria-pressed="false">Stuck script</button>
-        <button id="lpm" aria-pressed="false">Low Power</button>
-      </div>
-      <div class="row">
-        <button id="smooth" class="good">Feels smooth</button>
-        <button id="rough" class="bad">Not smooth</button>
-      </div>
-      <p class="note" id="sent"></p>
-      <p class="note">"Stuck script" freezes the page's script on and off: slides keep moving. Report how it feels once in Low Power Mode and once without, with the "Low Power" switch set to match. Compare with the <a href="https://lichess.org/analysis" target="_blank" rel="noopener">Lichess board</a>.</p>
-    </section>
+      <section class="sec">
+        <h3 class="sec-h"><i>03</i> Measure <span>on this device</span></h3>
+        <div class="stats">
+          <div><b id="s-fps">–</b><small>script fps</small></div>
+          <div><b id="s-gap">–</b><small>worst gap</small></div>
+          <div><b id="s-set">–</b><small>move, ms</small></div>
+          <div><b id="s-input">–</b><small>finger, ms</small></div>
+        </div>
+        <div class="bar">
+          <button id="measure" aria-pressed="false">Measure</button>
+          <button id="stress" aria-pressed="false">Stuck script</button>
+          <button id="lpm" aria-pressed="false">Low Power</button>
+        </div>
+        <div class="bar">
+          <button id="smooth" class="good">Feels smooth</button>
+          <button id="rough" class="bad">Not smooth</button>
+        </div>
+        <p class="hint" id="sent"></p>
+        <p class="hint">"Stuck script" freezes this page's script on and off. The slides keep moving, because the browser moves them, not the script.</p>
+      </section>
+    </aside>
   </div>
+
+  <section class="wide" id="how">
+    <div class="eyebrow"><i>04</i> How it stays smooth</div>
+    <h2>The browser moves the pieces. The script only says where.</h2>
+    <p class="lede">A phone in Low Power Mode lets a page's script run about 30 times a second, unevenly. A board that moves its pieces from script, frame by frame, is held to that. Lightsquare writes the new place of a piece once and hands the slide to the browser.</p>
+    <div class="flow">
+      <div><b>One state</b><p>The position, the marks and what may move are one plain object. Your app and the player's finger both change it.</p></div>
+      <div><b>Compare</b><p>The new state is compared with what is on screen. A piece that stays is not touched; a piece that moved keeps its element.</p></div>
+      <div><b>A few writes</b><p>A move is five small writes to the page, whatever the position. No measuring, no timers, no animation loop.</p></div>
+      <div><b>The browser slides</b><p>The piece gets a new transform and a CSS transition. From there no script runs until it has arrived.</p></div>
+    </div>
+    <ul class="rules">
+      <li><b>Transforms only</b>A moving piece changes its transform and nothing else.</li>
+      <li><b>Nothing at rest</b>A board that is not moving asks for no frame, no paint, no timer.</li>
+      <li><b>No chess rules inside</b>Your app says which moves are allowed. The board never judges.</li>
+      <li><b>Any size, no script</b>Places are fractions of the board's width. A resize runs nothing.</li>
+      <li><b>One measure per drag</b>The board is measured once, when the press begins.</li>
+      <li><b>Every rule has a test</b>The rules are checked against the source and in real browsers.</li>
+    </ul>
+  </section>
+
+  <section class="wide" id="numbers">
+    <div class="eyebrow"><i>05</i> Measured next to others</div>
+    <h2>The same game, the same browser, three boards.</h2>
+    <p class="lede" id="bench-lede">Each board is driven the same way and the browser's own counters are read. Where another board does better, the table says so.</p>
+    <div class="table-wrap"><table id="bench"><tbody><tr><td>No results yet. Run <code>npm run compare</code>.</td></tr></tbody></table></div>
+    <p class="small" id="bench-note"></p>
+  </section>
+
+  <section class="wide" id="use">
+    <div class="eyebrow"><i>06</i> Use it</div>
+    <div class="two">
+      <div>
+<pre><span class="k">import</span> { lightsquare } <span class="k">from</span> <span class="s">"lightsquare"</span>;
+<span class="k">import</span> { shapes } <span class="k">from</span> <span class="s">"lightsquare/shapes"</span>;
+<span class="k">import</span> <span class="s">"lightsquare/lightsquare.css"</span>;
+<span class="k">import</span> <span class="s">"lightsquare/pieces/cburnett.css"</span>;
+
+<span class="k">const</span> board = <span class="f">lightsquare</span>(element, {
+  movable: <span class="s">"white"</span>,
+  targets,                      <span class="c">// Map: where each piece may go</span>
+  <span class="f">onMove</span>({ from, to }) {
+    <span class="c">// your chess rules decide; then confirm or take back</span>
+    board.<span class="f">set</span>({ position: fenAfterTheMove });
+  },
+});
+
+board.<span class="f">use</span>(<span class="f">shapes</span>({ arrows: [{ from: <span class="s">"e2"</span>, to: <span class="s">"e4"</span> }], draw: <span class="k">true</span> }));</pre>
+        <p class="small">Not on npm yet: it goes there after it has run in Kibitzo for some weeks.</p>
+      </div>
+      <ul class="modules" aria-label="What you import, and its size gzipped">
+        <li><code>lightsquare</code><b>4.7 kB</b><span>pieces, marks, coordinates, tap and drag, premove</span></li>
+        <li><code>lightsquare/shapes</code><b>2.1 kB</b><span>arrows and circles, drawn by the app or the user</span></li>
+        <li><code>lightsquare/promotion</code><b>0.7 kB</b><span>the promotion picker</span></li>
+        <li><code>lightsquare/a11y</code><b>1.2 kB</b><span>screen readers and moves by keyboard</span></li>
+        <li><code>lightsquare/premove</code><b>0.8 kB</b><span>where a piece could premove to</span></li>
+        <li><code>lightsquare/theme</code><b>0.7 kB</b><span>looks as data, for one board or a whole page</span></li>
+        <li><code>lightsquare/overlay</code><b>0.5 kB</b><span>your own HTML on a square</span></li>
+        <li><code>lightsquare/react</code><b>0.5 kB</b><span>a React component</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <footer>Lightsquare · MIT · made for <a href="https://kibitzo.com">Kibitzo</a> · pieces by Colin M.L. Burnett (BSD)</footer>
 </div>
 <script type="module" src="/bench.js"></script>
 </body>

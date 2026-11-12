@@ -191,6 +191,26 @@ describe.each(PROFILES)("board in $name", (profile) => {
     expect(await page.evaluate(() => T.marks())).toEqual([]);
   });
 
+  it("an app's stylesheet can animate a mark's transform (a pulse, a pop) without moving it off its square", async () => {
+    await fresh(page, { check: "e8", marks: [{ square: "d4", name: "pulse" }, { square: "g2", name: "pop", above: true }] });
+    const places = await page.evaluate(async () => {
+      const style = document.head.appendChild(document.createElement("style"));
+      style.textContent = "@keyframes test-pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.3) rotate(20deg); } } .ls-mark-check, .ls-mark-pulse, .ls-mark-pop { animation: test-pulse 0.4s linear infinite; }";
+      await new Promise((r) => setTimeout(r, 130));
+      const centre = (name: string): string => {
+        const r = document.querySelector(`.ls-mark-${name}`)!.getBoundingClientRect();
+        const host = document.getElementById("board")!.getBoundingClientRect();
+        const size = host.width / 8;
+        return `${"abcdefgh"[Math.floor((r.left + r.width / 2 - host.left) / size)]}${8 - Math.floor((r.top + r.height / 2 - host.top) / size)}`;
+      };
+      const running = document.getAnimations().length;
+      const out = { check: centre("check"), pulse: centre("pulse"), pop: centre("pop"), running };
+      style.remove();
+      return out;
+    });
+    expect(places).toEqual({ check: "e8", pulse: "d4", pop: "g2", running: 3 });
+  });
+
   it("a mark on the top row or the right column says so, also after a flip, so badges can stay inside", async () => {
     await fresh(page, { position: "empty", marks: [{ square: "h8", name: "a", above: true }, { square: "a8", name: "b", above: true }, { square: "h1", name: "c", above: true }, { square: "d4", name: "d", above: true }, { square: "a1", name: "e" }] });
     expect(await page.evaluate(() => T.edges())).toEqual(["a top right", "b top", "c right", "d", "e"]);

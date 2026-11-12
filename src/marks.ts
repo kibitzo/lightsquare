@@ -30,17 +30,17 @@ export interface MarkView {
   destroy(): void;
 }
 
-export function markView(host: HTMLElement, under: HTMLElement, spot: (square: Square) => string, cell: (square: Square) => [number, number]): MarkView {
+export function markView(host: HTMLElement, under: HTMLElement, anchor: (el: HTMLElement, square: Square) => void, cell: (square: Square) => [number, number]): MarkView {
   const marks = new Map<string, { el: HTMLElement; square: Square; name: string; above: boolean }>();
 
   /**
    * Put a mark on its square. A mark over the pieces that is on the top
    * row or the right column says so (ls-at-top, ls-at-right), so a badge
    * that hangs over its square's corner can stay inside the board there.
-   * Marks under the pieces only ever get their transform written.
+   * Marks under the pieces only ever get their place written.
    */
   function place(el: HTMLElement, name: string, square: Square, above: boolean): void {
-    el.style.transform = spot(square);
+    anchor(el, square);
     if (!above && el.className) return;
     const [col, row] = above ? cell(square) : [0, 1];
     el.className = `ls-mark ls-mark-${name}${row === 0 ? " ls-at-top" : ""}${col === 7 ? " ls-at-right" : ""}`;

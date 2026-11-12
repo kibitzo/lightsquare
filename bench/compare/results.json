@@ -1,0 +1,141 @@
+{
+  "date": "2026-11-12",
+  "browser": "Chromium 149.0.7827.55 (headless), phone profile (Pixel 7: 412 by 915, 2.6x, touch)",
+  "machine": "Apple M4 Max, 14 cores",
+  "slideMs": 200,
+  "runs": 3,
+  "boards": {
+    "lightsquare": {
+      "name": "Lightsquare",
+      "version": "0.0.1",
+      "licence": "MIT",
+      "size": {
+        "js": 4839,
+        "jsWith": 6970,
+        "css": 1965
+      },
+      "atRest": {
+        "elements": 53,
+        "paints": 0,
+        "layouts": 0,
+        "styleRecalcs": 0,
+        "frames": 0,
+        "timers": 0,
+        "scriptCalls": 0
+      },
+      "perMove": {
+        "frameCallbacks": 0,
+        "timers": 0,
+        "layoutReads": 0,
+        "domWrites": 4,
+        "scriptMs": 0.06,
+        "styleAndLayoutMs": 0.67,
+        "styleRecalcs": 8,
+        "layouts": 0,
+        "paints": 7.3
+      },
+      "whileStuck": 51,
+      "whileBusy": 247,
+      "replay": {
+        "workMs": 0.01,
+        "wallMs": 0.1
+      },
+      "drag": {
+        "scriptMs": 4.31,
+        "styleAndLayoutMs": 3.86,
+        "layoutReads": 1,
+        "frameCallbacks": 0,
+        "domWrites": 53,
+        "moved": true
+      }
+    },
+    "chessground": {
+      "name": "chessground (Lichess)",
+      "version": "10.5.0",
+      "licence": "GPL-3.0",
+      "size": {
+        "js": 12192,
+        "jsWith": null,
+        "css": 1604
+      },
+      "atRest": {
+        "elements": 68,
+        "paints": 0,
+        "layouts": 0,
+        "styleRecalcs": 0,
+        "frames": 0,
+        "timers": 0,
+        "scriptCalls": 0
+      },
+      "perMove": {
+        "frameCallbacks": 25,
+        "timers": 0,
+        "layoutReads": 0,
+        "domWrites": 51,
+        "scriptMs": 3.26,
+        "styleAndLayoutMs": 1.74,
+        "styleRecalcs": 25,
+        "layouts": 0,
+        "paints": 4.3
+      },
+      "whileStuck": 0,
+      "whileBusy": 172,
+      "replay": {
+        "workMs": 0.01,
+        "wallMs": 0.05
+      },
+      "drag": {
+        "scriptMs": 3.96,
+        "styleAndLayoutMs": 1.92,
+        "layoutReads": 0,
+        "frameCallbacks": 45,
+        "domWrites": 51,
+        "moved": true
+      }
+    },
+    "cm-chessboard": {
+      "name": "cm-chessboard",
+      "version": "8.15.4",
+      "licence": "MIT",
+      "size": {
+        "js": 8340,
+        "jsWith": 11126,
+        "css": 1056
+      },
+      "atRest": {
+        "elements": 154,
+        "paints": 0,
+        "layouts": 0,
+        "styleRecalcs": 0,
+        "frames": 0,
+        "timers": 0,
+        "scriptCalls": 0
+      },
+      "perMove": {
+        "frameCallbacks": 25,
+        "timers": 0,
+        "layoutReads": 0,
+        "domWrites": 162,
+        "scriptMs": 2.54,
+        "styleAndLayoutMs": 3.99,
+        "styleRecalcs": 25,
+        "layouts": 24,
+        "paints": 48.3
+      },
+      "whileStuck": 0,
+      "whileBusy": 165,
+      "replay": {
+        "workMs": 3,
+        "wallMs": 16.73
+      },
+      "drag": {
+        "scriptMs": 5.22,
+        "styleAndLayoutMs": 4.77,
+        "layoutReads": 0,
+        "frameCallbacks": 2,
+        "domWrites": 163,
+        "moved": true
+      }
+    }
+  }
+}

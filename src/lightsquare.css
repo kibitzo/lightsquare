@@ -119,14 +119,8 @@
 
 /* Under the pointer. The only time a piece asks for its own GPU layer. */
 .ls-piece.ls-dragging {
-  --ls-grow: 1.1;
   z-index: 2;
   will-change: transform;
-}
-
-/* Held by a finger: larger, and raised above the fingertip by the script. */
-.ls-piece.ls-lifted {
-  --ls-grow: 1.7;
 }
 
 .ls-mark-last {
