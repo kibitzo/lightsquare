@@ -21,7 +21,8 @@ const check = (ok, text) => {
 
 rmSync(work, { recursive: true, force: true });
 mkdirSync(home, { recursive: true });
-const packed = execFileSync("npm", ["pack", "--silent", "--ignore-scripts", "--pack-destination", work], { cwd: root, encoding: "utf8" }).trim().split("\n").pop();
+// (--dry-run=false: inside "npm publish --dry-run" the setting is passed on, and the pack would write no file.)
+const packed = execFileSync("npm", ["pack", "--silent", "--ignore-scripts", "--dry-run=false", "--pack-destination", work], { cwd: root, encoding: "utf8" }).trim().split("\n").pop();
 const listing = execFileSync("tar", ["-tzf", work + packed], { encoding: "utf8" }).trim().split("\n").map((line) => line.replace(/^package\//, ""));
 execFileSync("tar", ["-xzf", work + packed, "-C", home, "--strip-components=1"]);
 

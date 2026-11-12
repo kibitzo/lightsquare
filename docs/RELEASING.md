@@ -2,27 +2,23 @@
 
 The package is `@kibitzo/lightsquare`. A release is made by pushing a version
 tag; GitHub then tests, builds, checks the packed file and publishes it
-(`.github/workflows/publish.yml`). Nobody publishes from a laptop, so every
-version on npm was built from a commit anyone can read, and npm shows that
+(`.github/workflows/publish.yml`). No npm token is stored anywhere: npm
+trusts that one workflow of this repository (a Trusted Publisher), and shows
+on the package's page which commit each version was built from
 (provenance).
 
-## Once, before the first release
+## Set up once
 
-1. On npmjs.com, the organisation `kibitzo` must exist and you must be a
-   member of it (Add organisation, the free plan: public packages cost
-   nothing).
-2. Make an access token that may publish: npmjs.com, Access Tokens, Generate
-   New Token, Granular Access Token, Read and write, limited to the
-   organisation `kibitzo`.
-3. Give it to the repository as the secret `NPM_TOKEN`:
+Done by a member of the organisation `kibitzo` on npmjs.com, in the
+package's Settings, under Trusted Publisher, GitHub Actions:
 
-       gh secret set NPM_TOKEN -R kibitzo/lightsquare
+- Organisation or user: `kibitzo`
+- Repository: `lightsquare`
+- Workflow filename: `publish.yml`
 
-   (it asks for the token; it is never written to a file here).
-
-After the first release the token can go: on npmjs.com, in the package's
-settings, name this repository and `publish.yml` as a Trusted Publisher,
-remove `NODE_AUTH_TOKEN` from the workflow and delete the secret.
+Version 0.1.0 is the one exception: npm sets a Trusted Publisher only for a
+package that exists, so the first version was published by hand from the
+tagged commit (`npm publish --access public`, approved in the browser).
 
 ## Every release
 
@@ -44,6 +40,9 @@ remove `NODE_AUTH_TOKEN` from the workflow and delete the secret.
 
 5. Watch the run (`gh run watch -R kibitzo/lightsquare`). When it is green:
    `npm view @kibitzo/lightsquare version` shows the new number.
+
+The workflow does nothing if that version is on npm already, so pushing a
+tag twice is harmless.
 
 A version that is on npm cannot be replaced. If a release is wrong, fix it
 and release the next number; `npm deprecate` marks the wrong one.

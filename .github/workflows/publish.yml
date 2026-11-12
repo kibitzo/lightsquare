@@ -1,8 +1,10 @@
 name: Publish
 
 # Publishes the package to npm when a version tag is pushed (v0.1.0), after
-# the same checks as CI and a check of the packed file itself. The steps a
-# person takes are in docs/RELEASING.md.
+# the same checks as CI and a check of the packed file itself. No token is
+# stored: npm trusts this workflow of this repository (a Trusted Publisher,
+# set in the package's settings on npmjs.com) and records where the version
+# was built. The steps a person takes are in docs/RELEASING.md.
 on:
   push:
     tags: ["v*"]
@@ -30,6 +32,14 @@ jobs:
       - run: npm run test:browser
       - run: npm run build
       - run: npm run check:package
-      - run: npm publish --provenance --access public --ignore-scripts
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      # Trusted publishing needs npm 11.5.1 or later; Node 22 brings an older one.
+      - run: npm install -g npm@latest
+      - name: Publish, unless this version is on npm already
+        run: |
+          NAME="$(node -p "require('./package.json').name")"
+          VERSION="$(node -p "require('./package.json').version")"
+          if npm view "$NAME@$VERSION" version >/dev/null 2>&1; then
+            echo "$NAME $VERSION is on npm already; nothing to publish."
+          else
+            npm publish --access public --ignore-scripts
+          fi
