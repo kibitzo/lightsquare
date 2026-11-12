@@ -193,15 +193,30 @@ Looks are CSS, so they cost no script and one setting reaches every board.
   class. An app stores one theme per user and applies it to the page.
 - **Arrows.** Colours are variables per name (`--ls-shape-red`); the
   thickness and the head are numbers given to the shapes module.
-- **Sizing is CSS.** The board takes the width of its container and is
-  square. Pieces, marks and coordinates are placed in fractions of the
-  board's width (`cqw`), so a resize runs no script and every width is
-  exact. The first version placed pieces in percent of their own box and
-  had to round the board to a multiple of 8 pixels, because Safari measures
-  such a transform on the pixel-snapped box (on a board 203 px wide the
-  h-file pieces sat 2.6 px off). Container units removed both the drift
-  and the rounding. The dark squares are one path for the same reason: a
-  tiled background is snapped to whole pixels by the browser.
+- **Sizing is CSS.** The board is square and takes the width of its
+  container, rounded down to a multiple of 8 pixels (`round(down, 100%,
+  8px)`: at most 7 pixels less). Pieces, marks and coordinates are placed
+  in fractions of the board's width (`cqw`), so a resize runs no script.
+  The history, because it went back and forth: the first version placed
+  pieces in percent of their own box and rounded the board to a multiple
+  of 8 pixels in script, because Safari measures such a transform on the
+  pixel-snapped box (on a board 203 px wide the h-file pieces sat 2.6 px
+  off). Container units removed the drift, and the rounding went with it:
+  every place was exact at every width. The places were; the painting was
+  not. On kibitzo.com in Safari (2026-11-12) a thin line of the bare
+  square showed beside the yellow of the last move: at a width where a
+  square is not a whole number of pixels, the drawing of the dark squares
+  and a mark placed by a transform are rounded differently. Measured in
+  Chromium and WebKit at 1, 2 and 3 device pixels to a pixel: thousands of
+  such pixels at odd widths, none with whole squares
+  (`tests/browser/seams.test.ts`). So the rounding is back, now done by
+  the browser. Where a square cannot be a whole number of device pixels (a
+  zoomed page, an Android phone at 2.625) an edge pixel is shared between
+  a square and its neighbour, but no line of the bare square shows.
+  Rounding to whole device pixels (`8px` divided by the pixel density) was tried and was
+  worse: the board's width in CSS pixels is then a fraction, and the
+  places go off again. The dark squares are one path for the same reason
+  as before: a tiled background is snapped to whole pixels by the browser.
 
 ## 9. Compared
 

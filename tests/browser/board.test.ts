@@ -315,7 +315,8 @@ describe.each(PROFILES)("board in $name", (profile) => {
       return { seen, log: watch.stop() };
     });
     expect(result.log).toEqual([]);
-    expect(result.seen.map((s) => s.width)).toEqual([203, 317, 151]);
+    // The widest width that gives whole squares (seams.test.ts), worked out by the browser.
+    expect(result.seen.map((s) => s.width)).toEqual([200, 312, 144]);
     for (const s of result.seen) {
       expect(s.off).toBeLessThan(0.02);
       expect(s.fen).toBe(START);

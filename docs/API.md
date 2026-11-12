@@ -13,8 +13,12 @@ import "@kibitzo/lightsquare/pieces/cburnett.css";
 const board = lightsquare(document.getElementById("board")!, { movable: "white" });
 ```
 
-The element becomes the board. It takes the width of its container and is
-square, at any size. Give the container a width.
+The element becomes the board. It is square and takes the width of its
+container, rounded down to a multiple of 8 pixels (so at most 7 pixels
+less): every square is then a whole number of pixels wide, and squares,
+marks and pieces meet exactly. Give the width to the container, not to the
+element; to keep the board in the middle of a wider container, centre it as
+you would any block (`margin-inline: auto`).
 
 Lightsquare knows no chess rules. Your app (with a library such as chess.js)
 says which moves are allowed and what the position is after a move.

@@ -39,7 +39,12 @@ unevenly (gaps of 33 and 50 ms).
 4. **Places are fractions of the board's width.** A piece is placed with
    `translate(N * 12.5cqw, M * 12.5cqw)`: the board is a CSS container, so
    the browser works the place out at every size. Resizing the board needs
-   no script, no measuring, no re-render, and the board may have any width.
+   no script, no measuring, no re-render. The board takes the width of its
+   container less what is left over when that width is shared out in whole
+   pixels among eight squares (`round(down, 100%, 8px)`, 7 pixels at most),
+   so the squares, the marks and the pieces meet on the same pixel; at
+   other widths a thin line of the bare square showed beside a mark
+   (measured 2026-11-12 in both engines, `tests/browser/seams.test.ts`).
    Percent of the piece's own box (`translate(N * 100%, ...)`) is only the
    fallback for browsers without container units: Safari measures it on the
    pixel-snapped box, and pieces drift by up to 3 pixels at odd widths
@@ -52,8 +57,11 @@ unevenly (gaps of 33 and 50 ms).
    background colour; the dark ones are a single path, drawn once and never
    touched. Not 64 elements, and not a tiled background: browsers snap
    tiles to whole pixels, which puts the squares up to 1.5 pixels away from
-   the pieces at odd widths (measured 2026-11-12). Highlights and markers
-   are a few elements on their own layer, created only while they are shown.
+   the pieces at odd widths (measured 2026-11-12). The path is drawn
+   without `shape-rendering: crispEdges`, which moves a square's edge to
+   the next whole pixel while a mark placed by a transform stays where it
+   is. Highlights and markers are a few elements on their own layer,
+   created only while they are shown.
 
 6. **One set of input listeners for the whole board.** Pointer events on the
    board element, never one listener per piece or per square. During a drag

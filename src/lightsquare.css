@@ -20,7 +20,16 @@
   --_hover: var(--ls-hover, var(--_target));
   --_premove: var(--ls-premove, rgba(90, 90, 90, 0.45));
   position: relative;
+  /* The board is as wide as its container, less what is left over when that
+     width is shared out in whole pixels among eight squares (7 pixels at
+     most). With a square a whole number of pixels wide, the squares, the
+     marks and the pieces meet on the same pixel; at other widths a thin
+     line of the bare square showed beside a mark. The max-width holds when
+     an app's own rule gives the element all of the width. Browsers without
+     round() keep the full width. */
   width: 100%;
+  width: round(down, 100%, 8px);
+  max-width: round(down, 100%, 8px);
   aspect-ratio: 1;
   /* The light squares, over an optional picture. The dark squares are one
      shape on top (.ls-squares). */
@@ -49,11 +58,14 @@
   pointer-events: none;
 }
 
+/* No shape-rendering: crispEdges here. It moved a square's edge to the next
+   whole pixel where the marks and pieces, placed by a transform, stayed
+   put: the line beside the mark again, wherever a square is not a whole
+   number of pixels (a zoomed page, many Android phones). */
 .ls-squares {
   width: 100%;
   height: 100%;
   fill: var(--_dark);
-  shape-rendering: crispEdges;
 }
 
 /* Bottom to top. A dragged piece is lifted above everything with its layer. */
