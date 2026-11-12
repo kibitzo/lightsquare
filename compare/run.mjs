@@ -24,11 +24,19 @@ if (!existsSync(`${root}dist/index.js`)) {
 }
 const version = (name) => JSON.parse(readFileSync(`${here}node_modules/${name}/package.json`, "utf8")).version;
 
-/** The boards, in the order of the report. `also` are the parts a board needs to match what the others ship in one piece. */
+/**
+ * The boards, in the order of the report. `also` are the parts a board needs
+ * for arrows, drawing by the user and premove: null when its one file has
+ * them, false when it does not offer them. `needs` is what a board cannot
+ * run without; `outside` of that is not counted in its size, because an app
+ * that picks the board has it already.
+ */
 const LIBS = [
   { id: "lightsquare", name: "Lightsquare", version: JSON.parse(readFileSync(`${root}package.json`, "utf8")).version, licence: "MIT", entry: `export * from "../dist/index.js"`, also: `export * from "../dist/index.js"; export * from "../dist/modules/shapes.js"; export * from "../dist/modules/premove.js"`, css: ["dist/lightsquare.css"] },
   { id: "chessground", name: "chessground (Lichess)", version: version("@lichess-org/chessground"), licence: "GPL-3.0", entry: `export { Chessground } from "@lichess-org/chessground"`, also: null, css: ["compare/node_modules/@lichess-org/chessground/assets/chessground.base.css", "compare/node_modules/@lichess-org/chessground/assets/chessground.brown.css"] },
   { id: "cm-chessboard", name: "cm-chessboard", version: version("cm-chessboard"), licence: "MIT", entry: `export { Chessboard } from "cm-chessboard/src/Chessboard.js"`, also: `export { Chessboard } from "cm-chessboard/src/Chessboard.js"; export { Markers } from "cm-chessboard/src/extensions/markers/Markers.js"; export { Arrows } from "cm-chessboard/src/extensions/arrows/Arrows.js"; export { RightClickAnnotator } from "cm-chessboard/src/extensions/right-click-annotator/RightClickAnnotator.js"`, css: ["compare/node_modules/cm-chessboard/assets/chessboard.css"] },
+  { id: "react-chessboard", name: "react-chessboard", version: version("react-chessboard"), licence: "MIT", needs: `React ${version("react")}`, outside: ["react", "react-dom", "react/jsx-runtime", "react-dom/client"], entry: `export { Chessboard } from "react-chessboard"`, also: null, css: [] },
+  { id: "chessboardjs", name: "chessboard.js", version: version("@chrisoakman/chessboardjs"), licence: "MIT", needs: `jQuery ${version("jquery")}`, entry: `import "./adapters/jquery-global.ts"; import "@chrisoakman/chessboardjs/dist/chessboard-1.0.0.js"`, also: false, css: ["compare/node_modules/@chrisoakman/chessboardjs/dist/chessboard-1.0.0.css"] },
 ];
 
 const SLIDE_MS = 200;
@@ -45,15 +53,17 @@ const median = (list) => [...list].sort((a, b) => a - b)[Math.floor(list.length 
 const round = (n, digits = 2) => Math.round(n * 10 ** digits) / 10 ** digits;
 const gz = (bytes) => gzipSync(bytes, { level: 9 }).length;
 
-async function bundle(contents, minify = true) {
-  const out = await build({ stdin: { contents, resolveDir: here, loader: "ts" }, bundle: true, format: "esm", minify, target: "es2020", write: false, logLevel: "silent" });
+/** One file out of an entry. Libraries that ask for it get their production build, as an app would ship them. */
+async function bundle(contents, minify = true, external = []) {
+  const out = await build({ stdin: { contents, resolveDir: here, loader: "ts" }, bundle: true, format: "esm", minify, external, define: { "process.env.NODE_ENV": '"production"' }, target: "es2020", write: false, logLevel: "silent" });
   return out.outputFiles[0].contents;
 }
 
 async function sizes(lib) {
   const css = Buffer.concat(lib.css.map((file) => readFileSync(root + file)));
   const minCss = (await build({ stdin: { contents: css.toString(), loader: "css" }, minify: true, write: false, logLevel: "silent" })).outputFiles[0].contents;
-  return { js: gz(await bundle(lib.entry)), jsWith: lib.also ? gz(await bundle(lib.also)) : null, css: gz(minCss) };
+  // jsWith: a size, null when the one file has those parts already, false when the board does not offer them. css: null when the board has no stylesheet.
+  return { js: gz(await bundle(lib.entry, true, lib.outside)), jsWith: lib.also ? gz(await bundle(lib.also, true, lib.outside)) : lib.also, css: lib.css.length ? gz(minCss) : null };
 }
 
 const MIME = { ".html": "text/html; charset=utf-8", ".js": "text/javascript", ".css": "text/css", ".svg": "image/svg+xml" };
@@ -290,28 +300,32 @@ async function steady(measure) {
 const kB = (bytes) => `${(bytes / 1024).toFixed(1)} kB`;
 /** A time too small to print is said to be so, not shown as zero. */
 const ms = (digits) => (n) => (n < 10 ** -digits ? `under ${10 ** -digits} ms` : `${n.toFixed(digits)} ms`);
-/** The rows of the report: a heading, or a label, how to read a board's number, how to print it, and which way is better. */
+/**
+ * The rows of the report: a heading, or a label, how to read a board's
+ * number (null when the board has none), how to print it, which way is
+ * better, and optionally a note for the page and what to print for "none".
+ */
 const ROWS = [
   "To download",
-  ["Script, gzipped", (b) => b.size.js, kB, "low"],
-  ["Script with arrows, drawing by the user and premove", (b) => b.size.jsWith ?? b.size.js, kB, "low"],
-  ["Styles, gzipped, without piece pictures", (b) => b.size.css, kB, "low"],
+  ["Script, gzipped", (b) => b.size.js, kB, "low", { note: "the board as it ships, with what it cannot run without" }],
+  ["Script with arrows, drawing by the user and premove", (b) => (b.size.jsWith === false ? null : b.size.jsWith ?? b.size.js), kB, "low", { note: "some boards need extra parts for these, some ship them in one file", none: "not offered" }],
+  ["Styles, gzipped, without piece pictures", (b) => b.size.css, kB, "low", { none: "in the script" }],
   "At rest",
   ["Elements on the page (starting position, with coordinates)", (b) => b.atRest.elements, String, "low"],
   ["Paints, script calls, frames and timers in two seconds", (b) => b.atRest.paints + b.atRest.scriptCalls + b.atRest.frames + b.atRest.timers, String, "low"],
   "One sliding move (middle value of 20 moves)",
-  ["Frames asked of the script", (b) => b.perMove.frameCallbacks, String, "low"],
+  ["Frames asked of the script", (b) => b.perMove.frameCallbacks, String, "low", { note: "how often the board's script must run during a slide" }],
   ["Writes to the page", (b) => b.perMove.domWrites, String, "low"],
   ["Layout reads", (b) => b.perMove.layoutReads, String, "low"],
   ["Script time", (b) => b.perMove.scriptMs, ms(2), "low"],
   ["Style and layout time", (b) => b.perMove.styleAndLayoutMs, ms(2), "low"],
   ["Paints", (b) => b.perMove.paints, (n) => n.toFixed(1), "low"],
   ["Paint time", (b) => b.perMove.paintMs, ms(2), "low"],
-  ["Raster time, off the main thread", (b) => b.perMove.rasterMs, ms(2), "low"],
-  ["Compositing time: layers, commit, drawing", (b) => b.perMove.compositeMs, ms(2), "low"],
+  ["Raster time, off the main thread", (b) => b.perMove.rasterMs, ms(2), "low", { note: "turning painted shapes into pixels" }],
+  ["Compositing time: layers, commit, drawing", (b) => b.perMove.compositeMs, ms(2), "low", { note: "drawn in software here, so compare boards only" }],
   "When the page's script is not free",
   ["Pictures drawn of a 900 ms slide while the script is frozen for 600 ms", (b) => b.whileStuck, String, "high"],
-  ["Pictures drawn of 12 moves while the script is busy half the time", (b) => b.whileBusy, String, "high"],
+  ["Pictures drawn of 12 moves while the script is busy half the time", (b) => b.whileBusy, String, "high", { note: "more means smoother" }],
   "A processor slowed six times",
   ["Main-thread work to show one position, no slide", (b) => b.replay.workMs, ms(3), "low"],
   "One piece dragged two squares with the mouse, in 42 steps",
@@ -320,6 +334,21 @@ const ROWS = [
   ["Layout reads", (b) => b.drag.layoutReads, String, "low"],
 ];
 
+/** The report as data: every row with its printed cells and which of them are the best. The page shows exactly this. */
+function table(results) {
+  const boards = Object.values(results.boards);
+  return ROWS.map((row) => {
+    if (typeof row === "string") return { group: row };
+    const [label, read, show, better, extra = {}] = row;
+    const values = boards.map(read);
+    const real = values.filter((v) => v !== null);
+    const best = better === "low" ? Math.min(...real) : Math.max(...real);
+    return { label, note: extra.note ?? "", cells: values.map((v) => ({ text: v === null ? extra.none ?? "none" : show(v), best: v !== null && v === best })) };
+  });
+}
+
+const COUNT = ["No", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight"];
+
 /** RESULTS.md: the table, how it was measured, and what it cannot show. */
 function report(results) {
   const boards = Object.values(results.boards);
@@ -327,24 +356,23 @@ function report(results) {
   /** Rows where Lightsquare does not have the best number: said in full, with who has it. */
   const behind = [];
   let heading = "";
-  for (const row of ROWS) {
-    if (typeof row === "string") {
-      heading = row;
-      lines.push(`| **${row}** | ${boards.map(() => "").join(" | ")} |`);
+  for (const row of table(results)) {
+    if (row.group) {
+      heading = row.group;
+      lines.push(`| **${row.group}** | ${boards.map(() => "").join(" | ")} |`);
       continue;
     }
-    const [label, read, show, better] = row;
-    const values = boards.map(read);
-    const best = better === "low" ? Math.min(...values) : Math.max(...values);
-    const leaders = boards.filter((_, i) => values[i] === best);
-    if (values[0] !== best) behind.push(`- **${heading.replace(/ \(.*\)$/, "")}, ${label[0].toLowerCase() + label.slice(1)}:** ${leaders.map((b) => b.name).join(" and ")} ${leaders.length > 1 ? "have" : "has"} ${show(best)}, Lightsquare ${show(values[0])}.`);
-    lines.push(`| ${label} | ${values.map((v) => (v === best && leaders.length < boards.length ? `**${show(v)}**` : show(v))).join(" | ")} |`);
+    const leaders = boards.filter((_, i) => row.cells[i].best);
+    const all = leaders.length === boards.length;
+    if (!row.cells[0].best) behind.push(`- **${heading.replace(/ \(.*\)$/, "")}, ${row.label[0].toLowerCase() + row.label.slice(1)}:** ${leaders.map((b) => b.name).join(" and ")} ${leaders.length > 1 ? "have" : "has"} ${row.cells[boards.indexOf(leaders[0])].text}, Lightsquare ${row.cells[0].text}.`);
+    lines.push(`| ${row.label} | ${row.cells.map((c) => (c.best && !all ? `**${c.text}**` : c.text)).join(" | ")} |`);
   }
+  const needs = boards.filter((b) => b.needs);
   return `# Lightsquare next to other boards
 
 Measured ${results.date}. Written by \`npm run measure\` in \`compare/\`; do not edit by hand.
 
-Three boards show the same game in the same browser, each driven the same
+${COUNT[boards.length] ?? boards.length} boards show the same game in the same browser, each driven the same
 way, and the browser's own counters are read. The best number in each row is
 in bold; where every board has the same number, none is.
 
@@ -375,6 +403,20 @@ ${behind.length ? behind.join("\n") : "In this run, nowhere."}
   with esbuild, then gzipped. chessground ships arrows, drawing and premove
   in its one file; for Lightsquare and cm-chessboard the second size row
   adds the parts that do the same (cm-chessboard has no premove).
+  react-chessboard has arrows and drawing in its one file and no premove;
+  its styles are written by its script, so it has no stylesheet.
+  chessboard.js offers none of the three.
+- **What a board cannot run without:** ${needs.length ? needs.map((b) => `${b.name} needs ${b.needs}`).join("; ") : "nothing"}. jQuery is counted in the size of chessboard.js, since
+  few apps have it otherwise. React is not counted in the size of
+  react-chessboard, since an app that picks it has React already; the drag
+  library it brings along is counted. React runs in its production build,
+  and every change of the position is one React update, as when an app
+  sets its state.
+  The time React spends is counted as the board's script time, because
+  whoever uses the board pays it.
+- **Piece pictures:** each board shows its own default set. chessboard.js
+  has none in its npm package and is given the Cburnett set, which is the
+  one its own site uses.
 - **The code** is in this folder: \`run.mjs\` and one small adapter per
   board in \`adapters/\`.
 
@@ -405,6 +447,7 @@ package.
 if (process.argv.includes("--sizes")) {
   const results = JSON.parse(readFileSync(`${here}results.json`, "utf8"));
   for (const lib of LIBS) results.boards[lib.id].size = await sizes(lib);
+  results.table = table(results);
   writeFileSync(`${here}results.json`, `${JSON.stringify(results, null, 2)}\n`);
   writeFileSync(`${here}RESULTS.md`, report(results));
   console.log(LIBS.map((lib) => `${lib.name} ${kB(results.boards[lib.id].size.js)}`).join(", "));
@@ -414,6 +457,30 @@ if (process.argv.includes("--sizes")) {
 if (process.argv.includes("--report")) {
   writeFileSync(`${here}RESULTS.md`, report(JSON.parse(readFileSync(`${here}results.json`, "utf8"))));
   console.log("RESULTS.md written from results.json");
+  process.exit(0);
+}
+
+// --shots: a picture of every board in the middle of a slow slide and after it, in ../.tmp/compare/, to see that each one really shows what is measured.
+if (process.argv.includes("--shots")) {
+  const { mkdirSync } = await import("node:fs");
+  mkdirSync(`${root}.tmp/compare`, { recursive: true });
+  const { server, origin } = await serve();
+  const browser = await chromium.launch();
+  for (const lib of LIBS) {
+    const { context, page, errors } = await open(browser, origin, lib, { fen: START, ms: 900 });
+    await page.waitForTimeout(500);
+    await page.evaluate((f) => void window.handle.set(f, true), GAME[0]);
+    await page.waitForTimeout(450);
+    await page.screenshot({ path: `${root}.tmp/compare/${lib.id}-mid.png`, clip: { x: 0, y: 0, width: 400, height: 400 } });
+    await page.waitForTimeout(900);
+    for (const fen of GAME.slice(1, 9)) await page.evaluate((f) => window.handle.set(f, false), fen);
+    await page.waitForTimeout(300);
+    await page.screenshot({ path: `${root}.tmp/compare/${lib.id}-end.png`, clip: { x: 0, y: 0, width: 400, height: 400 } });
+    console.log(`${lib.name}: ${errors.length ? errors.join("; ") : "no errors"}`);
+    await context.close();
+  }
+  await browser.close();
+  server.close();
   process.exit(0);
 }
 
@@ -453,10 +520,10 @@ if (only && !(only in MEASURES)) {
   process.exit(1);
 }
 const last = only ? JSON.parse(readFileSync(`${here}results.json`, "utf8")) : null;
-const results = { date: new Date().toISOString().slice(0, 10), browser: `Chromium ${browser.version()} (headless), phone profile (Pixel 7: 412 by 915, 2.6x, touch)`, machine: `${cpus()[0].model}, ${cpus().length} cores`, slideMs: SLIDE_MS, runs: RUNS, boards: {} };
+const results = { table: [], date: new Date().toISOString().slice(0, 10), browser: `Chromium ${browser.version()} (headless), phone profile (Pixel 7: 412 by 915, 2.6x, touch)`, machine: `${cpus()[0].model}, ${cpus().length} cores`, slideMs: SLIDE_MS, runs: RUNS, boards: {} };
 for (const lib of LIBS) {
   process.stdout.write(`${lib.name} ${lib.version}: `);
-  const board = { ...last?.boards[lib.id], name: lib.name, version: lib.version, licence: lib.licence, size: await sizes(lib) };
+  const board = { ...last?.boards[lib.id], name: lib.name, version: lib.version, licence: lib.licence, ...(lib.needs && { needs: lib.needs }), size: await sizes(lib) };
   for (const [key, measure] of Object.entries(MEASURES)) {
     if (only && key !== only) continue;
     board[key] = await steady(() => measure(browser, origin, lib));
@@ -467,6 +534,7 @@ for (const lib of LIBS) {
 }
 await browser.close();
 server.close();
+results.table = table(results);
 writeFileSync(`${here}results.json`, `${JSON.stringify(results, null, 2)}\n`);
 writeFileSync(`${here}RESULTS.md`, report(results));
 console.log(`results written to compare/results.json and compare/RESULTS.md`);

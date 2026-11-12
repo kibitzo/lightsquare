@@ -34,6 +34,10 @@
       "types": "./dist/modules/theme.d.ts",
       "import": "./dist/modules/theme.js"
     },
+    "./sounds": {
+      "types": "./dist/modules/sounds.d.ts",
+      "import": "./dist/modules/sounds.js"
+    },
     "./react": {
       "types": "./dist/react.d.ts",
       "import": "./dist/react.js"
@@ -54,7 +58,8 @@
     "test:browser": "vitest run --config vitest.browser.config.ts",
     "test:all": "vitest run && vitest run --config vitest.browser.config.ts",
     "bench": "node bench/server.mjs",
-    "icons": "node scripts/icons.mjs"
+    "icons": "node scripts/icons.mjs",
+    "demo": "node scripts/demo.mjs"
   },
   "keywords": [
     "chess",
@@ -64,7 +69,7 @@
     "performance"
   ],
   "author": "Kibitzo (https://kibitzo.com)",
-  "homepage": "https://kibitzo.com/lightsquare",
+  "homepage": "https://kibitzo.github.io/lightsquare/",
   "license": "MIT",
   "devDependencies": {
     "@types/node": "^22.20.5",

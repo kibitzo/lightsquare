@@ -18,6 +18,8 @@ const CSS = {
   lightsquare: ["/dist/lightsquare.css", "/dist/pieces/cburnett.css"],
   chessground: ["/compare/node_modules/@lichess-org/chessground/assets/chessground.base.css", "/compare/node_modules/@lichess-org/chessground/assets/chessground.brown.css", "/compare/node_modules/@lichess-org/chessground/assets/chessground.cburnett.css"],
   "cm-chessboard": ["/compare/node_modules/cm-chessboard/assets/chessboard.css"],
+  "react-chessboard": [],
+  chessboardjs: ["/compare/node_modules/@chrisoakman/chessboardjs/dist/chessboard-1.0.0.css"],
 };
 await Promise.all(CSS[lib].map((href) => new Promise((resolve, reject) => {
   const link = document.head.appendChild(document.createElement("link"));

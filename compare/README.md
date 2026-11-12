@@ -7,7 +7,8 @@ browser, each board driven the same way. The numbers are in
 This folder is a project of its own, kept apart from the library on purpose:
 
 - It has its own `package.json`, lockfile and type check. The other boards
-  (chessground, which is GPL, and cm-chessboard) are installed only here.
+  (chessground, which is GPL, cm-chessboard, react-chessboard and
+  chessboard.js) and what they need (React, jQuery) are installed only here.
 - Lightsquare's manifest, scripts, type check, tests and CI do not reach
   into this folder. A test of the library holds that line
   (`tests/unit/rules.test.ts`, "the comparison is a project of its own").
@@ -27,8 +28,8 @@ the numbers of `results.json` in a table.
 
 `npm run measure` builds Lightsquare first (the library's own tools must be
 installed at the top of the repository: `npm install` there), then measures
-the three boards and writes `results.json` and `RESULTS.md`. It takes a few
-minutes. Run nothing else in a browser on the machine meanwhile: it disturbs
+every board and writes `results.json` and `RESULTS.md`. It takes about a
+quarter of an hour. Run nothing else in a browser on the machine meanwhile: it disturbs
 the times.
 
 - `npm run sizes`: measure only the download sizes again.
@@ -36,6 +37,9 @@ the times.
 - `node run.mjs --only perMove`: measure one group again (`atRest`,
   `perMove`, `whileStuck`, `whileBusy`, `replay` or `drag`) and keep the
   rest of the last run.
+- `node run.mjs --shots`: a picture of every board in the middle of a slow
+  slide and after a few moves, in `../.tmp/compare/`, to see that each one
+  really shows what is measured. Look at them after adding a board.
 - `node run.mjs --paints`: where each board's rendering time goes for a
   move (painting, rastering, compositing), with a trial of Lightsquare
   keeping every piece on a layer of its own. A diagnosis tool; it writes

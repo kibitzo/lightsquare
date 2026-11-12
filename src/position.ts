@@ -104,6 +104,46 @@ function promotes(pawn: Placed, square: Square, code: PieceCode): boolean {
 }
 
 /**
+ * What a change of the pieces was, as far as the pieces tell. This is
+ * geometry, not rules: "move" is one piece to an empty square, "capture"
+ * a piece taken (also in passing), "castle" a king and a rook of its
+ * colour moving together, "promote" a pawn that became a piece, and
+ * "position" anything else (a new game, a jump of several moves).
+ */
+export interface Told {
+  kind: "move" | "capture" | "castle" | "promote" | "position";
+  /** The squares of the piece that moved (the king, when castling). Not set for "position". */
+  from?: Square;
+  to?: Square;
+  /** The piece that was taken, also when a promotion takes. */
+  captured?: PieceCode;
+}
+
+/** A change read from how the pieces pair; null if nothing changed. */
+export function whatChanged(before: readonly Placed[], { moved, added, removed }: Pairing): Told | null {
+  if (!moved.length && !added.length && !removed.length) return null;
+  const lead = moved.find((p) => p.code[1] === "k") ?? moved[0];
+  const castle = moved.length === 2 && !removed.length && lead.code[1] === "k" && moved.every((p) => p.code[0] === lead.code[0] && "kr".includes(p.code[1]));
+  if (added.length || removed.length > 1 || !(moved.length === 1 || castle)) return { kind: "position" };
+  const was = before.find((p) => p.id === lead.id)!;
+  const captured = removed[0]?.code;
+  return { kind: castle ? "castle" : was.code !== lead.code ? "promote" : captured ? "capture" : "move", from: was.square, to: lead.square, captured };
+}
+
+/**
+ * One piece moved on the board, read before the app has answered: a king's
+ * long step is castling, a pawn's slant onto an empty square takes in
+ * passing, and a pawn on the last row is about to be promoted.
+ */
+export function oneMove(mover: Placed, to: Square, taken: Placed | undefined): Told {
+  const [colour, type] = mover.code;
+  const pawn = type === "p";
+  const captured = taken?.code ?? (pawn && mover.square[0] !== to[0] ? ((colour === "w" ? "bp" : "wp") as PieceCode) : undefined);
+  const kind = pawn && "18".includes(to[1]) ? "promote" : type === "k" && Math.abs(mover.square.charCodeAt(0) - to.charCodeAt(0)) > 1 ? "castle" : captured ? "capture" : "move";
+  return { kind, from: mover.square, to, captured };
+}
+
+/**
  * Pair the pieces of the next position with the current ones, so moved
  * pieces keep their element and slide instead of being redrawn:
  * 1. a piece already on its square stays (same object, untouched);

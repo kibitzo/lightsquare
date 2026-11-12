@@ -5,14 +5,20 @@
 A chessboard for the web that stays smooth on every phone, including old
 ones and phones in Low Power Mode.
 
+**[Try the demo](https://kibitzo.github.io/lightsquare/)**: play on it,
+change its looks, hear it, and measure it on your own phone.
+
 - Pieces are moved by the browser, not by script: a move is one style change
   and a CSS transition. A slide keeps going even while the page's script is
   busy (a test shows this in Chromium; real phones are measured with the
   bench page).
 - At rest the board does nothing: no timers, no frames, no paints.
-- Small: the core is 4.7 kB (minified and gzipped) with no dependencies.
-  Arrows, the promotion picker, screen-reader support and the React
+- Small: the core is 5.2 kB (minified and gzipped) with no dependencies.
+  Arrows, the promotion picker, sounds, screen-reader support and the React
   component are separate imports of about 1 kB each.
+- Sounds in one line: `board.use(sounds())`. The board tells what every
+  change was (a move, a capture, castling, a promotion), so a sound, a move
+  list or a clock needs no work of its own to find out.
 - No chess rules inside: your app says which moves are allowed.
 - MIT.
 
@@ -48,9 +54,11 @@ page.
 
 - [docs/API.md](docs/API.md): everything the library offers.
 - `npm run bench`: the playground. Play, change the looks, measure on a
-  phone.
+  phone. `npm run demo` builds the same page as plain files (`site/`); it
+  is published at https://kibitzo.github.io/lightsquare/ on every push.
 - [compare/RESULTS.md](compare/RESULTS.md): Lightsquare measured next to
-  Lichess's board and cm-chessboard, with the method and its limits. The
+  four other boards (Lichess's chessground, cm-chessboard, react-chessboard
+  and chessboard.js), with the method and its limits. The
   comparison is a project of its own in `compare/`; the library does not
   depend on it.
 - [RULES.md](RULES.md): the hard rules every change obeys.

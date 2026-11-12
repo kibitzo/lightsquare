@@ -1,9 +1,9 @@
 import { attachInput, type Input } from "./input";
 import { coordView, layer, markView, squares, type CoordView, type MarkView } from "./marks";
 import { pieceView, type PieceView } from "./pieces";
-import { EMPTY, START, cellSquare, readFen, screenCell, writeFen, type Placed, type Square } from "./position";
+import { EMPTY, START, cellSquare, oneMove, pairPieces, readFen, screenCell, whatChanged, writeFen, type PieceCode, type Placed, type Square, type Told } from "./position";
 import { allows, at, canMove, canPremove, initial, wantedMarks, type State } from "./state";
-import type { Board, ModuleHooks, Options, Surface } from "./types";
+import type { Board, Change, ModuleHooks, Options, Surface } from "./types";
 
 interface Core {
   s: State;
@@ -16,8 +16,8 @@ interface Core {
   spot(square: Square): string;
   anchor(el: HTMLElement, square: Square): void;
   renderMarks(): void;
-  /** Tell the modules that the board changed. */
-  notify(): void;
+  /** Tell the modules that the board changed, and what the pieces did, if they did anything. */
+  notify(change?: Change | null): void;
 }
 
 interface Acts {
@@ -50,6 +50,7 @@ function take(s: State, o: Options): boolean {
   if (o.onSelect !== undefined) s.onSelect = o.onSelect;
   if (o.onPremove !== undefined) s.onPremove = o.onPremove;
   if (o.onTap !== undefined) s.onTap = o.onTap;
+  if (o.onChange !== undefined) s.onChange = o.onChange;
   return flipped;
 }
 
@@ -88,7 +89,7 @@ function makeCore(host: HTMLElement): Core {
     spot,
     anchor,
     renderMarks: () => marks.render(wantedMarks(s)),
-    notify: () => modules.forEach((m) => m.update?.()),
+    notify: (change) => modules.forEach((m) => m.update?.(change ?? undefined)),
   };
 }
 
@@ -119,11 +120,14 @@ function makeActs(c: Core): Acts {
       s.onPremove?.(s.premove);
       return;
     }
+    s.asked = { before: [...s.pieces], from, to };
     const taken = c.pieces.shift(s.pieces, from, to, slide);
+    const change: Change = { ...oneMove(mover, to, taken), by: "user", animated: true };
     s.lastMove = [from, to];
     c.renderMarks();
-    c.notify();
+    c.notify(change);
     tell();
+    s.onChange?.(change);
     s.onMove?.({ from, to, piece: mover.code, ...(taken && { captured: taken.code }) });
   }
 
@@ -171,10 +175,28 @@ function makeInput(c: Core, acts: Acts): Input {
   });
 }
 
+/**
+ * What the pieces did when the app set a position. The app's answer to a
+ * move of the user is not a change of its own when it is that same move,
+ * completed (the castling rook, the pawn taken in passing, the promoted
+ * piece) or taken back.
+ */
+function changeOf(s: State, shown: readonly Placed[], next: ReadonlyMap<Square, PieceCode>, told: Told | null, animated: boolean): Change | null {
+  const asked = s.asked;
+  s.asked = null;
+  if (!told) return null;
+  if (asked) {
+    const whole = whatChanged(asked.before, pairPieces(asked.before, next, () => 0));
+    if (!whole || (whole.from === asked.from && whole.to === asked.to)) return null;
+  }
+  return { ...told, by: "app", animated };
+}
+
 function makeSet(c: Core, acts: Acts, input: Input): Board["set"] {
   const { s, pieces } = c;
   let drawn = false;
   return (o, how) => {
+    let change: Change | null = null;
     const flipped = take(s, o);
     if (flipped) {
       input.abort();
@@ -184,7 +206,12 @@ function makeSet(c: Core, acts: Acts, input: Input): Board["set"] {
     }
     if (o.position !== undefined) {
       const fen = o.position === "start" ? START : o.position === "empty" ? EMPTY : o.position;
-      s.pieces = pieces.show(s.pieces, readFen(fen), drawn && !flipped && how?.animate !== false);
+      const next = readFen(fen);
+      const animated = drawn && !flipped && how?.animate !== false;
+      const shown = s.pieces;
+      const pairing = pieces.show(shown, next, animated);
+      s.pieces = pairing.placed;
+      change = drawn ? changeOf(s, shown, next, whatChanged(shown, pairing), animated) : null;
       input.sync();
     }
     const chosen = s.selected && at(s, s.selected);
@@ -197,8 +224,9 @@ function makeSet(c: Core, acts: Acts, input: Input): Board["set"] {
     c.coords.render(s.coordinates, s.orientation);
     c.renderMarks();
     drawn = true;
-    c.notify();
+    c.notify(change);
     tell();
+    if (change) s.onChange?.(change);
     if (lostPremove) s.onPremove?.(null);
   };
 }
@@ -214,6 +242,7 @@ function makeSurface(c: Core, acts: Acts): Surface {
     anchor: c.anchor,
     pieces: () => s.pieces,
     lastMove: () => s.lastMove,
+    check: () => s.check,
     selected: () => s.selected,
     tap: acts.tap,
   };
@@ -231,10 +260,14 @@ export function lightsquare(host: HTMLElement, options: Options = {}): Board {
   return {
     set,
     move(from, to) {
-      pieces.shift(s.pieces, from, to, true);
+      const mover = at(s, from);
+      const taken = pieces.shift(s.pieces, from, to, true);
+      const change: Change | null = mover && from !== to ? { ...oneMove(mover, to, taken), by: "app", animated: true } : null;
+      s.asked = null;
       input.sync();
       c.renderMarks();
-      c.notify();
+      c.notify(change);
+      if (change) s.onChange?.(change);
     },
     select(square) {
       acts.select(square && at(s, square) ? square : null);

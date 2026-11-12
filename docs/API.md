@@ -40,6 +40,7 @@ All are optional, at creation and in `board.set()`.
 | `onSelect` | `(square \| null) => void` | | The selection changed. |
 | `onPremove` | `([from, to] \| null) => void` | | The user set or cancelled a premove. |
 | `onTap` | `(square) => void` | | A press and release on one square, on any board. |
+| `onChange` | `(change) => void` | | The pieces changed, by the user or by the app: see "What changed". |
 
 ## The board
 
@@ -67,6 +68,35 @@ onMove({ from, to }) {
 
 A castling rook slides, a pawn taken en passant fades, a promoted pawn turns
 into its new piece: the board works these out from the two positions.
+
+## What changed
+
+`onChange` tells every change of the pieces, whoever made it: a move of the
+user, the opponent's move your app sets, a step through a game. It is what
+a sound, a move list or a clock listens to.
+
+```ts
+onChange({ kind, from, to, captured, by, animated }) {
+  // kind: "move" | "capture" | "castle" | "promote" | "position"
+  // by: "user" | "app"
+}
+```
+
+| Field | What |
+|---|---|
+| `kind` | `"move"`: one piece to an empty square. `"capture"`: a piece was taken, also in passing. `"castle"`: a king and its rook moved together. `"promote"`: a pawn became a piece. `"position"`: anything else, such as a new game or a jump of several moves. |
+| `from`, `to` | The squares of the piece that moved (the king, when castling). Not set for `"position"`. |
+| `captured` | The piece that was taken, also when a promotion takes. |
+| `by` | `"user"` for a move made on the board, `"app"` for a position your app set or `board.move()`. |
+| `animated` | The pieces slid. `false` for a position shown at once (`animate: false`). |
+
+The board reads this from the pieces; it knows no rules. A move of the user
+is told when it is made, before your app answers: a king's step of two
+squares is told as castling, a pawn's slant onto an empty square as a
+capture in passing, a pawn on the last row as a promotion. Your answer that
+completes such a move (the rook, the removed pawn, the new piece), or that
+takes the move back, is not told as a second change. Check and the end of a
+game are yours to tell: the board cannot know them.
 
 ## Premove
 
@@ -151,6 +181,44 @@ What the user draws is green; Alt gives blue and Shift yellow, so the user's
 arrows never look like the app's orange and red ones. Change this with
 `nameFor`. An arrow is slim while it is aimed and fills out when the button
 is let go. A left press on the board clears the user's drawing.
+
+### Sounds: `lightsquare/sounds`
+
+```ts
+import { sounds } from "lightsquare/sounds";
+
+const audio = board.use(sounds());      // that is all
+```
+
+A move, a capture, castling, a promotion and a check each have a sound. The
+sounds are made by the module (short knocks): there are no files to host.
+Use your own files for any of them, and add names of your own:
+
+```ts
+const audio = board.use(sounds({
+  files: { move: "/sounds/move.mp3", capture: "/sounds/capture.mp3", win: "/sounds/win.mp3" },
+  volume: 0.7,
+}));
+audio.play("end");                      // the game is over: yours to tell
+audio.play("win");
+audio.set({ muted: true });
+```
+
+- A move of the user sounds when it is made. A position your app sets
+  sounds when its pieces slide; a position shown at once (`animate: false`)
+  and a jump of several moves are silent, so stepping fast through a game
+  does not rattle.
+- One change, one sound. A check (the `check` option, newly set, in your
+  answer to the move or in the same `set`) takes the place of the move's
+  sound. `play()` takes the place of the sound of a change made in the same
+  task.
+- The built-in names are `move`, `capture`, `castle`, `promote`, `check`
+  and `end`.
+- A browser lets a page make sound only after the user has pressed
+  something; nothing is heard before the first press or key.
+
+If your app has its own sound code, use `onChange` instead: it tells the
+same things.
 
 ### Promotion picker: `lightsquare/promotion`
 
@@ -289,5 +357,7 @@ export function ruler(): Module<ModuleHooks & { hello(): string }> {
 ```
 
 `surface` gives the board element, the orientation, square and screen maths,
-the pieces, the last move, the selection, and `tap(square)`. A module obeys
+the pieces, the last move, the square in check, the selection, and
+`tap(square)`. `update(change)` gets what the pieces did, when they did
+anything (see "What changed"). A module obeys
 [RULES.md](../RULES.md) like the core.

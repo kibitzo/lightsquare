@@ -37,6 +37,7 @@ function complete(o: Options): Options {
     onSelect: o.onSelect ?? null,
     onPremove: o.onPremove ?? null,
     onTap: o.onTap ?? null,
+    onChange: o.onChange ?? null,
   };
 }
 

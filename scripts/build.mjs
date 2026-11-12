@@ -7,7 +7,7 @@ import { gzipSync } from "node:zlib";
 import { fileURLToPath } from "node:url";
 
 const root = fileURLToPath(new URL("../", import.meta.url));
-const modules = ["shapes", "promotion", "overlay", "a11y", "premove", "theme"];
+const modules = ["shapes", "promotion", "overlay", "a11y", "premove", "theme", "sounds"];
 const common = { absWorkingDir: root, bundle: true, format: "esm", minify: true, target: "es2020" };
 
 rmSync(`${root}dist`, { recursive: true, force: true });

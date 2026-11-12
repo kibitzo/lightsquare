@@ -95,7 +95,7 @@ describe("RULES.md", () => {
   });
 
   it("each module stays small", async () => {
-    const limit: Record<string, number> = { "shapes.ts": 2200, "promotion.ts": 1000, "overlay.ts": 700, "a11y.ts": 1700, "premove.ts": 1100, "theme.ts": 900 };
+    const limit: Record<string, number> = { "shapes.ts": 2200, "promotion.ts": 1000, "overlay.ts": 700, "a11y.ts": 1700, "premove.ts": 1100, "theme.ts": 900, "sounds.ts": 1500 };
     for (const [name, bytes] of Object.entries(limit)) {
       const out = await build({ absWorkingDir: root, entryPoints: [`src/modules/${name}`], bundle: true, format: "esm", minify: true, target: "es2020", write: false });
       expect(gzipSync(out.outputFiles[0].contents, { level: 9 }).length, name).toBeLessThan(bytes);
@@ -109,7 +109,7 @@ describe("RULES.md", () => {
   });
 
   it("rule 9: the comparison is a project of its own: the library's manifest, lockfile, scripts, configs, code and CI do not reach into it", () => {
-    const others = /chessground|cm-chessboard/i;
+    const others = /chessground|cm-chessboard|react-chessboard|chessboardjs|jquery/i;
     const manifest = JSON.parse(readFileSync(`${root}package.json`, "utf8"));
     const wanted = Object.keys({ ...manifest.dependencies, ...manifest.devDependencies, ...manifest.peerDependencies, ...manifest.optionalDependencies });
     expect(wanted.filter((name) => others.test(name))).toEqual([]);

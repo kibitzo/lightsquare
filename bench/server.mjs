@@ -13,12 +13,13 @@ import { spriteToCss } from "../scripts/sprite-to-css.mjs";
 const root = fileURLToPath(new URL("../", import.meta.url));
 const logDir = fileURLToPath(new URL("../.tmp/bench/", import.meta.url));
 
-async function bundle() {
+export async function bundle() {
   const out = await build({ absWorkingDir: root, entryPoints: ["bench/bench.ts"], bundle: true, format: "esm", target: "es2020", minify: true, write: false });
   return out.outputFiles[0].text;
 }
 
-const files = {
+/** The page's files: address, file in the repository, type. `scripts/demo.mjs` builds the published demo from the same list. */
+export const files = {
   "/": ["bench/index.html", "text/html; charset=utf-8"],
   "/lightsquare.css": ["src/lightsquare.css", "text/css"],
   "/pieces.css": ["src/pieces/cburnett.css", "text/css"],

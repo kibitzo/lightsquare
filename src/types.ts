@@ -1,4 +1,4 @@
-import type { Color, PieceCode, Placed, Square } from "./position";
+import type { Color, PieceCode, Placed, Square, Told } from "./position";
 
 /** For each square a piece stands on, the squares it may go to. */
 export type Targets = ReadonlyMap<Square, readonly Square[]>;
@@ -8,6 +8,18 @@ export interface UserMove {
   to: Square;
   piece: PieceCode;
   captured?: PieceCode;
+}
+
+/**
+ * The pieces changed: what it was (see `Told`), who did it and how. This is
+ * what a sound, a move list or a clock listens to; it comes for a move of
+ * the user and for a position set by the app alike.
+ */
+export interface Change extends Told {
+  /** "user": a move made on the board. "app": a position the app set, or `board.move()`. */
+  by: "user" | "app";
+  /** The pieces slid. False for a position shown at once (`animate: false`). */
+  animated: boolean;
 }
 
 /**
@@ -65,6 +77,13 @@ export interface Options {
   onPremove?: ((premove: readonly [Square, Square] | null) => void) | null;
   /** A press and release on one square, on any board, movable or not. */
   onTap?: ((square: Square) => void) | null;
+  /**
+   * The pieces changed, by the user or by the app. A move of the user is
+   * told once, when it is made: the app's answer that completes it (the
+   * castling rook, the pawn taken in passing, the promoted piece) or takes
+   * it back is not a second change.
+   */
+  onChange?: ((change: Change) => void) | null;
 }
 
 /** What a module gets from the board. Modules import nothing from the core. */
@@ -84,6 +103,8 @@ export interface Surface {
   anchor(el: HTMLElement, square: Square): void;
   pieces(): readonly Placed[];
   lastMove(): readonly [Square, Square] | null;
+  /** The square of the king in check, as the app set it. */
+  check(): Square | null;
   selected(): Square | null;
   /** The same as a tap on the square: select, move or unselect. */
   tap(square: Square): void;
@@ -91,8 +112,8 @@ export interface Surface {
 
 /** What a module may give back. The board calls these; the rest is the module's own API. */
 export interface ModuleHooks {
-  /** After every change of the board, in the same task. */
-  update?(): void;
+  /** After every change of the board, in the same task. `change` is given when the pieces changed (see `onChange`). */
+  update?(change?: Change): void;
   destroy?(): void;
 }
 

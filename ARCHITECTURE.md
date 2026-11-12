@@ -68,17 +68,18 @@ that shows a static position downloads only the core.
 
 | Entry point | What | Replaces in cm-chessboard | Size, gzipped |
 |---|---|---|---|
-| `lightsquare` (core) | position, pieces, marks, coordinates, orientation, tap and drag, premove, events, module host | Chessboard, Markers, AutoBorderNone | 4.7 kB |
+| `lightsquare` (core) | position, pieces, marks, coordinates, orientation, tap and drag, premove, events (also what each change of the pieces was), module host | Chessboard, Markers, AutoBorderNone | 5.2 kB |
 | `lightsquare/shapes` | arrows, circles, arrow labels, drawing by the user | Arrows, RightClickAnnotator | 2.0 kB |
 | `lightsquare/promotion` | promotion picker | PromotionDialog | 0.6 kB |
 | `lightsquare/overlay` | HTML anchored to squares | HtmlLayer | 0.4 kB |
 | `lightsquare/a11y` | screen-reader description, move announcements, keyboard moves | Accessibility | 1.1 kB |
 | `lightsquare/premove` | where a piece could premove to (geometry only) | (not in cm-chessboard) | 0.8 kB |
 | `lightsquare/theme` | looks as data: `applyTheme`, built-in board colours | (not in cm-chessboard) | 0.6 kB |
+| `lightsquare/sounds` | a sound for each kind of move, built in or from the app's files | (not in cm-chessboard) | 0.9 kB |
 | `lightsquare/react` | React component | (Kibitzo's 1,451-line wrapper, in part) | 0.5 kB |
 | later: `lightsquare/editor` | spare pieces, drag pieces on and off | (not in cm-chessboard) | |
 
-The stylesheet for all of it is 1.6 kB. Everything together is about 12 kB.
+The stylesheet for all of it is 1.9 kB. Everything together is about 14 kB.
 
 A module is a function that receives a `surface` (the board element, the
 orientation, square and screen maths, the pieces, `tap`) and returns its own
@@ -212,7 +213,7 @@ Read from the source and READMEs on 2026-11-12.
 | Drawn as | one SVG drawing | elements, plus SVG for shapes | elements, plus SVG for shapes |
 | A piece slides by | script loop, SVG transform rewritten per frame, drawing repainted | script loop, CSS transform set per frame | one CSS transition, no script per frame |
 | Positions | SVG units | pixels from the measured board; recomputed on resize | fractions of the board's width (container units); nothing to recompute |
-| Size, gzipped | 8.5 kB core, extensions extra | 10 kB | 4.7 kB core; about 12 kB with every module and the stylesheet |
+| Size, gzipped | 8.5 kB core, extensions extra | 10 kB | 5.2 kB core; about 14 kB with every module and the stylesheet |
 | Chess rules inside | no | no | no |
 | Premove | no | yes | yes |
 | User-drawn arrows | extension | yes | module |
@@ -266,7 +267,8 @@ phone tests. Our equivalents are `position.test.ts` for FEN and
 `premove.test.ts` for premove geometry.
 
 The comparison in `compare/` runs the same counters on Lightsquare,
-chessground and cm-chessboard side by side and writes
+chessground, cm-chessboard, react-chessboard and chessboard.js side by side
+and writes
 [compare/RESULTS.md](compare/RESULTS.md). It is a project of its own, with
 its own dependencies; see its README. The page
 itself (`bench/`) has its own tests in `tests/browser/playground.test.ts`.
@@ -275,6 +277,27 @@ What the suite cannot show: how a real phone feels. The phone profiles are
 desktop engines with a phone's screen and touch. `npm run bench` serves a
 page on the local network for a real phone and records what it measures and
 what the tester reports (rule 11).
+
+The first recorded phone rounds (2026-11-12, an iPhone with a 402 by 874
+point screen at 3x, Safari 27.2, Low Power Mode on, the game replayed
+automatically with a 180 ms slide):
+
+| Round | Every piece on its own layer | Script runs a second | Longest pause of the script | Slide, typical and longest, as the script saw it | Moves | Tester |
+|---|---|---:|---:|---:|---:|---|
+| 1 | no (as shipped) | 24.4 | 106 ms | 209 and 245 ms | 41 | smooth |
+| 2 | yes (the trial of the bench page) | 29.4 | 104 ms | 200 and 249 ms | 42 | smooth |
+| 3 | no (as shipped) | 24.4 | 107 ms | 194 and 216 ms | 21 | smooth |
+
+What they show: with the page's script held to about 24 to 29 runs a second
+and stopped for a tenth of a second at times, the slides were smooth to the
+tester. And keeping every piece on a layer of its own all the time (as
+chessground does, which is why it paints less often per move, see
+compare/RESULTS.md) could not be told apart from a layer for the moving
+piece only; so the library keeps the cheaper way (rule: only what is shown
+to help ships). What they do not show: dragging (no round had a drag), any
+other phone, and a frame rate; a page cannot count the frames Safari draws
+on its own, so "smooth" is the tester's eye. The slide times are as the
+held-back script heard of them, not the slide's true length.
 
 ## 11. Risks and open questions
 

@@ -11,6 +11,7 @@ import { premoveTargets } from "../src/modules/premove";
 import { overlay } from "../src/modules/overlay";
 import { promotion } from "../src/modules/promotion";
 import { shapes, type Arrow, type Circle } from "../src/modules/shapes";
+import { sounds } from "../src/modules/sounds";
 import { applyTheme, themes, type Theme } from "../src/modules/theme";
 
 const OPERA = "e4 e5 Nf3 d6 d4 Bg4 dxe5 Bxf3 Qxf3 dxe5 Bc4 Nf6 Qb3 Qe7 Nc3 c6 Bg5 b5 Nxb5 cxb5 Bxb5+ Nbd7 O-O-O Rd8 Rxd7 Rxd7 Rd1 Qe6 Bxd7+ Nxd7 Qb8+ Nxb8 Rd8#".split(" ");
@@ -100,8 +101,11 @@ function badges(to: string | undefined): BoardMark[] {
 let mateAt: string | null = null;
 function showMate(to: string | undefined): void {
   const square = badgePlaces(to).find(([name]) => name === "mate")?.[1] ?? null;
+  const reached = lastChange;
+  lastChange = null;
   if (square === mateAt) return;
   mateAt = square;
+  if (square && reached && reached !== "position") audio.play("end");
   if (!square) return html.remove("mate");
   const el = document.createElement("div");
   el.className = "mate";
@@ -129,7 +133,11 @@ function reply(): void {
   board.playPremove();
 }
 
+/** What the pieces last did, until the checkmate sound has asked: a mate reached by a move has its sound, one reached by a jump has not. */
+let lastChange: string | null = null;
+
 const board = lightsquare(host, {
+  onChange: (change) => (lastChange = change.kind),
   async onMove({ from, to, piece }) {
     let promoteTo: string | undefined;
     if (piece[1] === "p" && (to[1] === "8" || to[1] === "1")) {
@@ -151,6 +159,7 @@ const board = lightsquare(host, {
 const picker = board.use(promotion());
 const drawing = board.use(shapes({ draw: true }));
 const html = board.use(overlay());
+const audio = board.use(sounds());
 board.use(a11y({ label: "Lightsquare playground board" }));
 
 function goTo(target: number): void {
@@ -184,6 +193,7 @@ toggle("versus", () => {
   show();
 });
 toggle("hints", showShapes, true);
+toggle("sound", (on) => audio.set({ muted: !on }), true);
 toggle("samples", showShapes);
 
 /** ← → step through the game, ↑ or Home goes to the start, ↓ or End to the end. Keys used by a slider or by the board's own keyboard cursor are left alone. */
@@ -297,8 +307,13 @@ function choice(parent: string, key: keyof Look, value: string, content: string,
   };
 }
 
+/** True on a static host (the published demo): nothing there can take what a phone reports. */
+let onStaticHost = false;
+
 async function buildLooks(): Promise<void> {
-  const config = (await fetch("/config.json").then((r) => r.json()).catch(() => ({}))) as { extraPieces?: boolean };
+  const config = (await fetch("config.json").then((r) => r.json()).catch(() => ({}))) as { extraPieces?: boolean; static?: boolean };
+  onStaticHost = !!config.static;
+  if (onStaticHost) for (const el of document.querySelectorAll("[data-needs-server]")) el.remove();
   for (const [name, t] of Object.entries(themes)) choice("boards", "board", name, `<i style="background:linear-gradient(135deg, ${t.light} 50%, ${t.dark} 50%)"></i>`, "swatch");
   choice("checks", "checkLoops", "3", "Settles", "");
   choice("checks", "checkLoops", "infinite", "Forever", "");
@@ -445,9 +460,10 @@ function summary(): Record<string, unknown> {
 }
 
 function send(kind: string): void {
+  if (onStaticHost) return;
   const body = JSON.stringify({ kind, ...summary() });
   newRound();
-  void fetch("/log", { method: "POST", body, keepalive: true })
+  void fetch("log", { method: "POST", body, keepalive: true })
     .then(() => ($("sent").textContent = `Sent "${kind}" at ${new Date().toLocaleTimeString()}.`))
     .catch(() => ($("sent").textContent = "Could not reach the computer that serves this page."));
 }
@@ -463,59 +479,28 @@ setInterval(() => {
 
 // ── the comparison ─────────────────────────────────────────────────────
 
-interface Measured {
-  name: string;
-  version: string;
-  licence: string;
-  size: { js: number; jsWith: number | null; css: number };
-  atRest: { elements: number; paints: number; scriptCalls: number; frames: number; timers: number };
-  perMove: { frameCallbacks: number; domWrites: number; scriptMs: number; styleAndLayoutMs: number; paints: number; paintMs?: number; rasterMs?: number; compositeMs?: number };
-  whileStuck: number;
-  whileBusy: number;
-  replay: { workMs: number };
-  drag: { scriptMs: number; styleAndLayoutMs: number; frameCallbacks: number };
+/** The comparison, as the benchmark wrote it (compare/results.json): every row with its printed cells. This page only shows it. */
+interface Comparison {
+  date: string;
+  browser: string;
+  machine: string;
+  slideMs: number;
+  runs: number;
+  boards: Record<string, { name: string; version: string; licence: string }>;
+  table: Array<{ group: string } | { label: string; note: string; cells: Array<{ text: string; best: boolean }> }>;
 }
 
-const kB = (bytes: number): string => `${(bytes / 1024).toFixed(1)} kB`;
-/** The rows of the table: a heading, or what is shown, why it matters, how to read it, and which way is better. */
-const ROWS: Array<string | [string, string, (b: Measured) => number, (n: number) => string, "low" | "high"]> = [
-  "To download",
-  ["Script, gzipped", "the board as it ships", (b) => b.size.js, kB, "low"],
-  ["Script with arrows, drawing and premove", "Lightsquare and cm-chessboard need extra parts for these; chessground ships them in one", (b) => b.size.jsWith ?? b.size.js, kB, "low"],
-  ["Styles, gzipped", "without the piece pictures", (b) => b.size.css, kB, "low"],
-  "At rest",
-  ["Elements on the page", "the starting position, with coordinates", (b) => b.atRest.elements, String, "low"],
-  ["Work in two seconds", "paints, script calls, frames and timers, added up", (b) => b.atRest.paints + b.atRest.scriptCalls + b.atRest.frames + b.atRest.timers, String, "low"],
-  "One sliding move",
-  ["Frames asked of the script", "how often the board's script must run during a slide", (b) => b.perMove.frameCallbacks, String, "low"],
-  ["Writes to the page", "", (b) => b.perMove.domWrites, String, "low"],
-  ["Script time", "", (b) => b.perMove.scriptMs, (n) => `${n.toFixed(2)} ms`, "low"],
-  ["Style and layout time", "", (b) => b.perMove.styleAndLayoutMs, (n) => `${n.toFixed(2)} ms`, "low"],
-  ["Paints", "", (b) => b.perMove.paints, (n) => n.toFixed(1), "low"],
-  ["Raster time", "turning painted shapes into pixels, off the main thread", (b) => b.perMove.rasterMs ?? 0, (n) => `${n.toFixed(2)} ms`, "low"],
-  ["Compositing time", "layers, commit and drawing of every frame; software drawing, so compare boards only", (b) => b.perMove.compositeMs ?? 0, (n) => `${n.toFixed(2)} ms`, "low"],
-  "When the page's script is not free",
-  ["Pictures drawn of a slide while the script is frozen", "600 ms frozen, a 900 ms slide", (b) => b.whileStuck, String, "high"],
-  ["Pictures drawn of 12 moves while the script is busy half the time", "more means smoother", (b) => b.whileBusy, String, "high"],
-  "A slow processor",
-  ["Work to show a position, six times slowed", "main-thread time for each of 300 positions, no slide", (b) => b.replay.workMs, (n) => `${n.toFixed(3)} ms`, "low"],
-  "A drag with the mouse",
-  ["Script time", "one piece, two squares, 42 steps", (b) => b.drag.scriptMs, (n) => `${n.toFixed(1)} ms`, "low"],
-  ["Style and layout time", "", (b) => b.drag.styleAndLayoutMs, (n) => `${n.toFixed(1)} ms`, "low"],
-];
-
 async function showComparison(): Promise<void> {
-  const results = (await fetch("/results.json").then((r) => (r.ok ? r.json() : null)).catch(() => null)) as { date: string; browser: string; machine: string; slideMs: number; runs: number; boards: Record<string, Measured> } | null;
-  if (!results) return;
+  const results = (await fetch("results.json").then((r) => (r.ok ? r.json() : null)).catch(() => null)) as Comparison | null;
+  if (!results?.table?.length) return;
   const boards = Object.values(results.boards);
   const head = `<thead><tr><th></th>${boards.map((b, i) => `<th${i === 0 ? ' class="us"' : ""}>${b.name}<br>${b.version} · ${b.licence}</th>`).join("")}</tr></thead>`;
-  const body = ROWS.map((row) => {
-    if (typeof row === "string") return `<tr class="group"><td colspan="${boards.length + 1}">${row}</td></tr>`;
-    const [label, why, read, show, better] = row;
-    const values = boards.map(read);
-    const best = better === "low" ? Math.min(...values) : Math.max(...values);
-    return `<tr><td>${label}${why ? `<small>${why}</small>` : ""}</td>${values.map((v) => `<td${v === best ? ' class="best"' : ""}>${show(v)}</td>`).join("")}</tr>`;
-  }).join("");
+  const body = results.table
+    .map((row) => {
+      if ("group" in row) return `<tr class="group"><td colspan="${boards.length + 1}">${row.group}</td></tr>`;
+      return `<tr><td>${row.label}${row.note ? `<small>${row.note}</small>` : ""}</td>${row.cells.map((c) => `<td${c.best ? ' class="best"' : ""}>${c.text}</td>`).join("")}</tr>`;
+    })
+    .join("");
   $("bench").innerHTML = `${head}<tbody>${body}</tbody>`;
   $("bench-note").textContent = `Measured ${results.date} in ${results.browser}, on a ${results.machine}. Every board had the same 400 pixel box, the same game and a ${results.slideMs} ms slide; each number is the middle one of ${results.runs} runs. The best in each row is marked. This is a desktop computer, not a phone: the frozen-script rows stand in for a phone that holds the script back, and are not a measurement of one.`;
 }

@@ -1,5 +1,5 @@
 import type { Color, Placed, Square } from "./position";
-import type { SquareMark, Targets, UserMove } from "./types";
+import type { Change, SquareMark, Targets, UserMove } from "./types";
 
 export interface State {
   pieces: Placed[];
@@ -19,6 +19,9 @@ export interface State {
   onSelect: ((square: Square | null) => void) | null;
   onPremove: ((premove: readonly [Square, Square] | null) => void) | null;
   onTap: ((square: Square) => void) | null;
+  onChange: ((change: Change) => void) | null;
+  /** The pieces before a move of the user that the app has not answered yet, and that move's squares. */
+  asked: { before: readonly Placed[]; from: Square; to: Square } | null;
 }
 
 export interface Wanted {
@@ -44,6 +47,8 @@ export const initial = (): State => ({
   onSelect: null,
   onPremove: null,
   onTap: null,
+  onChange: null,
+  asked: null,
 });
 
 export const at = (s: State, square: Square): Placed | undefined => s.pieces.find((p) => p.square === square);

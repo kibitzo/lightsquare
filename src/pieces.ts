@@ -1,11 +1,11 @@
-import { pairPieces, type PieceCode, type Placed, type Square } from "./position";
+import { pairPieces, type Pairing, type PieceCode, type Placed, type Square } from "./position";
 
 export interface PieceView {
   element(p: Placed): HTMLElement;
   /** Place a piece on its square, with a slide or at once. */
   put(p: Placed, slide: boolean): void;
-  /** Show the next position; returns its pieces. Nothing is touched if nothing changed. */
-  show(current: readonly Placed[], next: ReadonlyMap<Square, PieceCode>, animate: boolean): Placed[];
+  /** Show the next position; returns how its pieces pair with the current ones. Nothing is touched if nothing changed. */
+  show(current: readonly Placed[], next: ReadonlyMap<Square, PieceCode>, animate: boolean): Pairing;
   /** Move one piece, taking what stands on the target. Returns the taken piece. */
   shift(pieces: Placed[], from: Square, to: Square, slide: boolean): Placed | undefined;
   /** Finish what the change before left behind: fading pieces, the on-top mark. */
@@ -66,12 +66,12 @@ export function pieceView(layer: HTMLElement, spot: (square: Square) => string):
     sweep,
     show(current, next, animate) {
       const pairing = pairPieces(current, next, () => ++lastId);
-      if (!pairing.moved.length && !pairing.added.length && !pairing.removed.length) return pairing.placed;
+      if (!pairing.moved.length && !pairing.added.length && !pairing.removed.length) return pairing;
       sweep();
       for (const p of pairing.removed) remove(p, animate);
       for (const p of pairing.moved) put(p, animate);
       for (const p of pairing.added) add(p);
-      return pairing.placed;
+      return pairing;
     },
     shift(pieces, from, to, slide) {
       const mover = pieces.find((p) => p.square === from);

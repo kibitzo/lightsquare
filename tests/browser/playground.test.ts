@@ -4,10 +4,12 @@
  * the page's own stylesheet and script can break things the library cannot
  * know about (a check halo drawn on the wrong square was the first such bug).
  */
-import type { Server } from "node:http";
+import { execFileSync } from "node:child_process";
+import { readFile } from "node:fs/promises";
+import { createServer, type Server } from "node:http";
 import type { Browser, Page } from "playwright";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
-import { PROFILES, open } from "./helpers";
+import { PROFILES, ROOT, open } from "./helpers";
 
 let site: { server: Server; port: number };
 beforeAll(async () => {
@@ -238,12 +240,83 @@ describe.each([PROFILES[0], PROFILES[1], PROFILES[2]])("the page in $name", (pro
     const table = await page.evaluate(async () => {
       const results = await fetch("/results.json").then((r) => (r.ok ? r.json() : null));
       await new Promise((r) => setTimeout(r, 200));
-      return { measured: !!results, boards: document.querySelectorAll("#bench thead th").length - 1, rows: document.querySelectorAll("#bench tbody tr:not(.group)").length, best: document.querySelectorAll("#bench td.best").length, note: document.getElementById("bench-note")!.textContent ?? "" };
+      return { measured: !!results?.table?.length, wanted: Object.keys(results?.boards ?? {}).length, boards: document.querySelectorAll("#bench thead th").length - 1, rows: document.querySelectorAll("#bench tbody tr:not(.group)").length, best: document.querySelectorAll("#bench td.best").length, note: document.getElementById("bench-note")!.textContent ?? "" };
     });
     if (!table.measured) return;
-    expect(table.boards).toBe(3);
+    expect(table.boards, "every measured board has its column").toBe(table.wanted);
+    expect(table.boards).toBeGreaterThanOrEqual(3);
     expect(table.rows).toBeGreaterThanOrEqual(14);
     expect(table.best).toBeGreaterThanOrEqual(table.rows);
     expect(table.note).toContain("not a phone");
+  });
+});
+
+/**
+ * The published demo: the same page as plain files (scripts/demo.mjs), on a
+ * host that only serves files, under a path of its own as on GitHub Pages.
+ */
+describe.each([PROFILES[0], PROFILES[2]])("the published demo in $name", (profile) => {
+  const TYPES: Record<string, string> = { html: "text/html; charset=utf-8", js: "text/javascript", css: "text/css", svg: "image/svg+xml", png: "image/png", json: "application/json" };
+  let host: Server;
+  let browser: Browser;
+  let page: Page;
+  let errors: string[];
+  const failed: string[] = [];
+
+  beforeAll(async () => {
+    execFileSync("node", ["scripts/demo.mjs"], { cwd: ROOT });
+    host = createServer(async (req, res) => {
+      const path = (req.url ?? "/").split("?")[0];
+      if (req.method !== "GET" || !path.startsWith("/lightsquare/") || path.includes("..")) return void res.writeHead(404).end();
+      const file = path.slice("/lightsquare/".length) || "index.html";
+      try {
+        res.writeHead(200, { "content-type": TYPES[file.split(".").pop()!] ?? "application/octet-stream" }).end(await readFile(`${ROOT}site/${file}`));
+      } catch {
+        res.writeHead(404).end();
+      }
+    });
+    await new Promise<void>((r) => host.listen(0, "127.0.0.1", r));
+    const address = host.address();
+    if (!address || typeof address === "string") throw new Error("no address");
+    ({ browser, page, errors } = await open(profile, `http://127.0.0.1:${address.port}`, "/lightsquare/"));
+    page.on("response", (r) => {
+      if (r.status() >= 400) failed.push(`${r.status()} ${new URL(r.url()).pathname}`);
+    });
+    await page.reload();
+    await page.waitForFunction("document.querySelectorAll('.ls-piece').length === 32 && document.querySelectorAll('#boards button').length > 0");
+  });
+  afterAll(async () => {
+    await browser.close();
+    host.close();
+  });
+
+  it("opens under its own path with every file found and no errors", async () => {
+    await page.waitForTimeout(300);
+    expect(failed).toEqual([]);
+    expect(errors).toEqual([]);
+    expect(await page.evaluate(() => (document.querySelector(".brand img") as HTMLImageElement).naturalWidth)).toBeGreaterThan(0);
+  });
+
+  it("plays: a step forward moves one piece", async () => {
+    await page.evaluate(() => document.getElementById("next")!.click());
+    await page.waitForTimeout(350);
+    const pawn = await page.evaluate(() => {
+      const host = document.getElementById("board")!.getBoundingClientRect();
+      const size = host.width / 8;
+      return [...document.querySelectorAll(".ls-piece.ls-wp")].some((el) => {
+        const r = el.getBoundingClientRect();
+        return Math.round((r.left - host.left) / size) === 4 && Math.round((r.top - host.top) / size) === 4;
+      });
+    });
+    expect(pawn, "the white pawn stands on e4").toBe(true);
+  });
+
+  it("leaves out what needs the computer that serves the page: the verdict buttons and the Low Power label", async () => {
+    expect(await page.evaluate(() => ["smooth", "rough", "lpm", "sent"].filter((id) => document.getElementById(id)))).toEqual([]);
+    expect(await page.evaluate(() => ["measure", "stress", "layers", "sound"].filter((id) => !document.getElementById(id)))).toEqual([]);
+  });
+
+  it("offers only the piece set that is the library's own", async () => {
+    expect(await page.evaluate(() => [...document.querySelectorAll("#sets button")].map((b) => b.textContent))).toEqual(["Cburnett"]);
   });
 });

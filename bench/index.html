@@ -6,11 +6,16 @@
 <meta name="theme-color" content="#0c1117">
 <title>Lightsquare: a chessboard that stays smooth on every phone</title>
 <meta name="description" content="Lightsquare is a small open-source chessboard for the web. Pieces are moved by the browser, not by script, so it stays smooth on old phones and in Low Power Mode.">
-<link rel="icon" type="image/svg+xml" href="/icon-small.svg">
-<link rel="apple-touch-icon" href="/apple-touch-icon.png">
-<link rel="stylesheet" href="/lightsquare.css">
-<link rel="stylesheet" href="/pieces.css">
-<link rel="stylesheet" href="/pieces-extra.css">
+<meta property="og:title" content="Lightsquare: a chessboard that stays smooth on every phone">
+<meta property="og:description" content="A small open-source chessboard for the web. The browser moves the pieces, not script, so it stays smooth on old phones and in Low Power Mode.">
+<meta property="og:image" content="https://kibitzo.github.io/lightsquare/social-preview.png">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" type="image/svg+xml" href="icon-small.svg">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="stylesheet" href="lightsquare.css">
+<link rel="stylesheet" href="pieces.css">
+<link rel="stylesheet" href="pieces-extra.css">
 <style>
   :root {
     --bg: #0c1117; --line: rgba(148, 163, 184, 0.16); --line-strong: rgba(148, 163, 184, 0.3); --panel: rgba(148, 163, 184, 0.045);
@@ -300,14 +305,14 @@
 <div class="page" id="page">
   <header>
     <div class="brand">
-      <img src="/icon.svg" width="60" height="60" alt="">
+      <img src="icon.svg" width="60" height="60" alt="">
       <div>
         <h1>Light<span>square</span></h1>
         <p class="tagline">A chessboard that stays <b>smooth on every phone</b>.</p>
       </div>
     </div>
     <ul class="facts" aria-label="Facts">
-      <li><b>4.7 kB</b><small>core, gzipped</small></li>
+      <li><b>5.2 kB</b><small>core, gzipped</small></li>
       <li><b>0</b><small>dependencies</small></li>
       <li><b>450+</b><small>tests</small></li>
       <li><b>MIT</b><small>licence</small></li>
@@ -336,6 +341,7 @@
           <button id="versus" aria-pressed="false">Vs computer</button>
           <button id="hints" aria-pressed="false">Hint arrow</button>
           <button id="samples" aria-pressed="false">Samples</button>
+          <button id="sound" aria-pressed="true">Sound</button>
         </div>
         <p class="hint">Drag or tap to play both sides. <kbd>←</kbd> <kbd>→</kbd> step through the Opera game, <kbd>↑</kbd> <kbd>↓</kbd> jump to its ends, <kbd>F</kbd> flips. Against the computer you can premove while it thinks. With a mouse, draw arrows with the right button; Alt and Shift change the colour.</p>
       </section>
@@ -368,18 +374,18 @@
         <div class="bar">
           <button id="measure" aria-pressed="false">Measure</button>
           <button id="stress" aria-pressed="false">Stuck script</button>
-          <button id="lpm" aria-pressed="false">Low Power</button>
+          <button id="lpm" aria-pressed="false" data-needs-server>Low Power</button>
         </div>
         <div class="bar">
           <button id="layers" aria-pressed="false">Trial: every piece on its own layer</button>
         </div>
-        <div class="bar">
+        <div class="bar" data-needs-server>
           <button id="smooth" class="good">Feels smooth</button>
           <button id="rough" class="bad">Not smooth</button>
         </div>
-        <p class="hint" id="sent"></p>
+        <p class="hint" id="sent" data-needs-server></p>
         <p class="hint">"Stuck script" freezes this page's script on and off. The slides keep moving, because the browser moves them, not the script.</p>
-        <p class="hint">The trial keeps all 32 pieces on layers of their own all the time, instead of only the piece that moves. On a desktop it costs about the same; a phone decides. Each verdict sends what was measured since the one before.</p>
+        <p class="hint">The trial keeps all 32 pieces on layers of their own all the time, instead of only the piece that moves. On a desktop it costs about the same; a phone decides.<span data-needs-server> Each verdict sends what was measured since the one before.</span></p>
       </section>
     </aside>
   </div>
@@ -406,8 +412,8 @@
 
   <section class="wide" id="numbers">
     <div class="eyebrow"><i>05</i> Measured next to others</div>
-    <h2>The same game, the same browser, three boards.</h2>
-    <p class="lede" id="bench-lede">Each board is driven the same way and the browser's own counters are read. Where another board does better, the table says so.</p>
+    <h2>The same game, the same browser, every board driven the same way.</h2>
+    <p class="lede" id="bench-lede">Lightsquare next to the boards most used on the web. The browser's own counters are read, and where another board does better, the table says so.</p>
     <div class="table-wrap"><table id="bench"><tbody><tr><td>No results yet. Run <code>npm run measure</code> in <code>compare/</code>.</td></tr></tbody></table></div>
     <p class="small" id="bench-note"></p>
   </section>
@@ -434,12 +440,13 @@ board.<span class="f">use</span>(<span class="f">shapes</span>({ arrows: [{ from
         <p class="small">Not on npm yet: it goes there after it has run in Kibitzo for some weeks.</p>
       </div>
       <ul class="modules" aria-label="What you import, and its size gzipped">
-        <li><code>lightsquare</code><b>4.7 kB</b><span>pieces, marks, coordinates, tap and drag, premove</span></li>
+        <li><code>lightsquare</code><b>5.2 kB</b><span>pieces, marks, coordinates, tap and drag, premove, what each change was</span></li>
         <li><code>lightsquare/shapes</code><b>2.0 kB</b><span>arrows and circles, drawn by the app or the user</span></li>
         <li><code>lightsquare/promotion</code><b>0.7 kB</b><span>the promotion picker</span></li>
         <li><code>lightsquare/a11y</code><b>1.2 kB</b><span>screen readers and moves by keyboard</span></li>
         <li><code>lightsquare/premove</code><b>0.8 kB</b><span>where a piece could premove to</span></li>
         <li><code>lightsquare/theme</code><b>0.7 kB</b><span>looks as data, for one board or a whole page</span></li>
+        <li><code>lightsquare/sounds</code><b>0.9 kB</b><span>a sound for every kind of move, no files needed</span></li>
         <li><code>lightsquare/overlay</code><b>0.4 kB</b><span>your own HTML on a square</span></li>
         <li><code>lightsquare/react</code><b>0.5 kB</b><span>a React component</span></li>
       </ul>
@@ -448,6 +455,6 @@ board.<span class="f">use</span>(<span class="f">shapes</span>({ arrows: [{ from
 
   <footer>Lightsquare · MIT · made for <a href="https://kibitzo.com">Kibitzo</a> · pieces by Colin M.L. Burnett (BSD)</footer>
 </div>
-<script type="module" src="/bench.js"></script>
+<script type="module" src="bench.js"></script>
 </body>
 </html>
