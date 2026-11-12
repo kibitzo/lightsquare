@@ -46,6 +46,10 @@
     <button id="flip">Flip</button>
   </div>
   <div class="row">
+    <button id="versus" aria-pressed="false">Vs computer</button>
+    <button id="hints" aria-pressed="false">Arrows</button>
+  </div>
+  <div class="row">
     <button id="measure" aria-pressed="false">Measure</button>
     <button id="stress" aria-pressed="false">Stuck script</button>
     <button id="lpm" aria-pressed="false">Low Power</button>
@@ -63,7 +67,7 @@
     <button id="rough" class="bad">Not smooth</button>
   </div>
   <p id="sent"></p>
-  <p>Drag or tap to play both sides. ◀ ▶ step through Morphy's Opera game. "Stuck script" freezes the page's script on and off: slides should keep moving. Tell me how it feels with the two buttons, once in Low Power Mode and once without (set the "Low Power" switch to match).</p>
+  <p>Drag or tap to play both sides. ◀ ▶ step through Morphy's Opera game. "Vs computer": you are White, Black answers after a moment, and you can premove while it thinks (a press cancels the premove). "Arrows" shows the next move of the game; on a computer, draw your own with the right mouse button. A pawn on the last rank opens the promotion picker. "Stuck script" freezes the page's script on and off: slides should keep moving. Tell me how it feels with the two buttons, once in Low Power Mode and once without (set the "Low Power" switch to match).</p>
   <p>Compare: <a id="lichess" href="https://lichess.org/analysis" target="_blank" rel="noopener">Lichess board</a> · <a id="old" href="#">the current Kibitzo board</a></p>
 </main>
 <script type="module" src="/bench.js"></script>

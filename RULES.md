@@ -50,7 +50,9 @@ unevenly (gaps of 33 and 50 ms).
 
 6. **One set of input listeners for the whole board.** Pointer events on the
    board element, never one listener per piece or per square. During a drag
-   the board's rectangle is measured once, at pointer down.
+   the board's rectangle is measured once, at pointer down. A module that
+   needs input of its own (the drawing pen) follows the same rule: its
+   listeners on the board element, one measure per press.
 
 7. **Touch only what changed.** Setting a position pairs pieces with the
    ones already shown (`pairPieces`); a piece that did not move is not

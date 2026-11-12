@@ -15,6 +15,13 @@
 <div id="wrap"><div id="board"></div></div>
 <script type="module">
 import { lightsquare } from "/lightsquare.js";
+import { shapes } from "/modules/shapes.js";
+import { promotion } from "/modules/promotion.js";
+import { overlay } from "/modules/overlay.js";
+import { a11y } from "/modules/a11y.js";
+import { premoveTargets } from "/modules/premove.js";
+
+window.M = { shapes, promotion, overlay, a11y, premoveTargets };
 
 const host = document.getElementById("board");
 const FILES = "abcdefgh";

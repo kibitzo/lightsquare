@@ -165,6 +165,121 @@
   color: var(--ls-light);
 }
 
+/* Module "shapes": arrows and circles, in board units (the layer's viewBox
+   is 8 by 8). Drawn once when they appear; they may fade in. */
+.ls-shapes {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.ls-arrow,
+.ls-circle {
+  --ls-shape: rgba(245, 158, 11, 0.88);
+  transition: opacity 120ms linear;
+}
+
+.ls-arrow-red, .ls-circle-red { --ls-shape: rgba(220, 38, 38, 0.85); }
+.ls-arrow-green, .ls-circle-green { --ls-shape: rgba(22, 163, 74, 0.85); }
+.ls-arrow-blue, .ls-circle-blue { --ls-shape: rgba(37, 99, 235, 0.85); }
+
+.ls-arrow path {
+  fill: var(--ls-shape);
+}
+
+.ls-arrow circle {
+  fill: #fff;
+  stroke: var(--ls-shape);
+  stroke-width: 0.04;
+}
+
+.ls-arrow text {
+  fill: #111827;
+  font: 700 0.24px system-ui, -apple-system, "Segoe UI", sans-serif;
+  text-anchor: middle;
+  dominant-baseline: central;
+}
+
+.ls-circle {
+  fill: none;
+  stroke: var(--ls-shape);
+  stroke-width: 0.07;
+}
+
+@starting-style {
+  .ls-arrow,
+  .ls-circle {
+    opacity: 0;
+  }
+}
+
+/* Module "promotion": the picker covers the board and dims it. */
+.ls-promotion {
+  pointer-events: auto;
+  background: rgba(12, 17, 23, 0.45);
+}
+
+.ls-choice {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 12.5%;
+  height: 12.5%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: #f8fafc center / 86% 86% no-repeat;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.45);
+  cursor: pointer;
+}
+
+.ls-choice:hover,
+.ls-choice:focus-visible {
+  background-color: #fde68a;
+  outline: none;
+}
+
+/* Module "overlay": a box the size of a square; what is put in it can be pressed. */
+.ls-anchor {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 12.5%;
+  height: 12.5%;
+}
+
+.ls-anchor > * {
+  pointer-events: auto;
+}
+
+/* Module "a11y": text for screen readers only, and the keyboard cursor. */
+.ls-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.ls-cursor {
+  display: none;
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 6;
+  width: 12.5%;
+  height: 12.5%;
+  box-sizing: border-box;
+  border: 0.2em solid #2563eb;
+  pointer-events: none;
+}
+
+.ls-board:focus-visible .ls-cursor {
+  display: block;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .ls-board {
     --ls-move-ms: 0ms;

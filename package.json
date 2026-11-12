@@ -10,6 +10,30 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     },
+    "./shapes": {
+      "types": "./dist/modules/shapes.d.ts",
+      "import": "./dist/modules/shapes.js"
+    },
+    "./promotion": {
+      "types": "./dist/modules/promotion.d.ts",
+      "import": "./dist/modules/promotion.js"
+    },
+    "./overlay": {
+      "types": "./dist/modules/overlay.d.ts",
+      "import": "./dist/modules/overlay.js"
+    },
+    "./a11y": {
+      "types": "./dist/modules/a11y.d.ts",
+      "import": "./dist/modules/a11y.js"
+    },
+    "./premove": {
+      "types": "./dist/modules/premove.d.ts",
+      "import": "./dist/modules/premove.js"
+    },
+    "./react": {
+      "types": "./dist/react.d.ts",
+      "import": "./dist/react.js"
+    },
     "./lightsquare.css": "./dist/lightsquare.css",
     "./pieces/cburnett.css": "./dist/pieces/cburnett.css"
   },
@@ -39,9 +63,13 @@
   "license": "MIT",
   "devDependencies": {
     "@types/node": "^22.20.5",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
     "chess.js": "^1.4.0",
     "esbuild": "^0.28.1",
     "playwright": "1.61.1",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
     "typescript": "^5.6.0",
     "vitest": "^3.0.0"
   },
@@ -51,5 +79,13 @@
   },
   "bugs": {
     "url": "https://github.com/kibitzo/lightsquare/issues"
+  },
+  "peerDependencies": {
+    "react": ">=18"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    }
   }
 }

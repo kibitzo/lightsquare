@@ -8,16 +8,18 @@ ones and phones in Low Power Mode.
   busy (a test shows this in Chromium; real phones are measured with the
   bench page).
 - At rest the board does nothing: no timers, no frames, no paints.
-- About 3 kB of script (minified and gzipped), no dependencies.
+- Small: the core is 4.4 kB (minified and gzipped) with no dependencies.
+  Arrows, the promotion picker, screen-reader support and the React
+  component are separate imports of about 1 kB each.
 - No chess rules inside: your app says which moves are allowed.
 - MIT.
 
-Status: early. The core (pieces, marks, the app's own marks and badges, tap
-and drag, events) is built and tested; coordinates, premove, arrows, the
-promotion picker and the React wrapper are next. Not on npm yet.
+Status: the library is complete for our needs and tested in Chromium and
+WebKit; it has not run in production yet and is not on npm.
 
 ```ts
 import { lightsquare } from "lightsquare";
+import { shapes } from "lightsquare/shapes";
 import "lightsquare/lightsquare.css";
 import "lightsquare/pieces/cburnett.css";
 
@@ -29,10 +31,18 @@ const board = lightsquare(document.getElementById("board")!, {
     board.set({ position: fenAfterTheMove });
   },
 });
+board.use(shapes({ arrows: [{ from: "e2", to: "e4" }], draw: true }));
 ```
+
+What it has: sliding pieces, captures, castling, en passant and promotion
+worked out from two positions; tap and drag; premove; last move, check,
+selection and move dots; coordinates; your own marks and badges; arrows and
+circles, drawn by the app or by the user; a promotion picker; HTML on
+squares; screen-reader text and moves by keyboard; a React component.
 
 ## Read first
 
+- [docs/API.md](docs/API.md): everything the library offers.
 - [RULES.md](RULES.md): the hard rules every change obeys.
 - [ARCHITECTURE.md](ARCHITECTURE.md): the design, the comparison with other
   boards, how it is tested, the order of work.

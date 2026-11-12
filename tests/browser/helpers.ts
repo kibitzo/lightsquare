@@ -15,13 +15,27 @@ const MIME: Record<string, string> = {
   ".json": "application/json",
 };
 
-/** Static server over the package, plus /lightsquare.js bundled from src. */
+/** What the test pages import, bundled from the source on the way in. */
+const BUNDLES: Record<string, string> = {
+  "/lightsquare.js": "src/index.ts",
+  "/modules/shapes.js": "src/modules/shapes.ts",
+  "/modules/promotion.js": "src/modules/promotion.ts",
+  "/modules/overlay.js": "src/modules/overlay.ts",
+  "/modules/a11y.js": "src/modules/a11y.ts",
+  "/modules/premove.js": "src/modules/premove.ts",
+  "/react-app.js": "tests/browser/react-app.ts",
+};
+
+/** Static server over the package, plus the bundles above. */
 export async function serve(): Promise<{ server: Server; origin: string }> {
-  const bundle = await build({ absWorkingDir: ROOT, entryPoints: ["src/index.ts"], bundle: true, format: "esm", target: "es2020", write: false });
-  const js = bundle.outputFiles[0].text;
+  const built = new Map<string, string>();
+  for (const [url, entry] of Object.entries(BUNDLES)) {
+    const out = await build({ absWorkingDir: ROOT, entryPoints: [entry], bundle: true, format: "esm", target: "es2020", write: false, define: { "process.env.NODE_ENV": '"development"' } });
+    built.set(url, out.outputFiles[0].text);
+  }
   const server = createServer(async (req, res) => {
     const path = normalize(decodeURIComponent((req.url ?? "/").split("?")[0]));
-    if (path === "/lightsquare.js") return void res.writeHead(200, { "content-type": MIME[".js"] }).end(js);
+    if (built.has(path)) return void res.writeHead(200, { "content-type": MIME[".js"] }).end(built.get(path));
     if (path.includes("..")) return void res.writeHead(403).end();
     try {
       const body = await readFile(join(ROOT, path));
@@ -84,7 +98,7 @@ const PROBES = `
   };
 `;
 
-export async function open(profile: Profile, origin: string): Promise<{ browser: Browser; page: Page; errors: string[] }> {
+export async function open(profile: Profile, origin: string, path = "/tests/browser/fixture.html"): Promise<{ browser: Browser; page: Page; errors: string[] }> {
   const browser = await profile.engine.launch();
   const context = await browser.newContext(profile.context);
   await context.addInitScript(PROBES);
@@ -94,7 +108,7 @@ export async function open(profile: Profile, origin: string): Promise<{ browser:
   page.on("console", (m) => {
     if (m.type() === "error") errors.push(m.text());
   });
-  await page.goto(`${origin}/tests/browser/fixture.html`);
+  await page.goto(`${origin}${path}`);
   await page.waitForFunction("window.ready === true");
   return { browser, page, errors };
 }
@@ -119,7 +133,7 @@ declare global {
   // eslint-disable-next-line no-var
   var T: {
     events: Array<Record<string, unknown>>;
-    board: { set(o: unknown, how?: unknown): void; move(a: string, b: string): void; select(s: string | null): void; position(): string; playPremove(): boolean; use<M>(module: (surface: unknown) => M): M; destroy(): void };
+    board: { set(o: unknown, how?: unknown): void; move(a: string, b: string): void; select(s: string | null): void; position(): string; playPremove(): boolean; use(module: unknown): any; destroy(): void }; // eslint-disable-line @typescript-eslint/no-explicit-any
     make(o?: unknown): void;
     set(o: unknown, how?: unknown): void;
     pieces(orientation?: string): Array<{ code: string; square: string; off: number }>;
@@ -127,12 +141,16 @@ declare global {
     marks(orientation?: string): string[];
     coords(): string[];
     pieceAt(square: string, orientation?: string): HTMLElement | null;
+    squareOf(el: Element, orientation?: string): string;
     tag(square: string, name: string): void;
     tagAt(square: string, orientation?: string): string | null;
     point(square: string, orientation?: string): { x: number; y: number; size: number };
     pointer(type: string, x: number, y: number, kind?: string): void;
     settled(): boolean;
   };
+  // The modules, as the fixture page imported them.
+  // eslint-disable-next-line no-var, @typescript-eslint/no-explicit-any
+  var M: Record<string, (...args: any[]) => any>;
   // eslint-disable-next-line no-var
   var P: { raf: number; timers: number; reads: number; reset(): void; watch(root: Element): { log: string[]; stop(): string[] } };
 }

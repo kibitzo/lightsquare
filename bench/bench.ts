@@ -5,6 +5,10 @@
  */
 import { Chess, type Square as ChessSquare } from "chess.js";
 import { lightsquare } from "../src/index";
+import { a11y } from "../src/modules/a11y";
+import { premoveTargets } from "../src/modules/premove";
+import { promotion } from "../src/modules/promotion";
+import { shapes } from "../src/modules/shapes";
 
 const OPERA = "e4 e5 Nf3 d6 d4 Bg4 dxe5 Bxf3 Qxf3 dxe5 Bc4 Nf6 Qb3 Qe7 Nc3 c6 Bg5 b5 Nxb5 cxb5 Bxb5+ Nbd7 O-O-O Rd8 Rxd7 Rxd7 Rd1 Qe6 Bxd7+ Nxd7 Qb8+ Nxb8 Rd8#".split(" ");
 
@@ -16,6 +20,11 @@ const host = $("board");
 let chess = new Chess();
 let ply = 0;
 let orientation: "white" | "black" = "white";
+
+/** The switches of the page, readable before their buttons are wired. */
+const toggles: Record<string, boolean> = {};
+const vsComputer = (): boolean => !!toggles.versus;
+const hinting = (): boolean => !!toggles.hints;
 
 const samples = { set: [] as number[], input: [] as number[], gaps: [] as number[], slides: [] as number[] };
 const counts = { moves: 0, drags: 0 };
@@ -34,24 +43,66 @@ function targets(): Map<string, string[]> {
 
 function show(): void {
   const last = chess.history({ verbose: true }).at(-1);
-  const next = { position: chess.fen(), movable: chess.turn() === "w" ? "white" : "black", targets: targets(), lastMove: last ? ([last.from, last.to] as const) : null, check: kingSquare(), marks: last && BADGES[ply] ? [{ square: last.to, name: BADGES[ply], above: true }] : null } as const;
+  const fen = chess.fen();
+  const whiteToMove = chess.turn() === "w";
+  const versus = vsComputer();
+  const next = {
+    position: fen,
+    movable: versus ? (whiteToMove ? "white" : "none") : whiteToMove ? "white" : "black",
+    targets: targets(),
+    premovable: versus && !whiteToMove ? "white" : "none",
+    premoveTargets: versus ? premoveTargets(fen, "white") : null,
+    lastMove: last ? ([last.from, last.to] as const) : null,
+    check: kingSquare(),
+    marks: last && BADGES[ply] ? [{ square: last.to, name: BADGES[ply], above: true }] : null,
+  } as const;
   const began = performance.now();
   board.set(next);
   samples.set.push(performance.now() - began);
   counts.moves++;
+  showHint();
+}
+
+/** With "Arrows" on: the next move of the Opera game, as the app would show a hint. */
+function showHint(): void {
+  const san = hinting() && ply >= 0 ? OPERA[ply] : undefined;
+  if (!san) return drawing.set({ arrows: [] });
+  const probe = new Chess(chess.fen());
+  const move = probe.move(san);
+  drawing.set({ arrows: [{ from: move.from, to: move.to }] });
+}
+
+let replyTimer = 0;
+function reply(): void {
+  const moves = chess.moves();
+  if (!moves.length || chess.turn() !== "b") return;
+  chess.move(moves[Math.floor(Math.random() * moves.length)]);
+  show();
+  board.playPremove();
 }
 
 const board = lightsquare(host, {
-  onMove({ from, to }) {
+  async onMove({ from, to, piece }) {
+    let promoteTo: string | undefined;
+    if (piece[1] === "p" && (to[1] === "8" || to[1] === "1")) {
+      const picked = await picker.ask(to, piece[0] === "w" ? "white" : "black");
+      if (!picked) return show();
+      promoteTo = picked;
+    }
     try {
-      chess.move({ from: from as ChessSquare, to: to as ChessSquare, promotion: "q" });
+      chess.move({ from: from as ChessSquare, to: to as ChessSquare, promotion: promoteTo });
       ply = -1;
     } catch {
       /* not legal: show() puts the piece back */
     }
     show();
+    clearTimeout(replyTimer);
+    if (vsComputer() && chess.turn() === "b") replyTimer = window.setTimeout(reply, 900);
   },
 });
+const picker = board.use(promotion());
+const drawing = board.use(shapes({ draw: true }));
+board.use(a11y({ label: "Lightsquare bench board" }));
 
 function goTo(target: number): void {
   const next = Math.max(0, Math.min(OPERA.length, target));
@@ -66,15 +117,23 @@ $("back").onclick = () => goTo(ply < 0 ? 0 : ply - 1);
 $("flip").onclick = () => board.set({ orientation: (orientation = orientation === "white" ? "black" : "white") });
 
 function toggle(id: string, onChange: (on: boolean) => void): () => boolean {
+  toggles[id] = false;
   const button = $(id);
   let on = false;
   button.onclick = () => {
     on = !on;
+    toggles[id] = on;
     button.setAttribute("aria-pressed", String(on));
     onChange(on);
   };
   return () => on;
 }
+
+toggle("versus", () => {
+  clearTimeout(replyTimer);
+  show();
+});
+toggle("hints", showHint);
 
 let autoTimer = 0;
 toggle("play", (on) => {

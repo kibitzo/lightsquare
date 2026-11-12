@@ -4,10 +4,14 @@ A chessboard that stays smooth on every phone. This document is the design.
 The hard rules it must obey are in [RULES.md](RULES.md); the diagram is
 [docs/architecture.html](docs/architecture.html).
 
-Status, 2026-11-12: the first milestone (M0) is built and tested in desktop
-browsers: pieces, marks, tap and drag, events. It still has to pass on a real
-phone in Low Power Mode (section 12). Coordinates, premove and the modules
-are not built yet.
+Status, 2026-11-12: the library is built and tested: the core (pieces,
+marks, coordinates, tap and drag, premove, events) and the modules (arrows
+and circles, promotion picker, HTML on squares, screen readers and keyboard,
+premove geometry, React). The founder's phone test in Low Power Mode passed
+by feel ("excellent"); numbers from that phone are still to be recorded.
+Not built: the board editor. Not done: Kibitzo's move to it (section 12).
+
+The API is in [docs/API.md](docs/API.md).
 
 ## 1. Goals
 
@@ -36,69 +40,75 @@ board sizes, server rendering of an interactive board.
 - The app hears about what happened through **events** and decides what it
   means. Lightsquare never decides whether a move is legal.
 
-## 3. What is on screen: six layers
+## 3. What is on screen: layers
 
 Bottom to top. Each layer is one element; only the layers in use exist.
 
 | Layer | Holds | Technique |
 |---|---|---|
-| surface | the 64 squares, coordinates | one CSS background; 16 text elements for coordinates |
-| marks | last move, selected square, check, move dots, any custom square mark | one small element per mark, placed by transform |
+| surface | the 64 squares | one CSS background on the board element |
+| marks | last move, selected square, check, premove, move dots, the app's marks under the pieces | one small element per mark, placed by transform |
+| coords | file letters and rank numbers | 16 text elements, written once per orientation |
 | pieces | one element per piece | placed by `translate(col * 100%, row * 100%)`, moved by transition |
-| shapes | arrows, circles, labels | one SVG overlay, redrawn only when shapes change |
-| over | the app's marks that sit above the pieces: move-quality badges, verdicts | one small element per mark, placed by transform |
-| overlay | promotion picker, any HTML the app anchors to a square | HTML placed by transform |
-| drag | the piece under the finger | the piece itself, lifted; follows the pointer |
+| shapes | arrows, circles, labels (module) | one SVG in board units, a shape drawn once when it appears |
+| over | the app's marks above the pieces: move-quality badges, verdicts | one small element per mark, placed by transform |
+| overlay | any HTML the app anchors to a square (module) | HTML placed by transform |
+| promotion | the promotion picker (module) | four buttons, while it is open |
 
 A piece is promoted to its own GPU layer (`will-change: transform`) only
-while it moves or is dragged. A board at rest holds no extra layers.
+while it is dragged; a slide needs none, the browser handles a transition by
+itself. A board at rest holds no extra layers. While a piece is dragged, the
+pieces layer is lifted above the arrows and badges, so the piece in the hand
+is never hidden.
 
 ## 4. Modules
 
 The core is one import. Everything else is a separate entry point, so an app
 that shows a static position downloads only the core.
 
-| Entry point | What | Replaces in cm-chessboard |
-|---|---|---|
-| `lightsquare` (core) | position, pieces, marks, coordinates, orientation, tap and drag input, premove, events, plugin host | Chessboard, Markers, AutoBorderNone |
-| `lightsquare/shapes` | arrows, circles, arrow labels, drawing by the user | Arrows, RightClickAnnotator |
-| `lightsquare/promotion` | promotion picker | PromotionDialog |
-| `lightsquare/overlay` | HTML anchored to squares | HtmlLayer |
-| `lightsquare/a11y` | screen-reader description, move announcements, keyboard moves | Accessibility |
-| `lightsquare/react` | React component and hook | (Kibitzo's 1,451-line wrapper) |
-| later: `lightsquare/editor` | spare pieces, drag pieces on and off | (not in cm-chessboard) |
+| Entry point | What | Replaces in cm-chessboard | Size, gzipped |
+|---|---|---|---|
+| `lightsquare` (core) | position, pieces, marks, coordinates, orientation, tap and drag, premove, events, module host | Chessboard, Markers, AutoBorderNone | 4.4 kB |
+| `lightsquare/shapes` | arrows, circles, arrow labels, drawing by the user | Arrows, RightClickAnnotator | 1.5 kB |
+| `lightsquare/promotion` | promotion picker | PromotionDialog | 0.6 kB |
+| `lightsquare/overlay` | HTML anchored to squares | HtmlLayer | 0.4 kB |
+| `lightsquare/a11y` | screen-reader description, move announcements, keyboard moves | Accessibility | 1.1 kB |
+| `lightsquare/premove` | where a piece could premove to (geometry only) | (not in cm-chessboard) | 0.8 kB |
+| `lightsquare/react` | React component | (Kibitzo's 1,451-line wrapper, in part) | 0.5 kB |
+| later: `lightsquare/editor` | spare pieces, drag pieces on and off | (not in cm-chessboard) | |
 
-A module is a plugin: a function that receives the board and returns
-`update(state, previous)` and `destroy()`. It may create its own layer. It
-runs in the same update as the core, so there is one write pass per change.
+The stylesheet for all of it is 1.4 kB. Everything together is about 11 kB.
+
+A module is a function that receives a `surface` (the board element, the
+orientation, square and screen maths, the pieces, `tap`) and returns its own
+API plus two optional hooks, `update()` and `destroy()`. `update()` runs in
+the same task as every change of the board. Modules import only types from
+the core, so each one stands alone. cm-chessboard features left out on
+purpose: PieceRotation (pieces turned for two players at one tablet) and
+Persistence (the app can store a FEN itself).
 
 ## 5. The API
 
-```ts
-import { lightsquare } from "lightsquare";
-import "lightsquare/lightsquare.css";
-import "lightsquare/pieces/cburnett.css";
+The full reference is [docs/API.md](docs/API.md). The shape of it:
 
+```ts
 const board = lightsquare(element, {
-  position: "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR",  // a FEN, "start" or "empty"
-  orientation: "white",
-  movable: "white",                 // "white" | "black" | "both" | "none"
-  targets,                          // Map<Square, Square[]>: where each piece may go
-  lastMove: ["e2", "e4"],
-  check: "e8",
-  marks: [{ square: "e4", name: "brilliant", above: true }],   // the app's own
-  onMove({ from, to, piece, captured }) {},   // the user moved a piece
-  onSelect(square) {},
+  position, orientation, movable, targets,     // what is shown, what may move
+  lastMove, check, marks, coordinates,         // marks
+  premovable, premoveTargets,                  // moving ahead of the turn
+  onMove, onSelect, onPremove, onTap,          // what the user did
 });
 
 board.set({ position, lastMove });  // one call changes anything
 board.move("g1", "f3");             // slide one piece
-board.position();                   // the placement on show
+board.playPremove();                // the premove in waiting, if allowed now
+board.use(shapes({ arrows }));      // add a module
 board.destroy();
 ```
 
 - **One `set()` for everything.** The app never has to learn an order of
-  calls, and a batch of changes is one write pass.
+  calls, and a batch of changes is one write pass. Setting what is already
+  shown touches nothing, so a framework may call it on every render.
 - **The board shows a user's move at once and reports it.** The app answers
   with `set({ position })`: the true position after the move (the rook of a
   castling move slides, a pawn taken en passant fades), or the old position
@@ -113,7 +123,9 @@ board.destroy();
   pass as the pieces, whoever designed it. The badge pictures themselves
   stay in the app, so the library stays small and every site keeps its own
   style.
-- Not built yet: `board.use(module)` for the modules of section 4.
+- **A premove is state, not a move.** The piece stays; the two squares are
+  marked; the app calls `playPremove()` when the turn comes, and the board
+  plays it as a user's move only if the current targets allow it.
 
 ## 6. Input
 
@@ -130,8 +142,13 @@ once; from then on a square is arithmetic.
   square under the finger gets a halo, so the finger hides neither.
 - A new position that arrives during a drag (the opponent moved) does not
   interrupt the drag, unless the held piece itself is gone.
-- **Premove** (not built yet) is state: the reconciler shows it; the app
-  confirms or drops it when the opponent has moved.
+- **Premove** is state: the reconciler shows it; a press on the board
+  cancels it; the app plays or drops it when the opponent has moved.
+- **A tap** on any square can be reported to the app (`onTap`), also on a
+  look-only board, without taking the touch from the page.
+- **Modules bring their own input** where they need it (the drawing pen
+  listens for the right mouse button), always on the board element, never
+  per piece or square.
 - The page does not scroll while pieces can be moved (`touch-action: none`
   on a movable board only).
 
@@ -176,7 +193,7 @@ Read from the source and READMEs on 2026-11-12.
 | Drawn as | one SVG drawing | elements, plus SVG for shapes | elements, plus SVG for shapes |
 | A piece slides by | script loop, SVG transform rewritten per frame, drawing repainted | script loop, CSS transform set per frame | one CSS transition, no script per frame |
 | Positions | SVG units | pixels from the measured board; recomputed on resize | percent; nothing to recompute |
-| Size, gzipped | 8.5 kB core, extensions extra | 10 kB | under 6 kB core, modules extra |
+| Size, gzipped | 8.5 kB core, extensions extra | 10 kB | 4.4 kB core; about 11 kB with every module and the stylesheet |
 | Chess rules inside | no | no | no |
 | Premove | no | yes | yes |
 | User-drawn arrows | extension | yes | module |
@@ -206,9 +223,12 @@ and WebKit, each as a desktop and as a phone profile with touch).
 |---|---|
 | `tests/unit/position.test.ts` | FEN reading and writing, bad FENs, square and screen maths for both sides, pairing for moves, captures, all four castlings, en passant, promotions |
 | `tests/unit/games.test.ts` | pairing through 60 random legal games (chess.js): every move exact, the mover keeps its element, never more touched than a move can touch; 2,000 jumps between unrelated positions |
-| `tests/unit/rules.test.ts` | RULES.md read against the source: no timers or animation loop, transform and opacity only, one measuring call, five listeners, no imports, under 6 kB |
+| `tests/unit/premove.test.ts` | premove geometry for every piece, castling, both colours, the board's edges |
+| `tests/unit/rules.test.ts` | RULES.md read against the source, core and modules: no timers or animation loop, transform and opacity only, one measuring call, five listeners, no imports, size limits |
 | `tests/browser/board.test.ts` | what a user sees, read from where the pieces are on screen: positions, square colours, slides, fades, flip, resize, hundreds of positions of random games |
 | `tests/browser/input.test.ts` | tap and drag with a real mouse, real touch points (Chromium) and synthetic touch (WebKit): selection, targets, drops, snap back, cancel, a second finger, a position change in the middle of a drag |
+| `tests/browser/modules.test.ts` | arrows and circles (geometry, colours, drawing with the right button, untouched while pieces move), the promotion picker, HTML on squares, screen-reader text, moves by keyboard |
+| `tests/browser/react.test.ts` | the React component in StrictMode: one board, props to positions, nothing touched on a re-render |
 | `tests/browser/perf.test.ts` | the work asked of the browser: nothing at rest (no paint, layout, frame, timer or write for two seconds), five writes per move, zero layout reads per position, one per drag, no script during a slide, script cost with the processor slowed six times |
 
 Two tests carry the design:
@@ -222,8 +242,8 @@ Two tests carry the design:
 
 For comparison, chessground's own test suite (read 2026-11-12) is two unit
 files, FEN and premove geometry, run in jsdom; it has no browser, speed or
-phone tests. Our equivalent of its FEN tests is in `position.test.ts`; the
-premove tests arrive with premove (M1).
+phone tests. Our equivalents are `position.test.ts` for FEN and
+`premove.test.ts` for premove geometry.
 
 What the suite cannot show: how a real phone feels. The phone profiles are
 desktop engines with a phone's screen and touch. `npm run bench` serves a
@@ -250,17 +270,16 @@ what the tester reports (rule 11).
 
 ## 12. Order of work
 
-| Step | What | Done when |
+| Step | What | State |
 |---|---|---|
-| M0 proof | core pieces and input (built), tested on the bench page, then on Kibitzo's puzzle board behind a switch | it feels like Lichess on the founder's phone in Low Power Mode |
-| M1 core | marks, coordinates, flip, premove, events, the speed tests | the speed tests pass; cm-chessboard core parity |
-| M2 modules | shapes, promotion, overlay | Kibitzo's arrows, badges and promotion work |
-| M3 | a11y module, React wrapper | Kibitzo's board component runs on Lightsquare with the same props |
-| M4 | Kibitzo pages one at a time: puzzles, lessons, coach, vision, play | each passes its browser tests and a phone check |
+| M0 proof | core pieces and input, on a bench page for the phone | done; passed by feel on the founder's phone, numbers still to be recorded |
+| M1 core | marks, coordinates, flip, premove, events, the speed tests | done |
+| M2 modules | shapes, promotion, overlay | done |
+| M3 | a11y module, React component | done |
+| M4 | Kibitzo: an adapter with the props of its current board component, then its pages one at a time (puzzles, lessons, coach, vision, play) | next; each page passes its browser tests and a phone check |
 | M5 | fenshot's board; cm-chessboard removed | no import of cm-chessboard is left |
 | M6 | publish 1.0: docs and demo at kibitzo.com/lightsquare, npm | after some weeks in production |
-
-If M0 fails, the design is wrong and we stop there.
+| later | the board editor module | when a product needs it |
 
 ## 13. Our own work
 
