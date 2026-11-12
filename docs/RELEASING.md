@@ -1,24 +1,31 @@
 # Releasing Lightsquare to npm
 
-The package is `@kibitzo/lightsquare`. A release is made by pushing a version
-tag; GitHub then tests, builds, checks the packed file and publishes it
-(`.github/workflows/publish.yml`). No npm token is stored anywhere: npm
-trusts that one workflow of this repository (a Trusted Publisher), and shows
-on the package's page which commit each version was built from
-(provenance).
+The package is `@kibitzo/lightsquare`. A release takes two acts:
+
+1. A version tag is pushed. GitHub tests, builds, checks the packed file and
+   hands it to npm (`.github/workflows/publish.yml`), where it waits,
+   unseen by users: it is staged.
+2. A maintainer approves it on npmjs.com with two-factor authentication.
+   Only then is it published.
+
+So nothing reaches users on the word of the repository alone: a stolen
+GitHub login, or a mistaken tag, can stage a version but not publish it.
+No npm token is stored anywhere. npm trusts that one workflow of this
+repository (a Trusted Publisher), and shows on the package's page which
+commit each version was built from (provenance).
 
 ## Set up once
 
-Done by a member of the organisation `kibitzo` on npmjs.com, in the
-package's Settings, under Trusted Publisher, GitHub Actions:
+Done 2026-11-12 on npmjs.com, in the package's Settings:
 
-- Organisation or user: `kibitzo`
-- Repository: `lightsquare`
-- Workflow filename: `publish.yml`
+- Trusted Publisher, GitHub Actions: organisation `kibitzo`, repository
+  `lightsquare`, workflow filename `publish.yml`. Allowed actions: staging
+  only (direct publishing is not allowed).
+- Publishing access: two-factor authentication required, tokens that
+  bypass it not allowed.
 
-Version 0.1.0 is the one exception: npm sets a Trusted Publisher only for a
-package that exists, so the first version was published by hand from the
-tagged commit (`npm publish --access public`, approved in the browser).
+Version 0.1.0 was published by hand from the tagged commit, before the
+package existed for a Trusted Publisher to be set on.
 
 ## Every release
 
@@ -38,8 +45,13 @@ tagged commit (`npm publish --access public`, approved in the browser).
        git tag v0.1.0
        git push origin main v0.1.0
 
-5. Watch the run (`gh run watch -R kibitzo/lightsquare`). npm checks a new
-   version before it serves it: for some minutes `npm view
+5. Watch the run (`gh run watch -R kibitzo/lightsquare`). When it is green
+   the version is staged.
+6. A maintainer signs in to npmjs.com, opens Staged Packages (in the
+   account's settings), looks at the version and its checksum, and clicks
+   Approve; npm asks for the second factor. (`npm stage approve <stage-id>`
+   does the same from a terminal.)
+7. npm checks a new version before it serves it: for some minutes `npm view
    @kibitzo/lightsquare version` still shows the old number (0.1.0 took
    five minutes; others have waited an hour). Then it shows the new one.
 
@@ -47,8 +59,9 @@ The registry also lists a version `0.0.0-stage`. npm made it itself as a
 placeholder while 0.1.0 was being checked; it is not ours and holds
 nothing.
 
-The workflow does nothing if that version is on npm already, so pushing a
-tag twice is harmless.
+The workflow does nothing if that version is on npm already. A staged
+version that should not go out is rejected in the same place it would be
+approved; its number can then be staged again.
 
 A version that is on npm cannot be replaced. If a release is wrong, fix it
 and release the next number; `npm deprecate` marks the wrong one.
