@@ -54,7 +54,6 @@
     "test:browser": "vitest run --config vitest.browser.config.ts",
     "test:all": "vitest run && vitest run --config vitest.browser.config.ts",
     "bench": "node bench/server.mjs",
-    "compare": "npm install --prefix bench/compare --silent && tsc -p bench/compare && node bench/compare/run.mjs",
     "icons": "node scripts/icons.mjs"
   },
   "keywords": [

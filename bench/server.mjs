@@ -25,7 +25,7 @@ const files = {
   "/icon.svg": ["docs/icons/icon.svg", "image/svg+xml"],
   "/icon-small.svg": ["docs/icons/icon-small.svg", "image/svg+xml"],
   "/apple-touch-icon.png": ["docs/icons/apple-touch-icon.png", "image/png"],
-  "/results.json": ["bench/compare/results.json", "application/json"],
+  "/results.json": ["compare/results.json", "application/json"],
 };
 
 /**

@@ -1,0 +1,22 @@
+{
+  "name": "lightsquare-compare",
+  "private": true,
+  "description": "Measures Lightsquare next to other chessboards. A project of its own: its dependencies are not Lightsquare's, and nothing here is part of the library or of its npm package.",
+  "type": "module",
+  "scripts": {
+    "measure": "npm --prefix .. run build --silent && tsc -p . && node run.mjs",
+    "sizes": "npm --prefix .. run build --silent && node run.mjs --sizes",
+    "report": "node run.mjs --report"
+  },
+  "dependencies": {
+    "@lichess-org/chessground": "latest",
+    "cm-chessboard": "latest"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.5",
+    "chess.js": "^1.4.0",
+    "esbuild": "^0.28.1",
+    "playwright": "1.61.1",
+    "typescript": "^5.6.0"
+  }
+}

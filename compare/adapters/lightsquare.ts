@@ -1,4 +1,4 @@
-import { lightsquare } from "../../../src/index";
+import { lightsquare } from "../../dist/index.js";
 import type { Create } from "./types";
 
 export const create: Create = (el, { fen, ms }) => {

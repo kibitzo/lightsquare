@@ -108,6 +108,28 @@ describe("RULES.md", () => {
     expect(gzipped).toBeLessThan(6 * 1024);
   });
 
+  it("rule 9: the comparison is a project of its own: the library's manifest, lockfile, scripts, configs, code and CI do not reach into it", () => {
+    const others = /chessground|cm-chessboard/i;
+    const manifest = JSON.parse(readFileSync(`${root}package.json`, "utf8"));
+    const wanted = Object.keys({ ...manifest.dependencies, ...manifest.devDependencies, ...manifest.peerDependencies, ...manifest.optionalDependencies });
+    expect(wanted.filter((name) => others.test(name))).toEqual([]);
+    expect(Object.entries(manifest.scripts).filter(([name, script]) => /compare/.test(`${name} ${script}`))).toEqual([]);
+    expect(manifest.files).toEqual(["dist"]);
+    expect(others.test(readFileSync(`${root}package-lock.json`, "utf8"))).toBe(false);
+    const configs = ["tsconfig.json", "tsconfig.build.json", "vitest.config.ts", "vitest.browser.config.ts", ...readdirSync(`${root}.github/workflows`).map((f) => `.github/workflows/${f}`)];
+    expect(configs.filter((file) => /compare/.test(readFileSync(root + file, "utf8")))).toEqual([]);
+    /** Every script of the library, its tests, its playground and its tools. */
+    const walk = (dir: string): string[] => readdirSync(root + dir, { withFileTypes: true }).flatMap((e) => (e.isDirectory() ? walk(`${dir}/${e.name}`) : /\.(ts|tsx|mjs|js)$/.test(e.name) ? [`${dir}/${e.name}`] : []));
+    const reaching = ["src", "tests", "bench", "scripts"].flatMap(walk).filter((file) => {
+      if (file === "tests/unit/rules.test.ts") return false;
+      const text = readFileSync(root + file, "utf8");
+      const imports = [...text.matchAll(/(?:from|import)\s*\(?\s*["'`]([^"'`]+)["'`]/g)].map((m) => m[1]);
+      // Only the numbers may be read, and only as data.
+      return imports.some((from) => others.test(from) || /compare\//.test(from)) || /compare\/(?!results\.json)/.test(text);
+    });
+    expect(reaching).toEqual([]);
+  });
+
   it("rule 12: nothing borrowed from GPL boards", () => {
     const everything = code + moduleCode + css;
     expect(count(everything, /chessground|cg-wrap|cg-board|cg-container/gi)).toBe(0);

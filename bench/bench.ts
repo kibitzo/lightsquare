@@ -105,7 +105,7 @@ function showMate(to: string | undefined): void {
   if (!square) return html.remove("mate");
   const el = document.createElement("div");
   el.className = "mate";
-  el.innerHTML = `<span class="mate-badge" role="img" aria-label="Checkmate">#<span class="mate-sparks" aria-hidden="true">${MATE_SPARKS.map((angle, i) => `<i class="mate-spark mate-spark-${i % 3}" style="--a:${angle}deg"></i>`).join("")}</span></span>`;
+  el.innerHTML = `<span class="mate-badge" role="img" aria-label="Checkmate"><span class="mate-sparks" aria-hidden="true">${MATE_SPARKS.map((angle, i) => `<i class="mate-spark mate-spark-${i % 3}" style="--a:${angle}deg"></i>`).join("")}</span></span>`;
   html.put("mate", square, el);
 }
 
@@ -484,7 +484,7 @@ const ROWS: Array<string | [string, string, (b: Measured) => number, (n: number)
   ["Pictures drawn of a slide while the script is frozen", "600 ms frozen, a 900 ms slide", (b) => b.whileStuck, String, "high"],
   ["Pictures drawn of 12 moves while the script is busy half the time", "more means smoother", (b) => b.whileBusy, String, "high"],
   "A slow processor",
-  ["Work to show a position, six times slowed", "main-thread time for each of 300 positions, no slide", (b) => b.replay.workMs, (n) => `${n.toFixed(2)} ms`, "low"],
+  ["Work to show a position, six times slowed", "main-thread time for each of 300 positions, no slide", (b) => b.replay.workMs, (n) => (n < 0.01 ? "under 0.01 ms" : `${n.toFixed(2)} ms`), "low"],
   "A drag with the mouse",
   ["Script time", "one piece, two squares, 42 steps", (b) => b.drag.scriptMs, (n) => `${n.toFixed(1)} ms`, "low"],
   ["Style and layout time", "", (b) => b.drag.styleAndLayoutMs, (n) => `${n.toFixed(1)} ms`, "low"],

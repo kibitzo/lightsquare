@@ -1,11 +1,13 @@
 // Measures Lightsquare next to other chessboards, each driven the same way
 // in the same browser, and writes the numbers to results.json and
-// BENCHMARK.md at the top of the repository.
-//   npm run compare
-// The method and its limits are written into BENCHMARK.md by this script.
+// RESULTS.md in this folder.
+//   npm run measure      (in compare/; see README.md)
+// Lightsquare is measured as it is built (../dist), the other boards as
+// they are published on npm. The method and its limits are written into
+// RESULTS.md by this script.
 import { Chess } from "chess.js";
 import { build } from "esbuild";
-import { readFileSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { createServer } from "node:http";
 import { cpus } from "node:os";
@@ -15,14 +17,18 @@ import { gzipSync } from "node:zlib";
 import { chromium, devices } from "playwright";
 
 const here = fileURLToPath(new URL("./", import.meta.url));
-const root = fileURLToPath(new URL("../../", import.meta.url));
+const root = fileURLToPath(new URL("../", import.meta.url));
+if (!existsSync(`${root}dist/index.js`)) {
+  console.error("Lightsquare is not built: run `npm run build` at the top of the repository, or `npm run measure` here, which does it.");
+  process.exit(1);
+}
 const version = (name) => JSON.parse(readFileSync(`${here}node_modules/${name}/package.json`, "utf8")).version;
 
 /** The boards, in the order of the report. `also` are the parts a board needs to match what the others ship in one piece. */
 const LIBS = [
-  { id: "lightsquare", name: "Lightsquare", version: JSON.parse(readFileSync(`${root}package.json`, "utf8")).version, licence: "MIT", entry: `export * from "../../src/index.ts"`, also: `export * from "../../src/index.ts"; export * from "../../src/modules/shapes.ts"; export * from "../../src/modules/premove.ts"`, css: ["src/lightsquare.css"] },
-  { id: "chessground", name: "chessground (Lichess)", version: version("@lichess-org/chessground"), licence: "GPL-3.0", entry: `export { Chessground } from "@lichess-org/chessground"`, also: null, css: ["bench/compare/node_modules/@lichess-org/chessground/assets/chessground.base.css", "bench/compare/node_modules/@lichess-org/chessground/assets/chessground.brown.css"] },
-  { id: "cm-chessboard", name: "cm-chessboard", version: version("cm-chessboard"), licence: "MIT", entry: `export { Chessboard } from "cm-chessboard/src/Chessboard.js"`, also: `export { Chessboard } from "cm-chessboard/src/Chessboard.js"; export { Markers } from "cm-chessboard/src/extensions/markers/Markers.js"; export { Arrows } from "cm-chessboard/src/extensions/arrows/Arrows.js"; export { RightClickAnnotator } from "cm-chessboard/src/extensions/right-click-annotator/RightClickAnnotator.js"`, css: ["bench/compare/node_modules/cm-chessboard/assets/chessboard.css"] },
+  { id: "lightsquare", name: "Lightsquare", version: JSON.parse(readFileSync(`${root}package.json`, "utf8")).version, licence: "MIT", entry: `export * from "../dist/index.js"`, also: `export * from "../dist/index.js"; export * from "../dist/modules/shapes.js"; export * from "../dist/modules/premove.js"`, css: ["dist/lightsquare.css"] },
+  { id: "chessground", name: "chessground (Lichess)", version: version("@lichess-org/chessground"), licence: "GPL-3.0", entry: `export { Chessground } from "@lichess-org/chessground"`, also: null, css: ["compare/node_modules/@lichess-org/chessground/assets/chessground.base.css", "compare/node_modules/@lichess-org/chessground/assets/chessground.brown.css"] },
+  { id: "cm-chessboard", name: "cm-chessboard", version: version("cm-chessboard"), licence: "MIT", entry: `export { Chessboard } from "cm-chessboard/src/Chessboard.js"`, also: `export { Chessboard } from "cm-chessboard/src/Chessboard.js"; export { Markers } from "cm-chessboard/src/extensions/markers/Markers.js"; export { Arrows } from "cm-chessboard/src/extensions/arrows/Arrows.js"; export { RightClickAnnotator } from "cm-chessboard/src/extensions/right-click-annotator/RightClickAnnotator.js"`, css: ["compare/node_modules/cm-chessboard/assets/chessboard.css"] },
 ];
 
 const SLIDE_MS = 200;
@@ -269,7 +275,8 @@ async function steady(measure) {
 }
 
 const kB = (bytes) => `${(bytes / 1024).toFixed(1)} kB`;
-const ms = (digits) => (n) => `${n.toFixed(digits)} ms`;
+/** A time too small to print is said to be so, not shown as zero. */
+const ms = (digits) => (n) => (n < 10 ** -digits ? `under ${10 ** -digits} ms` : `${n.toFixed(digits)} ms`);
 /** The rows of the report: a heading, or a label, how to read a board's number, how to print it, and which way is better. */
 const ROWS = [
   "To download",
@@ -297,7 +304,7 @@ const ROWS = [
   ["Layout reads", (b) => b.drag.layoutReads, String, "low"],
 ];
 
-/** BENCHMARK.md: the table, how it was measured, and what it cannot show. */
+/** RESULTS.md: the table, how it was measured, and what it cannot show. */
 function report(results) {
   const boards = Object.values(results.boards);
   const lines = [`| | ${boards.map((b) => `${b.name} ${b.version}`).join(" | ")} |`, `|---|${boards.map(() => "---:").join("|")}|`, `| Licence | ${boards.map((b) => b.licence).join(" | ")} |`];
@@ -319,7 +326,7 @@ function report(results) {
   }
   return `# Lightsquare next to other boards
 
-Measured ${results.date}. Written by \`npm run compare\`; do not edit by hand.
+Measured ${results.date}. Written by \`npm run measure\` in \`compare/\`; do not edit by hand.
 
 Three boards show the same game in the same browser, each driven the same
 way, and the browser's own counters are read. The best number in each row is
@@ -344,11 +351,13 @@ ${behind.length ? behind.join("\n") : "In this run, nowhere."}
   script, timers, layout reads and writes to the page from counters placed
   in the page before the board loads. "Pictures drawn" are the distinct
   frames the browser sent to a screen recording.
+- **What is measured:** Lightsquare as it is built for npm (\`dist/\`), the
+  other boards as they are published on npm.
 - **Sizes** are each board's public entry point bundled alone and minified
   with esbuild, then gzipped. chessground ships arrows, drawing and premove
   in its one file; for Lightsquare and cm-chessboard the second size row
   adds the parts that do the same (cm-chessboard has no premove).
-- **The code** is in \`bench/compare/\`: \`run.mjs\` and one small adapter per
+- **The code** is in this folder: \`run.mjs\` and one small adapter per
   board in \`adapters/\`.
 
 ## What this does not show
@@ -364,9 +373,10 @@ ${behind.length ? behind.join("\n") : "In this run, nowhere."}
 - **Defaults.** Each board runs as it comes. A board tuned by hand may do
   better than its row here.
 
-The other boards are installed only for this comparison
-(\`bench/compare/package.json\`). Nothing of them is part of Lightsquare or of
-its npm package.
+This folder is a project of its own. The other boards are installed only
+here (\`compare/package.json\`); Lightsquare's own manifest, scripts and tests
+do not know them, and nothing of them is part of Lightsquare or of its npm
+package.
 `;
 }
 
@@ -375,14 +385,14 @@ if (process.argv.includes("--sizes")) {
   const results = JSON.parse(readFileSync(`${here}results.json`, "utf8"));
   for (const lib of LIBS) results.boards[lib.id].size = await sizes(lib);
   writeFileSync(`${here}results.json`, `${JSON.stringify(results, null, 2)}\n`);
-  writeFileSync(`${root}BENCHMARK.md`, report(results));
+  writeFileSync(`${here}RESULTS.md`, report(results));
   console.log(LIBS.map((lib) => `${lib.name} ${kB(results.boards[lib.id].size.js)}`).join(", "));
   process.exit(0);
 }
 
 if (process.argv.includes("--report")) {
-  writeFileSync(`${root}BENCHMARK.md`, report(JSON.parse(readFileSync(`${here}results.json`, "utf8"))));
-  console.log("BENCHMARK.md written from bench/compare/results.json");
+  writeFileSync(`${here}RESULTS.md`, report(JSON.parse(readFileSync(`${here}results.json`, "utf8"))));
+  console.log("RESULTS.md written from results.json");
   process.exit(0);
 }
 
@@ -402,5 +412,5 @@ for (const lib of LIBS) {
 await browser.close();
 server.close();
 writeFileSync(`${here}results.json`, `${JSON.stringify(results, null, 2)}\n`);
-writeFileSync(`${root}BENCHMARK.md`, report(results));
-console.log(`results written to bench/compare/results.json and BENCHMARK.md`);
+writeFileSync(`${here}RESULTS.md`, report(results));
+console.log(`results written to compare/results.json and compare/RESULTS.md`);

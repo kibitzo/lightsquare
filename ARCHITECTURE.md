@@ -265,8 +265,10 @@ files, FEN and premove geometry, run in jsdom; it has no browser, speed or
 phone tests. Our equivalents are `position.test.ts` for FEN and
 `premove.test.ts` for premove geometry.
 
-`npm run compare` runs the same counters on Lightsquare, chessground and
-cm-chessboard side by side and writes [BENCHMARK.md](BENCHMARK.md). The page
+The comparison in `compare/` runs the same counters on Lightsquare,
+chessground and cm-chessboard side by side and writes
+[compare/RESULTS.md](compare/RESULTS.md). It is a project of its own, with
+its own dependencies; see its README. The page
 itself (`bench/`) has its own tests in `tests/browser/playground.test.ts`.
 
 What the suite cannot show: how a real phone feels. The phone profiles are

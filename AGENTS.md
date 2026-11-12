@@ -38,4 +38,5 @@ is in [ARCHITECTURE.md](ARCHITECTURE.md).
 | `src/pieces/`, `assets/` | the piece set and its source pictures |
 | `tests/unit/`, `tests/browser/` | see ARCHITECTURE.md, section 10 |
 | `bench/` | the playground: play, change the looks, measure on a real phone; served on the local network |
+| `compare/` | Lightsquare measured next to other boards. A project of its own (own `package.json`, lockfile, type check; see its README). Never import from it, never add its dependencies or a script for it to the library |
 | `scripts/` | build, piece stylesheet tools |

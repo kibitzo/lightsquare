@@ -72,6 +72,10 @@ unevenly (gaps of 33 and 50 ms).
 
 9. **Zero dependencies.** No runtime dependency, ever. No framework: the core
    is plain TypeScript and the DOM; framework wrappers live outside the core.
+   Other boards are installed only in `compare/`, which is a project of its
+   own: the library's manifest, lockfile, scripts, type check, tests and CI
+   never reach into it. The one thing that crosses over is data: the
+   playground shows the numbers of `compare/results.json`.
 
 10. **Small on purpose.** The core stays under 6 kB minified and gzipped.
     A feature that does not fit is an optional module the user imports.

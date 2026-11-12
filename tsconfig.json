@@ -11,6 +11,5 @@
     "declaration": true,
     "outDir": "dist"
   },
-  "include": ["src", "tests", "bench"],
-  "exclude": ["bench/compare"]
+  "include": ["src", "tests", "bench"]
 }

@@ -101,10 +101,13 @@ describe.each([PROFILES[0], PROFILES[1], PROFILES[2]])("the page in $name", (pro
       const host = document.getElementById("board")!.getBoundingClientRect();
       const r = document.querySelector(".mate-badge")!.getBoundingClientRect();
       const size = host.width / 8;
-      return { inside: r.left >= host.left - 1 && r.top >= host.top - 1 && r.right <= host.right + 1 && r.bottom <= host.bottom + 1, col: (r.left + r.width / 2 - host.left) / size, row: (r.top + r.height / 2 - host.top) / size, text: document.querySelector(".mate-badge")!.textContent!.trim() };
+      return { inside: r.left >= host.left - 1 && r.top >= host.top - 1 && r.right <= host.right + 1 && r.bottom <= host.bottom + 1, col: (r.left + r.width / 2 - host.left) / size, row: (r.top + r.height / 2 - host.top) / size, sign: getComputedStyle(document.querySelector(".mate-badge")!).backgroundImage, share: Math.round((r.width / size) * 100), fromTop: ((r.top - host.top) / size) * 100, small: host.width <= 460 };
     });
     expect(badge.inside).toBe(true);
-    expect(badge.text).toBe("#");
+    expect(badge.sign, "the # is a drawn sign").toContain("svg");
+    // The same disc as the other badges, at the same distance from the board's edge.
+    expect(badge.share).toBe(badge.small ? 46 : 38);
+    expect(Math.abs(badge.fromTop - 4), "4% of a square from the top edge").toBeLessThan(1);
     expect(badge.col, "near the right edge of e8").toBeGreaterThan(4.5);
     expect(badge.col).toBeLessThan(5.1);
     expect(badge.row, "near the top of e8, inside the board").toBeLessThan(0.5);
@@ -123,15 +126,17 @@ describe.each([PROFILES[0], PROFILES[1], PROFILES[2]])("the page in $name", (pro
         const width = parseFloat(after.width);
         const left = mark.right - parseFloat(after.right) - width;
         const top = mark.top + parseFloat(after.top);
-        return { name: el.className, glyph: after.content, inside: left >= host.left - 1 && top >= host.top - 1 && left + width <= host.right + 1 && top + width <= host.bottom + 1, share: Math.round((width / size) * 100), onOwnSquare: Math.abs(left + width / 2 - mark.right) <= width && Math.abs(top + width / 2 - mark.top) <= width };
+        const fromEdge = (at: string, gap: number): number | null => (el.classList.contains(at) ? (gap / size) * 100 : null);
+        return { name: el.className, sign: after.backgroundImage, small: host.width <= 460, fromTop: fromEdge("ls-at-top", top - host.top), fromRight: fromEdge("ls-at-right", host.right - left - width), inside: left >= host.left - 1 && top >= host.top - 1 && left + width <= host.right + 1 && top + width <= host.bottom + 1, share: Math.round((width / size) * 100), onOwnSquare: Math.abs(left + width / 2 - mark.right) <= width && Math.abs(top + width / 2 - mark.top) <= width };
       });
     });
     expect(badges).toHaveLength(9);
     for (const b of badges) {
       expect(b.inside, `${b.name} inside the board`).toBe(true);
       expect(b.onOwnSquare, `${b.name} on its square's corner`).toBe(true);
-      expect(b.glyph, b.name).not.toBe("none");
-      expect(b.share, `${b.name} is a good third of a square`).toBeGreaterThanOrEqual(34);
+      expect(b.sign, `${b.name} has a drawn sign`).toContain("svg");
+      expect(b.share, `${b.name} is a good third of a square`).toBe(b.small ? 46 : 38);
+      for (const gap of [b.fromTop, b.fromRight]) if (gap !== null) expect(Math.abs(gap - 4), `${b.name} is 4% of a square from the board's edge`).toBeLessThan(1);
     }
   });
 
