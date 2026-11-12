@@ -21,7 +21,9 @@ export interface Theme {
   boardImage?: string;
   /** The tints of the built-in marks. */
   lastMove?: string;
+  /** The selected square: its tint and its frame. */
   selected?: string;
+  selectedEdge?: string;
   check?: string;
   premove?: string;
   /** Move dots and rings. */
@@ -36,6 +38,8 @@ export interface Theme {
   moveMs?: number;
   /** Arrow and circle colours by name. `default` is the colour of an arrow with no name. */
   shapes?: Record<string, string>;
+  /** Circle colours by name, where they should differ from the arrows. */
+  circles?: Record<string, string>;
   /** How strong an arrow is at its tail and at its head, 0 to 1. */
   arrowTail?: number;
   arrowHead?: number;
@@ -47,6 +51,7 @@ const PLAIN: Array<[keyof Theme, string, (value: never) => string]> = [
   ["boardImage", "--ls-board-image", String],
   ["lastMove", "--ls-last", String],
   ["selected", "--ls-select", String],
+  ["selectedEdge", "--ls-select-edge", String],
   ["check", "--ls-check", String],
   ["premove", "--ls-premove", String],
   ["target", "--ls-target", String],
@@ -65,6 +70,7 @@ export function themeVariables(theme: Theme): Record<string, string> {
     if (value !== undefined) out[variable] = format(value as never);
   }
   for (const [name, colour] of Object.entries(theme.shapes ?? {})) out[name === "default" ? "--ls-shape" : `--ls-shape-${name}`] = colour;
+  for (const [name, colour] of Object.entries(theme.circles ?? {})) out[name === "default" ? "--ls-circle" : `--ls-circle-${name}`] = colour;
   return out;
 }
 

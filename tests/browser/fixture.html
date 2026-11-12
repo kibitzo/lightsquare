@@ -96,6 +96,10 @@ window.T = {
   marks(orientation = "white") {
     return [...host.querySelectorAll(".ls-mark")].map((el) => `${[...el.classList].find((c) => c.startsWith("ls-mark-")).slice(8)} ${T.squareOf(el, orientation)}`).sort();
   },
+  /** Which marks say they are on the top row or the right column. */
+  edges() {
+    return [...host.querySelectorAll(".ls-mark")].map((el) => `${[...el.classList].find((c) => c.startsWith("ls-mark-")).slice(8)}${el.classList.contains("ls-at-top") ? " top" : ""}${el.classList.contains("ls-at-right") ? " right" : ""}`).sort();
+  },
   pieceAt(square, orientation = "white") {
     return [...host.querySelectorAll(".ls-piece:not(.ls-gone)")].find((el) => T.squareOf(el, orientation) === square) ?? null;
   },

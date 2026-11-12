@@ -7,7 +7,7 @@ const css = readFileSync(fileURLToPath(new URL("../../src/lightsquare.css", impo
 
 describe("themes", () => {
   it("turns a theme into CSS variables", () => {
-    expect(themeVariables({ light: "#fff", dark: "#000", lastMove: "yellow", pieceSize: 0.9, moveMs: 120, arrowTail: 0.2, arrowHead: 1, shapes: { default: "orange", red: "crimson", mine: "#0ff" } })).toEqual({
+    expect(themeVariables({ light: "#fff", dark: "#000", lastMove: "yellow", pieceSize: 0.9, moveMs: 120, arrowTail: 0.2, arrowHead: 1, shapes: { default: "orange", red: "crimson", mine: "#0ff" }, circles: { default: "teal", red: "pink" } })).toEqual({
       "--ls-light": "#fff",
       "--ls-dark": "#000",
       "--ls-last": "yellow",
@@ -18,6 +18,8 @@ describe("themes", () => {
       "--ls-shape": "orange",
       "--ls-shape-red": "crimson",
       "--ls-shape-mine": "#0ff",
+      "--ls-circle": "teal",
+      "--ls-circle-red": "pink",
     });
   });
 
@@ -27,11 +29,12 @@ describe("themes", () => {
   });
 
   it("every variable a theme can set is read by the stylesheet or the shapes module", () => {
-    const all = themeVariables({ light: "a", dark: "a", boardImage: "a", lastMove: "a", selected: "a", check: "a", premove: "a", target: "a", hover: "a", pieceSize: 1, moveMs: 1, arrowTail: 1, arrowHead: 1 });
+    const all = themeVariables({ light: "a", dark: "a", boardImage: "a", lastMove: "a", selected: "a", selectedEdge: "a", check: "a", premove: "a", target: "a", hover: "a", pieceSize: 1, moveMs: 1, arrowTail: 1, arrowHead: 1 });
     for (const name of Object.keys(all)) expect(css, name).toContain(`var(${name}`);
     const shapes = readFileSync(fileURLToPath(new URL("../../src/modules/shapes.ts", import.meta.url)), "utf8");
     expect(shapes).toContain("var(--ls-shape,");
     expect(shapes).toContain("var(--ls-shape-${name},");
+    expect(shapes).toContain("var(--ls-circle${name ? `-${name}` : \"\"},");
   });
 
   it("the wood theme is exactly what a board looks like with no theme", () => {

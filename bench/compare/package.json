@@ -1,0 +1,10 @@
+{
+  "name": "lightsquare-compare",
+  "private": true,
+  "description": "Other chessboards, installed only to be measured next to Lightsquare. Nothing here is part of the library or of its npm package.",
+  "type": "module",
+  "dependencies": {
+    "@lichess-org/chessground": "latest",
+    "cm-chessboard": "latest"
+  }
+}

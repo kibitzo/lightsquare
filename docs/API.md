@@ -97,7 +97,10 @@ board.set({ marks: [
 
 The board places an element with the class `ls-mark-hint` (or
 `ls-mark-brilliant`) on the square, the size of the square, in the same write
-as the move. Your stylesheet draws it:
+as the move. A mark over the pieces that is on the top row or the right
+column of the screen also gets `ls-at-top` or `ls-at-right`, so a badge that
+hangs over its square's corner can stay inside the board there. Your
+stylesheet draws it:
 
 ```css
 .ls-mark-hint { background: rgba(16, 185, 129, 0.28); }
@@ -132,6 +135,9 @@ drawing.clear();
 `blue`, `yellow`. Change one, or add your own name, with a variable:
 `--ls-shape-red: crimson`, `--ls-shape-mine: #7c3aed` (see Looks). Each shape
 also carries the class `ls-arrow-<name>` or `ls-circle-<name>`.
+
+A label sits on the arrow in a dark disc ringed in the arrow's colour
+(`--ls-label-bg`, `--ls-label-text`).
 
 An arrow runs from the centre of its first square to the centre of its
 last one, where its point stops. Its colour grows from faint at the tail, so
@@ -215,16 +221,18 @@ away. `themeVariables(theme)` returns the variables for an inline style
 |---|---|---|
 | `light`, `dark` | `--ls-light`, `--ls-dark` | `#ecdab9`, `#c5a076` |
 | `boardImage` | `--ls-board-image` | none. A CSS image under the squares; with a picture of a whole board, set `dark: "transparent"`. |
-| `lastMove`, `selected`, `check`, `premove` | `--ls-last`, `--ls-select`, `--ls-check`, `--ls-premove` | the built-in marks |
+| `lastMove`, `check`, `premove` | `--ls-last`, `--ls-check`, `--ls-premove` | the built-in marks |
+| `selected`, `selectedEdge` | `--ls-select`, `--ls-select-edge` | the selected square: a soft amber tint inside an amber frame |
 | `target`, `hover` | `--ls-target`, `--ls-hover` | move dots; the square under a dragged piece |
 | `pieces` | the class `ls-set-<name>` | the page's default set |
 | `pieceSize` | `--ls-piece-size` | `100%` |
 | `moveMs` | `--ls-move-ms` | `180ms` (`0ms` under "reduce motion") |
-| `shapes.default`, `shapes.<name>` | `--ls-shape`, `--ls-shape-<name>` | orange; deep red, green, blue, yellow |
+| `shapes.default`, `shapes.<name>` | `--ls-shape`, `--ls-shape-<name>` | arrows and circles: orange; deep red, green, blue, yellow |
+| `circles.default`, `circles.<name>` | `--ls-circle`, `--ls-circle-<name>` | circles only, where they should differ from the arrows |
 | `arrowTail`, `arrowHead` | `--ls-tail-opacity`, `--ls-head-opacity` | `0.14`, `0.82` |
 
-Also: `--ls-ease` (the slide's curve) and `--ls-circle-width` (in squares,
-default `0.05`).
+Also: `--ls-ease` (the slide's curve) and `--ls-circle-stroke` (how thick a
+circle's line is, in squares, default `0.05`).
 
 Coordinates are small and quiet: over the pieces, in the colour of the
 other squares a touch deeper, growing with the board (about 10 px on a

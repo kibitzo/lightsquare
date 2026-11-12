@@ -141,6 +141,7 @@ declare global {
     seen(orientation?: string): string;
     marks(orientation?: string): string[];
     coords(): string[];
+    edges(): string[];
     pieceAt(square: string, orientation?: string): HTMLElement | null;
     squareOf(el: Element, orientation?: string): string;
     tag(square: string, name: string): void;

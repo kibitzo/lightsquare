@@ -191,6 +191,13 @@ describe.each(PROFILES)("board in $name", (profile) => {
     expect(await page.evaluate(() => T.marks())).toEqual([]);
   });
 
+  it("a mark on the top row or the right column says so, also after a flip, so badges can stay inside", async () => {
+    await fresh(page, { position: "empty", marks: [{ square: "h8", name: "a", above: true }, { square: "a8", name: "b", above: true }, { square: "h1", name: "c", above: true }, { square: "d4", name: "d", above: true }, { square: "a1", name: "e" }] });
+    expect(await page.evaluate(() => T.edges())).toEqual(["a top right", "b top", "c right", "d", "e"]);
+    await page.evaluate(() => T.set({ orientation: "black" }));
+    expect(await page.evaluate(() => T.edges()), "only marks over the pieces say where they are").toEqual(["a", "b right", "c top", "d", "e"]);
+  });
+
   it("shows coordinates on the edge squares, and turns them with the board", async () => {
     await fresh(page);
     const white = await page.evaluate(() => T.coords());

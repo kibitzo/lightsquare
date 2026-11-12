@@ -57,10 +57,42 @@
   .note { margin: 10px 0 0; font-size: 13px; color: #94a3b8; }
   #sent { min-height: 18px; }
 
-  /* Badges: placed by Lightsquare (marks with above: true), drawn by this page. */
-  .ls-mark-brilliant::after, .ls-mark-great::after { position: absolute; top: -16%; right: -16%; width: 46%; height: 46%; border-radius: 50%; display: grid; place-items: center; font: 700 clamp(8px, 2.6cqw, 15px)/1 system-ui, sans-serif; color: #fff; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5); animation: badge-pop 240ms cubic-bezier(0.2, 0.9, 0.3, 1.4); }
-  .ls-mark-brilliant::after { content: "!!"; background: #0d9488; }
-  .ls-mark-great::after { content: "!"; background: #2563eb; }
+  .wells { display: flex; flex-wrap: wrap; gap: 2px; grid-column: 2 / -1; }
+  .well { display: grid; justify-items: center; gap: 1px; width: 50px; padding: 4px 0 2px; border-radius: 10px; cursor: pointer; }
+  .well:hover { background: rgba(148, 163, 184, 0.12); }
+  .well input { width: 30px; height: 30px; padding: 0; border: 0; border-radius: 50%; background: none; cursor: pointer; -webkit-appearance: none; appearance: none; }
+  .well input::-webkit-color-swatch-wrapper { padding: 0; }
+  .well input::-webkit-color-swatch { border: 1px solid rgba(255, 255, 255, 0.25); border-radius: 50%; }
+  .well input::-moz-color-swatch { border: 1px solid rgba(255, 255, 255, 0.25); border-radius: 50%; }
+  .well small { font-size: 10px; color: #94a3b8; }
+  .badges { display: flex; flex-wrap: wrap; gap: 4px; grid-column: 2 / -1; }
+  .badges button { height: 44px; min-width: 44px; padding: 0 8px; }
+  .badges .pick { padding: 0; border-color: transparent; background: none; }
+  .badges .pick:hover { background: rgba(148, 163, 184, 0.12); }
+  .badges .pick i { display: grid; place-items: center; width: 26px; height: 26px; margin: auto; border-radius: 50%; background: var(--badge); color: #fff; font: 900 12px/1 system-ui, sans-serif; font-style: normal; letter-spacing: -0.06em; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.45); }
+  .badges .pick i::before { content: var(--glyph); }
+  .badges .pick[aria-pressed="true"] { background: rgba(245, 158, 11, 0.16); box-shadow: inset 0 0 0 1px rgba(245, 158, 11, 0.6); }
+
+  /* Move-quality badges. Lightsquare places them (marks with above: true)
+     and says when one is on the top row or the right column; this page
+     draws them: a disc on the square's top-right corner, pulled inside the
+     board at its edges. */
+  .ls-mark-brilliant, .q-brilliant { --badge: #06b6d4; --glyph: "!!"; }
+  .ls-mark-great, .q-great { --badge: #34d399; --glyph: "!"; }
+  .ls-mark-excellent, .q-excellent { --badge: #10b981; --glyph: "!"; }
+  .ls-mark-best, .q-best { --badge: #059669; --glyph: "✓"; }
+  .ls-mark-inaccuracy, .q-inaccuracy { --badge: #fbbf24; --glyph: "?!"; }
+  .ls-mark-mistake, .q-mistake { --badge: #f97316; --glyph: "?"; }
+  .ls-mark-blunder, .q-blunder { --badge: #d04f4f; --glyph: "??"; }
+  .ls-mark-book, .q-book { --badge: #94a3b8; --glyph: "B"; }
+  .ls-mark-forced, .q-forced { --badge: #cbd5e1; --glyph: "□"; }
+  :is(.ls-mark-brilliant, .ls-mark-great, .ls-mark-excellent, .ls-mark-best, .ls-mark-inaccuracy, .ls-mark-mistake, .ls-mark-blunder, .ls-mark-book, .ls-mark-forced)::after {
+    content: var(--glyph); position: absolute; top: -15%; right: -15%; width: 30%; height: 30%; border-radius: 50%; display: grid; place-items: center;
+    background: var(--badge); color: #fff; font: 900 clamp(6px, 2.35cqw, 16px)/1 system-ui, -apple-system, "Segoe UI", sans-serif; letter-spacing: -0.06em;
+    box-shadow: 0 0.2cqw 0.5cqw rgba(0, 0, 0, 0.45); animation: badge-pop 220ms cubic-bezier(0.2, 0.9, 0.3, 1.4);
+  }
+  .ls-at-top::after { top: 5%; }
+  .ls-at-right::after { right: 5%; }
   @keyframes badge-pop { from { transform: scale(0.4); opacity: 0; } }
 
   @media (min-width: 920px) {
@@ -104,9 +136,11 @@
       <div class="field"><span>Labels</span><div class="segments" id="labels"></div></div>
       <div class="field"><span>Piece size</span><input id="pieceSize" type="range" min="70" max="100" step="1" aria-label="Piece size"><output id="pieceSizeOut"></output></div>
       <div class="field"><span>Slide</span><input id="moveMs" type="range" min="0" max="400" step="10" aria-label="Slide time"><output id="moveMsOut"></output></div>
-      <div class="field"><span>Arrow</span><div class="swatches" id="arrows"></div></div>
+      <div class="field"><span>Arrows</span><div class="wells" id="arrowColours"></div></div>
+      <div class="field"><span>Circles</span><div class="wells" id="circleColours"></div></div>
       <div class="field"><span>Thickness</span><input id="arrowWidth" type="range" min="10" max="34" step="1" aria-label="Arrow thickness"><output id="arrowWidthOut"></output></div>
       <div class="field"><span>Strength</span><input id="arrowHead" type="range" min="40" max="100" step="2" aria-label="Arrow strength"><output id="arrowHeadOut"></output></div>
+      <div class="field"><span>Badges</span><div class="badges" id="badges"></div></div>
       <pre id="theme" aria-label="The theme as data"></pre>
     </section>
 

@@ -82,6 +82,8 @@ let lastGradient = 0;
 
 /** A shape's colour: the page's variable for its name, else the built-in tone, else the plain colour. */
 const colour = (name?: string): string => (name ? `var(--ls-shape-${name},${TONES[name] ?? PLAIN})` : PLAIN);
+/** A circle may have a colour of its own (--ls-circle, --ls-circle-<name>); else it follows the arrows. */
+const circleColour = (name?: string): string => `var(--ls-circle${name ? `-${name}` : ""},${colour(name)})`;
 
 /** Plain is green, Alt blue, Shift yellow: orange and red are left for the app's own arrows. */
 const defaultName: NonNullable<ShapesOptions["nameFor"]> = (k) => (k.shiftKey ? "yellow" : k.altKey ? "blue" : "green");
@@ -99,7 +101,8 @@ interface Outline {
   d: string;
   tail: [number, number];
   tip: [number, number];
-  mid: [number, number];
+  /** Where a label sits: past the piece on the first square, clear of the head. */
+  label: [number, number];
 }
 
 function arrowOutline(from: [number, number], to: [number, number], look: Required<ArrowLook>, scale: number): Outline {
@@ -117,7 +120,7 @@ function arrowOutline(from: [number, number], to: [number, number], look: Requir
     d: `M${at(0, half)}L${at(neck, half)}L${at(neck, wing)}L${at(length, 0)}L${at(neck, -wing)}L${at(neck, -half)}L${at(0, -half)}A${n(half)} ${n(half)} 0 0 0 ${at(0, half)}Z`,
     tail: point(0, 0),
     tip: point(length, 0),
-    mid: point(neck / 2, 0),
+    label: point(length * 0.42, 0),
   };
 }
 
@@ -132,7 +135,7 @@ export function shapes(options: ShapesOptions = {}): Module<Shapes> {
     let orientation = surface.orientation();
 
     function arrowElement(a: Arrow, preview = false): SVGElement {
-      const { d, tail, tip, mid } = arrowOutline(surface.cell(a.from), surface.cell(a.to), { ...LOOK, ...o.look }, preview ? PREVIEW : 1);
+      const { d, tail, tip, label } = arrowOutline(surface.cell(a.from), surface.cell(a.to), { ...LOOK, ...o.look }, preview ? PREVIEW : 1);
       const group = svg("g", { class: `ls-arrow${a.name ? ` ls-arrow-${a.name}` : ""}${preview ? " ls-arrow-preview" : ""}`, style: `--_shape:${colour(a.name)};transform-origin:${tail[0]}px ${tail[1]}px` });
       const id = `ls-fade-${++lastGradient}`;
       const fade = group.appendChild(svg("linearGradient", { id, gradientUnits: "userSpaceOnUse", x1: tail[0], y1: tail[1], x2: tip[0], y2: tip[1] }));
@@ -140,15 +143,15 @@ export function shapes(options: ShapesOptions = {}): Module<Shapes> {
       fade.appendChild(svg("stop", { offset: 1 }));
       group.appendChild(svg("path", { d, fill: `url(#${id})` }));
       if (a.label) {
-        group.appendChild(svg("circle", { cx: mid[0], cy: mid[1], r: 0.17 }));
-        group.appendChild(svg("text", { x: mid[0], y: mid[1] })).textContent = a.label;
+        group.appendChild(svg("circle", { cx: label[0], cy: label[1], r: 0.165 }));
+        group.appendChild(svg("text", { x: label[0], y: label[1], dy: "0.36em" })).textContent = a.label;
       }
       return group;
     }
 
     function circleElement(c: Circle): SVGElement {
       const [col, row] = surface.cell(c.square);
-      return svg("circle", { class: `ls-circle${c.name ? ` ls-circle-${c.name}` : ""}`, cx: col + 0.5, cy: row + 0.5, r: 0.43, style: `--_shape:${colour(c.name)};transform-origin:${col + 0.5}px ${row + 0.5}px` });
+      return svg("circle", { class: `ls-circle${c.name ? ` ls-circle-${c.name}` : ""}`, cx: col + 0.5, cy: row + 0.5, r: 0.43, style: `--_shape:${circleColour(c.name)};transform-origin:${col + 0.5}px ${row + 0.5}px` });
     }
 
     function render(): void {

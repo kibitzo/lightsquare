@@ -65,7 +65,7 @@ function makeCore(host: HTMLElement): Core {
   const wide = typeof CSS !== "undefined" && CSS.supports("width", "1cqw");
   const place = (col: number, row: number): string => (wide ? `translate(${col * 12.5}cqw,${row * 12.5}cqw)` : `translate(${col * 100}%,${row * 100}%)`);
   const spot = (square: Square): string => place(...screenCell(square, s.orientation));
-  const marks = markView(host, marksLayer, spot);
+  const marks = markView(host, marksLayer, spot, (square) => screenCell(square, s.orientation));
   const modules: ModuleHooks[] = [];
   return {
     s,

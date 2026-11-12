@@ -14,8 +14,12 @@ import { applyTheme, themes, type Theme } from "../src/modules/theme";
 
 const OPERA = "e4 e5 Nf3 d6 d4 Bg4 dxe5 Bxf3 Qxf3 dxe5 Bc4 Nf6 Qb3 Qe7 Nc3 c6 Bg5 b5 Nxb5 cxb5 Bxb5+ Nbd7 O-O-O Rd8 Rxd7 Rxd7 Rd1 Qe6 Bxd7+ Nxd7 Qb8+ Nxb8 Rd8#".split(" ");
 /** Move-quality badges for the replay, by ply. Their look is this page's CSS, not the library's. */
-const BADGES: Record<number, string> = { 19: "great", 25: "great", 31: "brilliant", 33: "great" };
-const ARROW_COLOURS = ["#ea580c", "#d97706", "#047857", "#1d4ed8", "#6d28d9", "#334155"];
+const BADGES: Record<number, string> = { 5: "book", 12: "inaccuracy", 16: "mistake", 19: "great", 20: "forced", 23: "excellent", 25: "great", 27: "best", 28: "blunder", 31: "brilliant", 33: "great" };
+const BADGE_KINDS = ["brilliant", "great", "excellent", "best", "inaccuracy", "mistake", "blunder", "book", "forced"];
+/** "All": every badge at once, with the corner, the top row and the right column covered. */
+const BADGE_SQUARES = ["h8", "a8", "h4", "c5", "d5", "e5", "f5", "b4", "g4"];
+/** The names of the colours and what each is for: the app's two, then the user's three. */
+const SHAPE_NAMES: Array<[string, string, string]> = [["default", "plan", "#ea580c"], ["red", "threat", "#b91c1c"], ["green", "pen", "#047857"], ["blue", "Alt", "#1d4ed8"], ["yellow", "Shift", "#ca8a04"]];
 const SAMPLE_ARROWS: Arrow[] = [{ from: "b1", to: "c3" }, { from: "c8", to: "g4", name: "red" }, { from: "d1", to: "d4", name: "green", label: "1" }, { from: "f1", to: "b5", name: "blue", label: "2" }, { from: "h7", to: "h5", name: "yellow" }];
 const SAMPLE_CIRCLES: Circle[] = [{ square: "e5", name: "red" }, { square: "a4" }, { square: "g6", name: "green" }];
 
@@ -57,13 +61,20 @@ function show(): void {
     premoveTargets: versus ? premoveTargets(fen, "white") : null,
     lastMove: last ? ([last.from, last.to] as const) : null,
     check: kingSquare(),
-    marks: last && BADGES[ply] ? [{ square: last.to, name: BADGES[ply], above: true }] : null,
+    marks: badges(last?.to),
   } as const;
   const began = performance.now();
   board.set(next);
   samples.set.push(performance.now() - began);
   counts.moves++;
   showShapes();
+}
+
+/** The badges to show: the replay's own, one kind on the last move, or all nine at once. */
+function badges(to: string | undefined): Array<{ square: string; name: string; above: true }> | null {
+  if (look.badge === "all") return BADGE_KINDS.map((name, i) => ({ square: BADGE_SQUARES[i], name, above: true }));
+  const name = look.badge === "auto" ? BADGES[ply] : look.badge;
+  return name ? [{ square: to ?? "e4", name, above: true }] : null;
 }
 
 /** The hint arrow is the next move of the Opera game; the samples show every colour at once. */
@@ -167,23 +178,40 @@ interface Look {
   labels: "on" | "off";
   pieceSize: number;
   moveMs: number;
-  arrow: string;
   arrowWidth: number;
   arrowHead: number;
+  /** "auto" follows the replay, "all" shows every badge, else one kind on the last move. */
+  badge: string;
+  arrowColours: Record<string, string>;
+  circleColours: Record<string, string>;
 }
 
-const LOOK_KEY = "lightsquare-playground-look";
-const look: Look = { board: "wood", pieces: "cburnett", labels: "on", pieceSize: 100, moveMs: 180, arrow: ARROW_COLOURS[0], arrowWidth: 20, arrowHead: 82 };
+const LOOK_KEY = "lightsquare-playground-look-2";
+const plainColours = (): Record<string, string> => Object.fromEntries(SHAPE_NAMES.map(([name, , colour]) => [name, colour]));
+const look: Look = { board: "wood", pieces: "cburnett", labels: "on", pieceSize: 100, moveMs: 180, arrowWidth: 20, arrowHead: 82, badge: "auto", arrowColours: plainColours(), circleColours: plainColours() };
 
 /** The look as the theme an app would store for a user. */
 function themeOf(l: Look): Theme {
-  return { ...themes[l.board], pieces: l.pieces, pieceSize: l.pieceSize / 100, moveMs: l.moveMs, shapes: { default: l.arrow }, arrowTail: Math.round(l.arrowHead * 0.17) / 100, arrowHead: l.arrowHead / 100 };
+  const builtIn = plainColours();
+  const changed = (colours: Record<string, string>, base: Record<string, string>): Record<string, string> => Object.fromEntries(Object.entries(colours).filter(([name, colour]) => colour !== base[name]));
+  const shapeColours = changed(l.arrowColours, builtIn);
+  const circleColours = changed(l.circleColours, l.arrowColours);
+  return {
+    ...themes[l.board],
+    pieces: l.pieces,
+    pieceSize: l.pieceSize / 100,
+    moveMs: l.moveMs,
+    ...(Object.keys(shapeColours).length && { shapes: shapeColours }),
+    ...(Object.keys(circleColours).length && { circles: circleColours }),
+    arrowTail: Math.round(l.arrowHead * 0.17) / 100,
+    arrowHead: l.arrowHead / 100,
+  };
 }
 
 function applyLook(): void {
   const theme = themeOf(look);
   applyTheme($("page"), theme);
-  board.set({ coordinates: look.labels === "on" });
+  board.set({ coordinates: look.labels === "on", marks: badges(chess.history({ verbose: true }).at(-1)?.to) });
   const width = look.arrowWidth / 100;
   drawing.set({ look: { width, headWidth: width * 2.7, headLength: width * 2.3 } });
   $("theme").textContent = `applyTheme(element, ${JSON.stringify(theme, null, 1).replace(/\n\s*/g, " ")})`;
@@ -211,7 +239,9 @@ function choice(parent: string, key: keyof Look, value: string, content: string,
 async function buildLooks(): Promise<void> {
   const config = (await fetch("/config.json").then((r) => r.json()).catch(() => ({}))) as { extraPieces?: boolean };
   for (const [name, t] of Object.entries(themes)) choice("boards", "board", name, `<i style="background:linear-gradient(135deg, ${t.light} 50%, ${t.dark} 50%)"></i>`, "swatch");
-  for (const colour of ARROW_COLOURS) choice("arrows", "arrow", colour, `<i style="background:${colour}"></i>`, "swatch");
+  choice("badges", "badge", "auto", "Auto", "");
+  choice("badges", "badge", "all", "All", "");
+  for (const kind of BADGE_KINDS) choice("badges", "badge", kind, `<i class="q-${kind}"></i>`, "pick");
   choice("labels", "labels", "on", "On", "");
   choice("labels", "labels", "off", "Off", "");
   choice("sets", "pieces", "cburnett", "Cburnett", "");
@@ -232,7 +262,23 @@ async function buildLooks(): Promise<void> {
       applyLook();
     };
   }
+  wells("arrowColours", look.arrowColours);
+  wells("circleColours", look.circleColours);
   applyLook();
+}
+
+/** One colour well per shape name. Changing one shows the samples, so the change is seen. */
+function wells(parent: string, colours: Record<string, string>): void {
+  for (const [name, caption] of SHAPE_NAMES) {
+    const label = $(parent).appendChild(document.createElement("label"));
+    label.className = "well";
+    label.innerHTML = `<input type="color" value="${colours[name]}" aria-label="${parent} ${caption}"><small>${caption}</small>`;
+    (label.firstChild as HTMLInputElement).oninput = (e) => {
+      colours[name] = (e.target as HTMLInputElement).value;
+      if (!toggles.samples) $("samples").click();
+      applyLook();
+    };
+  }
 }
 
 // ── measuring ──────────────────────────────────────────────────────────

@@ -30,8 +30,21 @@ export interface MarkView {
   destroy(): void;
 }
 
-export function markView(host: HTMLElement, under: HTMLElement, spot: (square: Square) => string): MarkView {
-  const marks = new Map<string, { el: HTMLElement; square: Square }>();
+export function markView(host: HTMLElement, under: HTMLElement, spot: (square: Square) => string, cell: (square: Square) => [number, number]): MarkView {
+  const marks = new Map<string, { el: HTMLElement; square: Square; name: string; above: boolean }>();
+
+  /**
+   * Put a mark on its square. A mark over the pieces that is on the top
+   * row or the right column says so (ls-at-top, ls-at-right), so a badge
+   * that hangs over its square's corner can stay inside the board there.
+   * Marks under the pieces only ever get their transform written.
+   */
+  function place(el: HTMLElement, name: string, square: Square, above: boolean): void {
+    el.style.transform = spot(square);
+    if (!above && el.className) return;
+    const [col, row] = above ? cell(square) : [0, 1];
+    el.className = `ls-mark ls-mark-${name}${row === 0 ? " ls-at-top" : ""}${col === 7 ? " ls-at-right" : ""}`;
+  }
   /** For marks drawn over the pieces. Made when the first one is shown. */
   let over: HTMLElement | null = null;
 
@@ -45,18 +58,18 @@ export function markView(host: HTMLElement, under: HTMLElement, spot: (square: S
       for (const [key, { square, above }] of want) {
         const mark = marks.get(key);
         if (mark) {
-          if (mark.square !== square) mark.el.style.transform = spot((mark.square = square));
+          if (mark.square !== square) place(mark.el, mark.name, (mark.square = square), mark.above);
           continue;
         }
         const el = document.createElement("div");
-        el.className = `ls-mark ls-mark-${key.split(" ")[0]}`;
-        el.style.transform = spot(square);
+        const name = key.split(" ")[0];
+        place(el, name, square, !!above);
         (above ? (over ??= layer(host, "ls-over")) : under).appendChild(el);
-        marks.set(key, { el, square });
+        marks.set(key, { el, square, name, above: !!above });
       }
     },
     replace() {
-      for (const mark of marks.values()) mark.el.style.transform = spot(mark.square);
+      for (const mark of marks.values()) place(mark.el, mark.name, mark.square, mark.above);
     },
     destroy() {
       over?.remove();

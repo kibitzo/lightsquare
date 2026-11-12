@@ -80,7 +80,21 @@ describe.each(PROFILES)("modules in $name", (profile) => {
       expect(knight.left).toBeLessThan(5.55);
       expect(knight.right).toBeGreaterThan(6.5);
       expect(knight.bottom).toBeGreaterThan(7.5);
-      expect(await page.evaluate(() => document.querySelector(".ls-arrow-red text")!.textContent)).toBe("1");
+      const label = await page.evaluate(() => {
+        const group = document.querySelector(".ls-arrow-red")!;
+        const disc = group.querySelector("circle")!.getBoundingClientRect();
+        const text = group.querySelector("text")!.getBoundingClientRect();
+        const style = getComputedStyle(group.querySelector("circle")!);
+        const light = (getComputedStyle(group.querySelector("text")!).fill.match(/[\d.]+/g) ?? []).slice(0, 3).map(Number);
+        return {
+          text: group.querySelector("text")!.textContent,
+          centred: Math.abs(disc.left + disc.width / 2 - (text.left + text.width / 2)) < 1.5 && Math.abs(disc.top + disc.height / 2 - (text.top + text.height / 2)) < 2.5,
+          disc: style.fill,
+          ring: style.stroke,
+          lightText: light.every((v) => v > (light.length && light[0] <= 1 ? 0.7 : 180)),
+        };
+      });
+      expect(label).toEqual({ text: "1", centred: true, disc: "rgba(12, 17, 23, 0.88)", ring: "rgb(185, 28, 28)", lightText: true });
       const circle = await box(".ls-circle-green");
       expect((circle.left + circle.right) / 2).toBeCloseTo(3.5, 1);
       expect((circle.top + circle.bottom) / 2).toBeCloseTo(4.5, 1);
@@ -246,6 +260,20 @@ describe.each(PROFILES)("modules in $name", (profile) => {
       );
     const picked = (): Promise<unknown[]> => page.evaluate(() => (window as unknown as W).picked);
     const use = (): Promise<void> => page.evaluate(() => void ((window as unknown as W).A = T.board.use(M.promotion())));
+
+    it("the picker is one panel, a square wide and four squares tall, carved from the board", async () => {
+      await fresh(page, { position: "8/4P3/8/8/8/8/8/k6K" });
+      await use();
+      await ask("e8", "white");
+      const panel = await box(".ls-picker");
+      expect([panel.left, panel.top, panel.right, panel.bottom]).toEqual([4, 0, 5, 4]);
+      expect(await page.evaluate(() => getComputedStyle(document.querySelector(".ls-promotion")!).backgroundColor)).toBe("rgba(0, 0, 0, 0)");
+      await page.evaluate(() => (window as unknown as W).A.cancel());
+      await ask("d1", "white");
+      const up = await box(".ls-picker");
+      expect([up.left, up.top, up.right, up.bottom]).toEqual([3, 4, 4, 8]);
+      await page.evaluate(() => (window as unknown as W).A.cancel());
+    });
 
     it("offers four pieces from the promotion square inwards, as buttons with names", async () => {
       await fresh(page, { position: "8/4P3/8/8/8/8/8/k6K" });
@@ -505,6 +533,39 @@ describe.each(PROFILES)("modules in $name", (profile) => {
         M.applyTheme(document.documentElement, {});
         M.applyTheme(document.getElementById("board")!, {});
       });
+    });
+
+    it("circles follow the arrows' colours unless they are given their own", async () => {
+      await fresh(page);
+      const seen = await page.evaluate(() => {
+        T.board.use(M.shapes({ circles: [{ square: "a4" }, { square: "b4", name: "red" }, { square: "c4", name: "green" }] }));
+        const read = (): string[] => [...document.querySelectorAll(".ls-circle")].map((el) => getComputedStyle(el).stroke);
+        const before = read();
+        M.applyTheme(document.getElementById("wrap")!, { shapes: { default: "rgb(1, 1, 1)", red: "rgb(2, 2, 2)" }, circles: { red: "rgb(3, 3, 3)", green: "rgb(4, 4, 4)" } });
+        const after = read();
+        M.applyTheme(document.getElementById("wrap")!, {});
+        return { before, after };
+      });
+      expect(seen.before).toEqual(["rgb(234, 88, 12)", "rgb(185, 28, 28)", "rgb(4, 120, 87)"]);
+      expect(seen.after).toEqual(["rgb(1, 1, 1)", "rgb(3, 3, 3)", "rgb(4, 4, 4)"]);
+    });
+
+    it("the selected square has a tint and a frame, both in the theme", async () => {
+      await fresh(page, { movable: "white" });
+      const seen = await page.evaluate(() => {
+        T.board.select("e2");
+        const read = (): string[] => {
+          const style = getComputedStyle(document.querySelector(".ls-mark-select")!);
+          return [style.backgroundColor, style.boxShadow.replace(/\s+/g, " ").includes("inset") ? "framed" : "plain", style.boxShadow.match(/rgba?\([^)]+\)/)?.[0] ?? ""];
+        };
+        const before = read();
+        M.applyTheme(document.getElementById("wrap")!, { selected: "rgba(0, 0, 255, 0.3)", selectedEdge: "rgb(0, 0, 255)" });
+        const after = read();
+        M.applyTheme(document.getElementById("wrap")!, {});
+        return { before, after };
+      });
+      expect(seen.before).toEqual(["rgba(245, 158, 11, 0.2)", "framed", "rgba(245, 158, 11, 0.9)"]);
+      expect(seen.after).toEqual(["rgba(0, 0, 255, 0.3)", "framed", "rgb(0, 0, 255)"]);
     });
 
     it("arrows can be made thicker and their heads larger", async () => {

@@ -13,7 +13,8 @@
   --_ms: var(--ls-move-ms, 180ms);
   --_ease: var(--ls-ease, cubic-bezier(0.2, 0.7, 0.25, 1));
   --_last: var(--ls-last, rgba(255, 235, 0, 0.5));
-  --_select: var(--ls-select, rgba(30, 22, 14, 0.28));
+  --_select: var(--ls-select, rgba(245, 158, 11, 0.2));
+  --_select-edge: var(--ls-select-edge, rgba(245, 158, 11, 0.9));
   --_check: var(--ls-check, rgba(220, 38, 38, 0.78));
   --_target: var(--ls-target, rgba(0, 0, 0, 0.2));
   --_hover: var(--ls-hover, rgba(0, 0, 0, 0.16));
@@ -134,8 +135,10 @@
   background: var(--_premove);
 }
 
+/* The piece in hand: a soft tint inside a clear frame. */
 .ls-mark-select {
   background: var(--_select);
+  box-shadow: inset 0 0 0 max(2px, 0.5cqw) var(--_select-edge);
 }
 
 .ls-mark-check {
@@ -231,23 +234,26 @@
   transition: none;
 }
 
+/* A label on an arrow ("1", "2"): a dark disc ringed in the arrow's colour,
+   with the text in a light tint of it. */
 .ls-arrow circle {
-  fill: #fff;
+  fill: var(--ls-label-bg, rgba(12, 17, 23, 0.88));
   stroke: var(--_shape);
-  stroke-width: 0.04;
+  stroke-width: 0.028;
 }
 
 .ls-arrow text {
-  fill: #111827;
-  font: 700 0.24px system-ui, -apple-system, "Segoe UI", sans-serif;
+  fill: #f1f5f9;
+  fill: var(--ls-label-text, color-mix(in srgb, var(--_shape) 22%, #fff));
+  font: 700 0.2px ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-variant-numeric: tabular-nums;
   text-anchor: middle;
-  dominant-baseline: central;
 }
 
 .ls-circle {
   fill: none;
   stroke: var(--_shape);
-  stroke-width: var(--ls-circle-width, 0.05);
+  stroke-width: var(--ls-circle-stroke, 0.05);
   opacity: var(--ls-head-opacity, 0.82);
 }
 
@@ -259,35 +265,57 @@
   }
 }
 
-/* Module "promotion": the picker covers the board and dims it. */
+/* Module "promotion": a panel carved from the board, one square wide, on
+   the promotion square and the squares behind it. The layer around it is
+   clear and catches a press beside the panel. */
 .ls-promotion {
   pointer-events: auto;
-  background: rgba(12, 17, 23, 0.45);
 }
 
-.ls-choice {
+.ls-picker {
   position: absolute;
   left: 0;
   top: 0;
   width: 12.5%;
-  height: 12.5%;
+  height: calc(var(--ls-picks, 4) * 12.5%);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: 0.8cqw;
+  background: var(--_light);
+  background: color-mix(in srgb, var(--_light) 94%, #fff);
+  box-shadow: 0 0 0 1px rgba(120, 85, 45, 0.35), 0 0.9cqw 2.8cqw rgba(40, 25, 10, 0.45);
+  transition: opacity 140ms linear;
+}
+
+/* From the bottom edge the first choice is at the bottom. */
+.ls-picker-up {
+  flex-direction: column-reverse;
+}
+
+.ls-choice {
+  flex: 1;
   margin: 0;
   padding: 0;
   border: 0;
-  border-radius: 50%;
   /* Longhands: the picture comes from the piece's own class (.ls-wq, ...). */
-  background-color: #f8fafc;
+  background-color: transparent;
   background-position: center;
-  background-size: 86% 86%;
+  background-size: 88% 88%;
   background-repeat: no-repeat;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.45);
   cursor: pointer;
 }
 
 .ls-choice:hover,
 .ls-choice:focus-visible {
-  background-color: #fde68a;
+  background-color: rgba(245, 158, 11, 0.2);
   outline: none;
+}
+
+@starting-style {
+  .ls-picker {
+    opacity: 0;
+  }
 }
 
 /* Module "overlay": a box the size of a square; what is put in it can be pressed. */

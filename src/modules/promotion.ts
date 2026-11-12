@@ -1,6 +1,6 @@
 /**
- * The promotion picker: four pieces on the promotion square and the three
- * squares behind it.
+ * The promotion picker: a panel with four pieces, on the promotion square
+ * and the three squares behind it.
  *
  *   const picker = board.use(promotion());
  *   const piece = await picker.ask("e8", "white");   // "q" | "r" | "b" | "n" | null
@@ -46,15 +46,19 @@ export function promotion(options: PromotionOptions = {}): Module<Promotion> {
       const layer = document.createElement("div");
       layer.className = "ls-layer ls-promotion";
       const [col, row] = surface.cell(square);
-      const step = row < 4 ? 1 : -1;
-      (options.pieces ?? ["q", "n", "r", "b"]).forEach((piece, i) => {
-        const button = layer.appendChild(document.createElement("button"));
+      const pieces = options.pieces ?? ["q", "n", "r", "b"];
+      const up = row >= 4;
+      const panel = layer.appendChild(document.createElement("div"));
+      panel.className = `ls-picker${up ? " ls-picker-up" : ""}`;
+      panel.style.setProperty("--ls-picks", String(pieces.length));
+      panel.style.transform = surface.spot(surface.square(col, up ? row - pieces.length + 1 : row)!);
+      for (const piece of pieces) {
+        const button = panel.appendChild(document.createElement("button"));
         button.type = "button";
         button.className = `ls-choice ls-${color[0]}${piece}`;
         button.dataset.piece = piece;
         button.setAttribute("aria-label", options.labels?.[piece] ?? LABELS[piece]);
-        button.style.transform = surface.spot(surface.square(col, row + step * i)!);
-      });
+      }
       layer.addEventListener("pointerdown", (e) => e.stopPropagation());
       layer.addEventListener("click", (e) => close(((e.target as Element).closest<HTMLElement>(".ls-choice")?.dataset.piece as PromotionPiece) ?? null));
       layer.addEventListener("keydown", (e) => e.key === "Escape" && close(null));
