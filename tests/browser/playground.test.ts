@@ -57,7 +57,8 @@ describe.each([PROFILES[0], PROFILES[1], PROFILES[2]])("the page in $name", (pro
   beforeEach(async () => {
     await page.evaluate(() => localStorage.clear());
     await page.reload();
-    await page.waitForFunction("document.querySelectorAll('.ls-piece').length === 32 && document.querySelectorAll('#boards button').length > 0");
+    // The page is ready when the board stands, the controls are built and the size under the board has been written (the browser reports the size a moment after layout).
+    await page.waitForFunction("document.querySelectorAll('.ls-piece').length === 32 && document.querySelectorAll('#boards button').length > 0 && document.getElementById('where').textContent !== ''");
     errors.length = 0;
   });
 
@@ -214,7 +215,10 @@ describe.each([PROFILES[0], PROFILES[1], PROFILES[2]])("the page in $name", (pro
       const host = document.getElementById("board")!.getBoundingClientRect();
       const size = host.width / 8;
       const off = Math.max(...[...document.querySelectorAll(".ls-piece")].map((el) => { const r = el.getBoundingClientRect(); const c = (r.left - host.left) / size; return Math.abs(c - Math.round(c)); }));
-      return { off, label: document.getElementById("where")!.textContent, running: document.getAnimations().length };
+      // What must not move is the board. The grip's own colour fades for a moment when the pointer leaves it; that is not the board's doing.
+      const board = document.getElementById("board")!;
+      const running = document.getAnimations().filter((a) => board.contains((a.effect as KeyframeEffect).target)).length;
+      return { off, label: document.getElementById("where")!.textContent, running };
     });
     expect(state.off).toBeLessThan(0.02);
     expect(state.label).toContain(`${Math.round(small)} px`);
