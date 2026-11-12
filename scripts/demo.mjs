@@ -18,6 +18,8 @@ writeFileSync(`${out}config.json`, JSON.stringify({ static: true }));
 // The notice of the second piece set goes where the set goes.
 cpSync(`${root}bench/pieces/NOTICE.md`, `${out}pieces-staunty-NOTICE.md`);
 cpSync(`${root}docs/icons/social-preview.png`, `${out}social-preview.png`);
+// The design as one picture, linked from the page and from the README.
+cpSync(`${root}docs/architecture.html`, `${out}architecture.html`);
 // GitHub Pages runs Jekyll over a site unless told not to.
 writeFileSync(`${out}.nojekyll`, "");
 console.log("site/ written");

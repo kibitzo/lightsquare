@@ -22,6 +22,42 @@ change its looks, and measure it on your own phone.
 - No chess rules inside: your app says which moves are allowed.
 - MIT.
 
+## Next to other boards
+
+<!-- comparison: written by compare/run.mjs, do not edit by hand -->
+| | Lightsquare | chessground | cm-chessboard | react-chessboard | chessboard.js |
+|---|---:|---:|---:|---:|---:|
+| Script to download, gzipped | **5.2 kB** | 11.9 kB | 8.1 kB | 21.5 kB | 33.0 kB |
+| The same, with arrows, drawing and premove | **7.3 kB** | 11.9 kB | 10.9 kB | 21.5 kB | not offered |
+| Elements on the page | **53** | 68 | 154 | 515 | 130 |
+| Per move: frames asked of the script | **0** | 25 | 25 | **0** | 26 |
+| Per move: writes to the page | **4** | 51 | 162 | 6 | 59 |
+| Per move: script time | **0.06 ms** | 2.82 ms | 2.02 ms | 2.77 ms | 4.73 ms |
+| Per move: paints | 7.3 | **4.3** | 48.4 | 6.0 | 79.8 |
+| Per move: compositing time | 5.28 ms | 16.47 ms | 9.91 ms | **3.61 ms** | 7.08 ms |
+| Pictures drawn of a slide while the script is frozen | **51** | 0 | 0 | **51** | 0 |
+| Pictures drawn of 12 moves, script busy half the time | **248** | 172 | 169 | 246 | 144 |
+| Work to show a position, slowed processor | **0.005 ms** | 0.009 ms | 3.492 ms | 6.238 ms | 0.006 ms |
+| Drag: script time | **3.9 ms** | 3.9 ms | 5.0 ms | 36.8 ms | 8.6 ms |
+| Drag: style and layout time | 3.6 ms | **1.5 ms** | 4.5 ms | 2.0 ms | 1.6 ms |
+
+Measured 2026-11-12 in headless Chromium on a desktop computer, each
+board driven the same way; the best in each row is in bold. Another board
+is ahead in: per move: paints; per move: compositing time; drag: style and layout time. The full table, the method and what it
+cannot show (it is not a phone) are in
+[compare/RESULTS.md](compare/RESULTS.md).
+<!-- end of comparison -->
+
+## How a move reaches the screen
+
+<p align="center"><a href="https://kibitzo.github.io/lightsquare/architecture.html"><img src="docs/architecture.png" width="100%" alt="Your app and the player's finger both change one state object. A reconciler writes only what changed into the board's layers. The browser's compositor slides the pieces: no script runs per frame. Optional modules (arrows, promotion, accessibility) join the same update."></a></p>
+
+One state, one reconciler, a few writes, and the browser does the sliding.
+That last step is the whole point: while a piece moves, no script of the
+board runs, so a phone that holds the page's script back cannot make the
+slide stutter. The design in full is in [ARCHITECTURE.md](ARCHITECTURE.md);
+the rules it obeys, each with a test, are in [RULES.md](RULES.md).
+
 Status: the library is complete for our needs and tested in Chromium and
 WebKit; it has not run in production yet and is not on npm.
 
@@ -56,11 +92,10 @@ page.
 - `npm run bench`: the playground. Play, change the looks, measure on a
   phone. `npm run demo` builds the same page as plain files (`site/`); it
   is published at https://kibitzo.github.io/lightsquare/ on every push.
-- [compare/RESULTS.md](compare/RESULTS.md): Lightsquare measured next to
-  four other boards (Lichess's chessground, cm-chessboard, react-chessboard
-  and chessboard.js), with the method and its limits. The
-  comparison is a project of its own in `compare/`; the library does not
-  depend on it.
+- [compare/RESULTS.md](compare/RESULTS.md): the full comparison with four
+  other boards (Lichess's chessground, cm-chessboard, react-chessboard and
+  chessboard.js), with the method and its limits. The comparison is a
+  project of its own in `compare/`; the library does not depend on it.
 - [RULES.md](RULES.md): the hard rules every change obeys.
 - [ARCHITECTURE.md](ARCHITECTURE.md): the design, the comparison with other
   boards, how it is tested, the order of work.

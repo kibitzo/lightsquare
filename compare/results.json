@@ -6,6 +6,7 @@
     {
       "label": "Script, gzipped",
       "note": "the board as it ships, with what it cannot run without",
+      "front": "Script to download, gzipped",
       "cells": [
         {
           "text": "5.2 kB",
@@ -32,6 +33,7 @@
     {
       "label": "Script with arrows, drawing by the user and premove",
       "note": "some boards need extra parts for these, some ship them in one file",
+      "front": "The same, with arrows, drawing and premove",
       "cells": [
         {
           "text": "7.3 kB",
@@ -87,6 +89,7 @@
     {
       "label": "Elements on the page (starting position, with coordinates)",
       "note": "",
+      "front": "Elements on the page",
       "cells": [
         {
           "text": "53",
@@ -142,6 +145,7 @@
     {
       "label": "Frames asked of the script",
       "note": "how often the board's script must run during a slide",
+      "front": "Per move: frames asked of the script",
       "cells": [
         {
           "text": "0",
@@ -168,6 +172,7 @@
     {
       "label": "Writes to the page",
       "note": "",
+      "front": "Per move: writes to the page",
       "cells": [
         {
           "text": "4",
@@ -220,6 +225,7 @@
     {
       "label": "Script time",
       "note": "",
+      "front": "Per move: script time",
       "cells": [
         {
           "text": "0.06 ms",
@@ -272,6 +278,7 @@
     {
       "label": "Paints",
       "note": "",
+      "front": "Per move: paints",
       "cells": [
         {
           "text": "7.3",
@@ -350,6 +357,7 @@
     {
       "label": "Compositing time: layers, commit, drawing",
       "note": "drawn in software here, so compare boards only",
+      "front": "Per move: compositing time",
       "cells": [
         {
           "text": "5.28 ms",
@@ -379,6 +387,7 @@
     {
       "label": "Pictures drawn of a 900 ms slide while the script is frozen for 600 ms",
       "note": "",
+      "front": "Pictures drawn of a slide while the script is frozen",
       "cells": [
         {
           "text": "51",
@@ -405,6 +414,7 @@
     {
       "label": "Pictures drawn of 12 moves while the script is busy half the time",
       "note": "more means smoother",
+      "front": "Pictures drawn of 12 moves, script busy half the time",
       "cells": [
         {
           "text": "248",
@@ -434,6 +444,7 @@
     {
       "label": "Main-thread work to show one position, no slide",
       "note": "",
+      "front": "Work to show a position, slowed processor",
       "cells": [
         {
           "text": "0.005 ms",
@@ -463,6 +474,7 @@
     {
       "label": "Script time",
       "note": "",
+      "front": "Drag: script time",
       "cells": [
         {
           "text": "3.9 ms",
@@ -489,6 +501,7 @@
     {
       "label": "Style and layout time",
       "note": "",
+      "front": "Drag: style and layout time",
       "cells": [
         {
           "text": "3.6 ms",

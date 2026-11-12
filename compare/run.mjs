@@ -310,30 +310,30 @@ const ms = (digits) => (n) => (n < 10 ** -digits ? `under ${10 ** -digits} ms` :
  */
 const ROWS = [
   "To download",
-  ["Script, gzipped", (b) => b.size.js, kB, "low", { note: "the board as it ships, with what it cannot run without" }],
-  ["Script with arrows, drawing by the user and premove", (b) => (b.size.jsWith === false ? null : b.size.jsWith ?? b.size.js), kB, "low", { note: "some boards need extra parts for these, some ship them in one file", none: "not offered" }],
+  ["Script, gzipped", (b) => b.size.js, kB, "low", { note: "the board as it ships, with what it cannot run without", front: "Script to download, gzipped" }],
+  ["Script with arrows, drawing by the user and premove", (b) => (b.size.jsWith === false ? null : b.size.jsWith ?? b.size.js), kB, "low", { note: "some boards need extra parts for these, some ship them in one file", none: "not offered", front: "The same, with arrows, drawing and premove" }],
   ["Styles, gzipped, without piece pictures", (b) => b.size.css, kB, "low", { none: "in the script" }],
   "At rest",
-  ["Elements on the page (starting position, with coordinates)", (b) => b.atRest.elements, String, "low"],
+  ["Elements on the page (starting position, with coordinates)", (b) => b.atRest.elements, String, "low", { front: "Elements on the page" }],
   ["Paints, script calls, frames and timers in two seconds", (b) => b.atRest.paints + b.atRest.scriptCalls + b.atRest.frames + b.atRest.timers, String, "low"],
   "One sliding move (middle value of 20 moves)",
-  ["Frames asked of the script", (b) => b.perMove.frameCallbacks, String, "low", { note: "how often the board's script must run during a slide" }],
-  ["Writes to the page", (b) => b.perMove.domWrites, String, "low"],
+  ["Frames asked of the script", (b) => b.perMove.frameCallbacks, String, "low", { note: "how often the board's script must run during a slide", front: "Per move: frames asked of the script" }],
+  ["Writes to the page", (b) => b.perMove.domWrites, String, "low", { front: "Per move: writes to the page" }],
   ["Layout reads", (b) => b.perMove.layoutReads, String, "low"],
-  ["Script time", (b) => b.perMove.scriptMs, ms(2), "low"],
+  ["Script time", (b) => b.perMove.scriptMs, ms(2), "low", { front: "Per move: script time" }],
   ["Style and layout time", (b) => b.perMove.styleAndLayoutMs, ms(2), "low"],
-  ["Paints", (b) => b.perMove.paints, (n) => n.toFixed(1), "low"],
+  ["Paints", (b) => b.perMove.paints, (n) => n.toFixed(1), "low", { front: "Per move: paints" }],
   ["Paint time", (b) => b.perMove.paintMs, ms(2), "low"],
   ["Raster time, off the main thread", (b) => b.perMove.rasterMs, ms(2), "low", { note: "turning painted shapes into pixels" }],
-  ["Compositing time: layers, commit, drawing", (b) => b.perMove.compositeMs, ms(2), "low", { note: "drawn in software here, so compare boards only" }],
+  ["Compositing time: layers, commit, drawing", (b) => b.perMove.compositeMs, ms(2), "low", { note: "drawn in software here, so compare boards only", front: "Per move: compositing time" }],
   "When the page's script is not free",
-  ["Pictures drawn of a 900 ms slide while the script is frozen for 600 ms", (b) => b.whileStuck, String, "high"],
-  ["Pictures drawn of 12 moves while the script is busy half the time", (b) => b.whileBusy, String, "high", { note: "more means smoother" }],
+  ["Pictures drawn of a 900 ms slide while the script is frozen for 600 ms", (b) => b.whileStuck, String, "high", { front: "Pictures drawn of a slide while the script is frozen" }],
+  ["Pictures drawn of 12 moves while the script is busy half the time", (b) => b.whileBusy, String, "high", { note: "more means smoother", front: "Pictures drawn of 12 moves, script busy half the time" }],
   "A processor slowed six times",
-  ["Main-thread work to show one position, no slide", (b) => b.replay.workMs, ms(3), "low"],
+  ["Main-thread work to show one position, no slide", (b) => b.replay.workMs, ms(3), "low", { front: "Work to show a position, slowed processor" }],
   "One piece dragged two squares with the mouse, in 42 steps",
-  ["Script time", (b) => b.drag.scriptMs, ms(1), "low"],
-  ["Style and layout time", (b) => b.drag.styleAndLayoutMs, ms(1), "low"],
+  ["Script time", (b) => b.drag.scriptMs, ms(1), "low", { front: "Drag: script time" }],
+  ["Style and layout time", (b) => b.drag.styleAndLayoutMs, ms(1), "low", { front: "Drag: style and layout time" }],
   ["Layout reads", (b) => b.drag.layoutReads, String, "low"],
 ];
 
@@ -346,8 +346,41 @@ function table(results) {
     const values = boards.map(read);
     const real = values.filter((v) => v !== null);
     const best = better === "low" ? Math.min(...real) : Math.max(...real);
-    return { label, note: extra.note ?? "", cells: values.map((v) => ({ text: v === null ? extra.none ?? "none" : show(v), best: v !== null && v === best })) };
+    return { label, note: extra.note ?? "", front: extra.front, cells: values.map((v) => ({ text: v === null ? extra.none ?? "none" : show(v), best: v !== null && v === best })) };
   });
+}
+
+/**
+ * The short table at the front of the repository (README.md), between its
+ * two marks: the rows that say most, the ones where another board is ahead
+ * among them. Written from the same results as the full report.
+ */
+function frontPage(results) {
+  const boards = Object.values(results.boards);
+  const rows = table(results).filter((row) => row.front);
+  const behind = rows.filter((row) => !row.cells[0].best).map((row) => row.front[0].toLowerCase() + row.front.slice(1));
+  return `| | ${boards.map((b) => b.name.replace(" (Lichess)", "")).join(" | ")} |
+|---|${boards.map(() => "---:").join("|")}|
+${rows.map((row) => `| ${row.front} | ${row.cells.map((c) => (c.best && !row.cells.every((x) => x.best) ? `**${c.text}**` : c.text)).join(" | ")} |`).join("\n")}
+
+Measured ${results.date} in headless Chromium on a desktop computer, each
+board driven the same way; the best in each row is in bold. Another board
+is ahead in: ${behind.join("; ")}. The full table, the method and what it
+cannot show (it is not a phone) are in
+[compare/RESULTS.md](compare/RESULTS.md).`;
+}
+
+const FRONT = ["<!-- comparison: written by compare/run.mjs, do not edit by hand -->", "<!-- end of comparison -->"];
+
+/** Write the results everywhere they are shown: the data the page reads, the full report, and the short table of the README. */
+function publish(results) {
+  results.table = table(results);
+  writeFileSync(`${here}results.json`, `${JSON.stringify(results, null, 2)}\n`);
+  writeFileSync(`${here}RESULTS.md`, report(results));
+  const readme = readFileSync(`${root}README.md`, "utf8");
+  const [from, to] = [readme.indexOf(FRONT[0]), readme.indexOf(FRONT[1])];
+  if (from < 0 || to < from) throw new Error("README.md has lost the marks of its comparison");
+  writeFileSync(`${root}README.md`, `${readme.slice(0, from + FRONT[0].length)}\n${frontPage(results)}\n${readme.slice(to)}`);
 }
 
 const COUNT = ["No", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight"];
@@ -455,16 +488,14 @@ package.
 if (process.argv.includes("--sizes")) {
   const results = JSON.parse(readFileSync(`${here}results.json`, "utf8"));
   for (const lib of LIBS) results.boards[lib.id].size = await sizes(lib);
-  results.table = table(results);
-  writeFileSync(`${here}results.json`, `${JSON.stringify(results, null, 2)}\n`);
-  writeFileSync(`${here}RESULTS.md`, report(results));
+  publish(results);
   console.log(LIBS.map((lib) => `${lib.name} ${kB(results.boards[lib.id].size.js)}`).join(", "));
   process.exit(0);
 }
 
 if (process.argv.includes("--report")) {
-  writeFileSync(`${here}RESULTS.md`, report(JSON.parse(readFileSync(`${here}results.json`, "utf8"))));
-  console.log("RESULTS.md written from results.json");
+  publish(JSON.parse(readFileSync(`${here}results.json`, "utf8")));
+  console.log("RESULTS.md and the table of README.md written from results.json");
   process.exit(0);
 }
 
@@ -562,7 +593,5 @@ for (const lib of LIBS) {
 }
 await browser.close();
 server.close();
-results.table = table(results);
-writeFileSync(`${here}results.json`, `${JSON.stringify(results, null, 2)}\n`);
-writeFileSync(`${here}RESULTS.md`, report(results));
+publish(results);
 console.log(`results written to compare/results.json and compare/RESULTS.md`);

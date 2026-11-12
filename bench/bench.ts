@@ -243,7 +243,8 @@ interface Look {
   circleColours: Record<string, string>;
 }
 
-const LOOK_KEY = "lightsquare-playground-look-2";
+// The number goes up when a saved look must not outlive a change of the page (3: Staunty became the first piece set).
+const LOOK_KEY = "lightsquare-playground-look-3";
 const plainColours = (): Record<string, string> => Object.fromEntries(SHAPE_NAMES.map(([name, , colour]) => [name, colour]));
 const look: Look = { board: "wood", pieces: "staunty", labels: "on", pieceSize: 100, moveMs: 180, arrowWidth: 20, arrowHead: 82, badge: "auto", checkLoops: "3", boardScale: 1, glow: 82, arrowColours: plainColours(), circleColours: plainColours() };
 
