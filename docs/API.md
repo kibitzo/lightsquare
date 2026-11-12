@@ -136,8 +136,9 @@ drawing.clear();
 `--ls-shape-red: crimson`, `--ls-shape-mine: #7c3aed` (see Looks). Each shape
 also carries the class `ls-arrow-<name>` or `ls-circle-<name>`.
 
-A label sits on the arrow in a dark disc ringed in the arrow's colour
-(`--ls-label-bg`, `--ls-label-text`).
+An arrow with a label gets a head made for it: the shaft opens into a disc
+that holds the text, upright and white (`--ls-label-text`), and the disc
+narrows to the point.
 
 An arrow runs from the centre of its first square to the centre of its
 last one, where its point stops. Its colour grows from faint at the tail, so
@@ -239,6 +240,13 @@ other squares a touch deeper, growing with the board (about 10 px on a
 phone, 12 px at most). Change them with `--ls-coord-font`,
 `--ls-coord-size`, `--ls-coord-weight`, `--ls-coord-on-light` and
 `--ls-coord-on-dark`.
+
+The board is a CSS container named `lightsquare`, so your own styles can
+follow its size, whatever the window's:
+
+```css
+@container lightsquare (max-width: 460px) { .ls-mark-brilliant::after { width: 46%; } }
+```
 
 ### Piece sets
 

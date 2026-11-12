@@ -8,6 +8,7 @@ import { Chess, type Square as ChessSquare } from "chess.js";
 import { lightsquare } from "../src/index";
 import { a11y } from "../src/modules/a11y";
 import { premoveTargets } from "../src/modules/premove";
+import { overlay } from "../src/modules/overlay";
 import { promotion } from "../src/modules/promotion";
 import { shapes, type Arrow, type Circle } from "../src/modules/shapes";
 import { applyTheme, themes, type Theme } from "../src/modules/theme";
@@ -15,9 +16,12 @@ import { applyTheme, themes, type Theme } from "../src/modules/theme";
 const OPERA = "e4 e5 Nf3 d6 d4 Bg4 dxe5 Bxf3 Qxf3 dxe5 Bc4 Nf6 Qb3 Qe7 Nc3 c6 Bg5 b5 Nxb5 cxb5 Bxb5+ Nbd7 O-O-O Rd8 Rxd7 Rxd7 Rd1 Qe6 Bxd7+ Nxd7 Qb8+ Nxb8 Rd8#".split(" ");
 /** Move-quality badges for the replay, by ply. Their look is this page's CSS, not the library's. */
 const BADGES: Record<number, string> = { 5: "book", 12: "inaccuracy", 16: "mistake", 19: "great", 20: "forced", 23: "excellent", 25: "great", 27: "best", 28: "blunder", 31: "brilliant", 33: "great" };
-const BADGE_KINDS = ["brilliant", "great", "excellent", "best", "inaccuracy", "mistake", "blunder", "book", "forced"];
+const BADGE_KINDS = ["brilliant", "great", "excellent", "best", "inaccuracy", "mistake", "blunder", "book", "forced", "mate"];
 /** "All": every badge at once, with the corner, the top row and the right column covered. */
-const BADGE_SQUARES = ["h8", "a8", "h4", "c5", "d5", "e5", "f5", "b4", "g4"];
+const BADGE_SQUARES = ["h8", "a8", "h4", "c5", "d5", "e5", "f5", "b4", "g4", "e8"];
+type BoardMark = { square: string; name: string; above?: boolean };
+/** The eight sparks of the checkmate badge, a little off the axes so they read as a burst. */
+const MATE_SPARKS = [10, 55, 100, 145, 190, 235, 280, 325];
 /** The names of the colours and what each is for: the app's two, then the user's three. */
 const SHAPE_NAMES: Array<[string, string, string]> = [["default", "plan", "#ea580c"], ["red", "threat", "#b91c1c"], ["green", "pen", "#047857"], ["blue", "Alt", "#1d4ed8"], ["yellow", "Shift", "#ca8a04"]];
 const SAMPLE_ARROWS: Arrow[] = [{ from: "b1", to: "c3" }, { from: "c8", to: "g4", name: "red" }, { from: "d1", to: "d4", name: "green", label: "1" }, { from: "f1", to: "b5", name: "blue", label: "2" }, { from: "h7", to: "h5", name: "yellow" }];
@@ -60,21 +64,43 @@ function show(): void {
     premovable: versus && !whiteToMove ? "white" : "none",
     premoveTargets: versus ? premoveTargets(fen, "white") : null,
     lastMove: last ? ([last.from, last.to] as const) : null,
-    check: kingSquare(),
+    check: chess.isCheckmate() ? null : kingSquare(),
     marks: badges(last?.to),
   } as const;
   const began = performance.now();
   board.set(next);
   samples.set.push(performance.now() - began);
   counts.moves++;
+  showMate(last?.to);
   showShapes();
 }
 
-/** The badges to show: the replay's own, one kind on the last move, or all nine at once. */
-function badges(to: string | undefined): Array<{ square: string; name: string; above: true }> | null {
-  if (look.badge === "all") return BADGE_KINDS.map((name, i) => ({ square: BADGE_SQUARES[i], name, above: true }));
-  const name = look.badge === "auto" ? BADGES[ply] : look.badge;
-  return name ? [{ square: to ?? "e4", name, above: true }] : null;
+/** Where the badges go: the replay's own, one kind on the last move, or all of them at once. */
+function badgePlaces(to: string | undefined): Array<[string, string]> {
+  if (look.badge === "all") return BADGE_KINDS.map((name, i) => [name, BADGE_SQUARES[i]]);
+  if (look.badge !== "auto") return [[look.badge, to ?? "e4"]];
+  const places: Array<[string, string]> = to && BADGES[ply] ? [[BADGES[ply], to]] : [];
+  const mated = chess.isCheckmate() ? kingSquare() : null;
+  if (mated) places.push(["mate", mated]);
+  return places;
+}
+
+/** The board's marks for the badges. Checkmate is a glow under the king; its "#" is HTML (showMate). */
+function badges(to: string | undefined): BoardMark[] {
+  return badgePlaces(to).map(([name, square]) => (name === "mate" ? { square, name: "mated" } : { square, name, above: true }));
+}
+
+/** The "#" with its sparks, put on the mated king's square. It is rebuilt only when the square changes, so it lands once. */
+let mateAt: string | null = null;
+function showMate(to: string | undefined): void {
+  const square = badgePlaces(to).find(([name]) => name === "mate")?.[1] ?? null;
+  if (square === mateAt) return;
+  mateAt = square;
+  if (!square) return html.remove("mate");
+  const el = document.createElement("div");
+  el.className = "mate";
+  el.innerHTML = `<span class="mate-badge" role="img" aria-label="Checkmate">#<span class="mate-sparks" aria-hidden="true">${MATE_SPARKS.map((angle, i) => `<i class="mate-spark mate-spark-${i % 3}" style="--a:${angle}deg"></i>`).join("")}</span></span>`;
+  html.put("mate", square, el);
 }
 
 /** The hint arrow is the next move of the Opera game; the samples show every colour at once. */
@@ -118,6 +144,7 @@ const board = lightsquare(host, {
 });
 const picker = board.use(promotion());
 const drawing = board.use(shapes({ draw: true }));
+const html = board.use(overlay());
 board.use(a11y({ label: "Lightsquare playground board" }));
 
 function goTo(target: number): void {
@@ -182,13 +209,15 @@ interface Look {
   arrowHead: number;
   /** "auto" follows the replay, "all" shows every badge, else one kind on the last move. */
   badge: string;
+  /** How often the halo under a king in check breathes: "3" times, or "infinite". */
+  checkLoops: string;
   arrowColours: Record<string, string>;
   circleColours: Record<string, string>;
 }
 
 const LOOK_KEY = "lightsquare-playground-look-2";
 const plainColours = (): Record<string, string> => Object.fromEntries(SHAPE_NAMES.map(([name, , colour]) => [name, colour]));
-const look: Look = { board: "wood", pieces: "cburnett", labels: "on", pieceSize: 100, moveMs: 180, arrowWidth: 20, arrowHead: 82, badge: "auto", arrowColours: plainColours(), circleColours: plainColours() };
+const look: Look = { board: "wood", pieces: "cburnett", labels: "on", pieceSize: 100, moveMs: 180, arrowWidth: 20, arrowHead: 82, badge: "auto", checkLoops: "3", arrowColours: plainColours(), circleColours: plainColours() };
 
 /** The look as the theme an app would store for a user. */
 function themeOf(l: Look): Theme {
@@ -211,7 +240,10 @@ function themeOf(l: Look): Theme {
 function applyLook(): void {
   const theme = themeOf(look);
   applyTheme($("page"), theme);
-  board.set({ coordinates: look.labels === "on", marks: badges(chess.history({ verbose: true }).at(-1)?.to) });
+  const lastTo = chess.history({ verbose: true }).at(-1)?.to;
+  board.set({ coordinates: look.labels === "on", marks: badges(lastTo) });
+  showMate(lastTo);
+  $("page").style.setProperty("--check-loops", look.checkLoops);
   const width = look.arrowWidth / 100;
   drawing.set({ look: { width, headWidth: width * 2.7, headLength: width * 2.3 } });
   $("theme").textContent = `applyTheme(element, ${JSON.stringify(theme, null, 1).replace(/\n\s*/g, " ")})`;
@@ -239,6 +271,8 @@ function choice(parent: string, key: keyof Look, value: string, content: string,
 async function buildLooks(): Promise<void> {
   const config = (await fetch("/config.json").then((r) => r.json()).catch(() => ({}))) as { extraPieces?: boolean };
   for (const [name, t] of Object.entries(themes)) choice("boards", "board", name, `<i style="background:linear-gradient(135deg, ${t.light} 50%, ${t.dark} 50%)"></i>`, "swatch");
+  choice("checks", "checkLoops", "3", "Settles", "");
+  choice("checks", "checkLoops", "infinite", "Forever", "");
   choice("badges", "badge", "auto", "Auto", "");
   choice("badges", "badge", "all", "All", "");
   for (const kind of BADGE_KINDS) choice("badges", "badge", kind, `<i class="q-${kind}"></i>`, "pick");

@@ -82,19 +82,20 @@ describe.each(PROFILES)("modules in $name", (profile) => {
       expect(knight.bottom).toBeGreaterThan(7.5);
       const label = await page.evaluate(() => {
         const group = document.querySelector(".ls-arrow-red")!;
-        const disc = group.querySelector("circle")!.getBoundingClientRect();
+        const head = group.querySelector("path")!.getBoundingClientRect();
         const text = group.querySelector("text")!.getBoundingClientRect();
-        const style = getComputedStyle(group.querySelector("circle")!);
-        const light = (getComputedStyle(group.querySelector("text")!).fill.match(/[\d.]+/g) ?? []).slice(0, 3).map(Number);
+        const size = document.getElementById("board")!.getBoundingClientRect().width / 8;
+        const tip = T.point("f3");
+        const centre = { x: text.left + text.width / 2, y: text.top + text.height / 2 };
         return {
           text: group.querySelector("text")!.textContent,
-          centred: Math.abs(disc.left + disc.width / 2 - (text.left + text.width / 2)) < 1.5 && Math.abs(disc.top + disc.height / 2 - (text.top + text.height / 2)) < 2.5,
-          disc: style.fill,
-          ring: style.stroke,
-          lightText: light.every((v) => v > (light.length && light[0] <= 1 ? 0.7 : 180)),
+          discs: group.querySelectorAll("circle").length,
+          fill: getComputedStyle(group.querySelector("text")!).fill,
+          inHead: Math.hypot(centre.x - tip.x, centre.y - tip.y) / size < 0.5 && centre.x > head.left && centre.x < head.right && centre.y > head.top && centre.y < head.bottom,
+          fits: text.height / size < 0.42 && text.width / size < 0.34,
         };
       });
-      expect(label).toEqual({ text: "1", centred: true, disc: "rgba(12, 17, 23, 0.88)", ring: "rgb(185, 28, 28)", lightText: true });
+      expect(label).toEqual({ text: "1", discs: 0, fill: "rgb(255, 255, 255)", inHead: true, fits: true });
       const circle = await box(".ls-circle-green");
       expect((circle.left + circle.right) / 2).toBeCloseTo(3.5, 1);
       expect((circle.top + circle.bottom) / 2).toBeCloseTo(4.5, 1);
@@ -360,6 +361,8 @@ describe.each(PROFILES)("modules in $name", (profile) => {
       const moved = await box("#mine");
       expect([moved.left, moved.top]).toEqual([7, 0]);
       expect(await page.evaluate(() => document.querySelectorAll(".ls-anchor").length)).toBe(1);
+      expect(await page.evaluate(() => document.querySelector(".ls-anchor")!.className), "in the screen's top-right corner it says so").toBe("ls-anchor ls-at-top ls-at-right");
+      expect(await page.evaluate(() => getComputedStyle(document.getElementById("board")!).containerName), "an app's stylesheet can ask for the board's size by name").toBe("lightsquare");
       await page.evaluate(() => (window as unknown as W).A.remove("tip"));
       expect(await page.evaluate(() => document.querySelectorAll(".ls-anchor, #mine").length)).toBe(0);
     });

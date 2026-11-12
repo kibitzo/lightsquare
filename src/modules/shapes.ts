@@ -16,7 +16,7 @@ export interface Arrow {
   to: Square;
   /** Picks the colour: the class `ls-arrow-<name>`. Leave out for the default. */
   name?: string;
-  /** A short text on the arrow, such as "1". */
+  /** A short text, such as "1". The arrow's head becomes a disc that holds it and narrows to the point. */
   label?: string;
 }
 
@@ -101,11 +101,13 @@ interface Outline {
   d: string;
   tail: [number, number];
   tip: [number, number];
-  /** Where a label sits: past the piece on the first square, clear of the head. */
+  /** Where a label sits: the centre of the disc in the head. */
   label: [number, number];
+  /** The radius of that disc. */
+  room: number;
 }
 
-function arrowOutline(from: [number, number], to: [number, number], look: Required<ArrowLook>, scale: number): Outline {
+function arrowOutline(from: [number, number], to: [number, number], look: Required<ArrowLook>, scale: number, labelled = false): Outline {
   const dx = to[0] - from[0];
   const dy = to[1] - from[1];
   const length = Math.hypot(dx, dy);
@@ -114,13 +116,33 @@ function arrowOutline(from: [number, number], to: [number, number], look: Requir
   const point = (along: number, across: number): [number, number] => [n(from[0] + 0.5 + ux * along - uy * across), n(from[1] + 0.5 + uy * along + ux * across)];
   const at = (along: number, across: number): string => point(along, across).join(" ");
   const half = (look.width * scale) / 2;
+  const tailEnd = `L${at(0, -half)}A${n(half)} ${n(half)} 0 0 0 ${at(0, half)}Z`;
+  if (labelled) {
+    // A head made for its label: the shaft opens into a disc that holds the
+    // text, and the disc narrows to a point on the centre of the target.
+    const r = Math.max(half * 1.25, look.headWidth * 0.4 * scale);
+    const back = Math.min(r * 1.72, length - r * 1.05);
+    const centre = length - back;
+    const enter = centre - Math.sqrt(r * r - half * half);
+    const touch = centre + (r * r) / back;
+    const reach = (r * Math.sqrt(back * back - r * r)) / back;
+    const arc = `A${n(r)} ${n(r)} 0 0 0 `;
+    return {
+      d: `M${at(0, half)}L${at(enter, half)}${arc}${at(touch, reach)}L${at(length, 0)}L${at(touch, -reach)}${arc}${at(enter, -half)}${tailEnd}`,
+      tail: point(0, 0),
+      tip: point(length, 0),
+      label: point(centre, 0),
+      room: r,
+    };
+  }
   const wing = (look.headWidth * scale) / 2;
   const neck = Math.max(0, length - look.headLength * scale);
   return {
-    d: `M${at(0, half)}L${at(neck, half)}L${at(neck, wing)}L${at(length, 0)}L${at(neck, -wing)}L${at(neck, -half)}L${at(0, -half)}A${n(half)} ${n(half)} 0 0 0 ${at(0, half)}Z`,
+    d: `M${at(0, half)}L${at(neck, half)}L${at(neck, wing)}L${at(length, 0)}L${at(neck, -wing)}L${at(neck, -half)}${tailEnd}`,
     tail: point(0, 0),
     tip: point(length, 0),
-    label: point(length * 0.42, 0),
+    label: point(neck, 0),
+    room: 0,
   };
 }
 
@@ -135,7 +157,7 @@ export function shapes(options: ShapesOptions = {}): Module<Shapes> {
     let orientation = surface.orientation();
 
     function arrowElement(a: Arrow, preview = false): SVGElement {
-      const { d, tail, tip, label } = arrowOutline(surface.cell(a.from), surface.cell(a.to), { ...LOOK, ...o.look }, preview ? PREVIEW : 1);
+      const { d, tail, tip, label, room } = arrowOutline(surface.cell(a.from), surface.cell(a.to), { ...LOOK, ...o.look }, preview ? PREVIEW : 1, !!a.label);
       const group = svg("g", { class: `ls-arrow${a.name ? ` ls-arrow-${a.name}` : ""}${preview ? " ls-arrow-preview" : ""}`, style: `--_shape:${colour(a.name)};transform-origin:${tail[0]}px ${tail[1]}px` });
       const id = `ls-fade-${++lastGradient}`;
       const fade = group.appendChild(svg("linearGradient", { id, gradientUnits: "userSpaceOnUse", x1: tail[0], y1: tail[1], x2: tip[0], y2: tip[1] }));
@@ -143,8 +165,8 @@ export function shapes(options: ShapesOptions = {}): Module<Shapes> {
       fade.appendChild(svg("stop", { offset: 1 }));
       group.appendChild(svg("path", { d, fill: `url(#${id})` }));
       if (a.label) {
-        group.appendChild(svg("circle", { cx: label[0], cy: label[1], r: 0.165 }));
-        group.appendChild(svg("text", { x: label[0], y: label[1], dy: "0.36em" })).textContent = a.label;
+        const size = n((room * 1.32) / Math.max(1, a.label.length * 0.62));
+        group.appendChild(svg("text", { x: label[0], y: label[1], dy: "0.35em", style: `font-size:${size}px` })).textContent = a.label;
       }
       return group;
     }

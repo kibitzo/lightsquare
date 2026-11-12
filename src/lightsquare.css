@@ -29,8 +29,10 @@
   -webkit-user-select: none;
   -webkit-touch-callout: none;
   -webkit-tap-highlight-color: transparent;
-  /* Children are placed and sized by the board's width (cqw). */
-  container-type: inline-size;
+  /* Children are placed and sized by the board's width (cqw). An app's
+     stylesheet can ask for the board's size by name:
+     @container lightsquare (max-width: 460px) { ... } */
+  container: lightsquare / inline-size;
   contain: layout style inline-size;
   isolation: isolate;
 }
@@ -234,18 +236,12 @@
   transition: none;
 }
 
-/* A label on an arrow ("1", "2"): a dark disc ringed in the arrow's colour,
-   with the text in a light tint of it. */
-.ls-arrow circle {
-  fill: var(--ls-label-bg, rgba(12, 17, 23, 0.88));
-  stroke: var(--_shape);
-  stroke-width: 0.028;
-}
-
+/* A label on an arrow ("1", "2") is written in its head, upright, in white.
+   The script sets its size to fit the head. */
 .ls-arrow text {
-  fill: #f1f5f9;
-  fill: var(--ls-label-text, color-mix(in srgb, var(--_shape) 22%, #fff));
-  font: 700 0.2px ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  fill: var(--ls-label-text, #fff);
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-weight: 800;
   font-variant-numeric: tabular-nums;
   text-anchor: middle;
 }
