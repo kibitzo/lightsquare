@@ -169,10 +169,23 @@
   .ls-mark-dot,
   .ls-mark-take {
     pointer-events: auto;
+    cursor: var(--ls-piece-cursor, pointer);
   }
   .ls-mark-dot:hover,
   .ls-mark-take:hover {
     background: var(--_hover);
+  }
+
+  /* A hand over a piece that can be picked up, and a closed one while it
+     is carried. Only those pieces take the pointer: a piece that cannot be
+     moved lets it through to the mark on its square. */
+  .ls-white-moves .ls-piece[class*=" ls-w"],
+  .ls-black-moves .ls-piece[class*=" ls-b"] {
+    pointer-events: auto;
+    cursor: var(--ls-piece-cursor, pointer);
+  }
+  .ls-board:has(.ls-dragging) {
+    cursor: grabbing;
   }
 }
 

@@ -62,7 +62,7 @@
       "note": "",
       "cells": [
         {
-          "text": "2.0 kB",
+          "text": "2.1 kB",
           "best": false
         },
         {
@@ -563,9 +563,9 @@
       "version": "0.0.1",
       "licence": "MIT",
       "size": {
-        "js": 5325,
-        "jsWith": 7480,
-        "css": 2032
+        "js": 5374,
+        "jsWith": 7525,
+        "css": 2105
       },
       "atRest": {
         "elements": 53,

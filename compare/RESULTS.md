@@ -12,7 +12,7 @@ in bold; where every board has the same number, none is.
 | **To download** |  |  |  |  |  |
 | Script, gzipped | **5.2 kB** | 11.9 kB | 8.1 kB | 21.5 kB | 33.0 kB |
 | Script with arrows, drawing by the user and premove | **7.3 kB** | 11.9 kB | 10.9 kB | 21.5 kB | not offered |
-| Styles, gzipped, without piece pictures | 2.0 kB | 1.6 kB | 1.0 kB | in the script | **0.4 kB** |
+| Styles, gzipped, without piece pictures | 2.1 kB | 1.6 kB | 1.0 kB | in the script | **0.4 kB** |
 | **At rest** |  |  |  |  |  |
 | Elements on the page (starting position, with coordinates) | **53** | 68 | 154 | 515 | 130 |
 | Paints, script calls, frames and timers in two seconds | 0 | 0 | 0 | 0 | 0 |
@@ -38,7 +38,7 @@ in bold; where every board has the same number, none is.
 
 ## Where another board is ahead
 
-- **To download, styles, gzipped, without piece pictures:** chessboard.js has 0.4 kB, Lightsquare 2.0 kB.
+- **To download, styles, gzipped, without piece pictures:** chessboard.js has 0.4 kB, Lightsquare 2.1 kB.
 - **One sliding move, style and layout time:** react-chessboard has 0.78 ms, Lightsquare 0.81 ms.
 - **One sliding move, paints:** chessground (Lichess) has 4.3, Lightsquare 7.3.
 - **One sliding move, paint time:** chessground (Lichess) has 0.16 ms, Lightsquare 0.71 ms.

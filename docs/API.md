@@ -302,7 +302,9 @@ away. `themeVariables(theme)` returns the variables for an inline style
 | `circles.default`, `circles.<name>` | `--ls-circle`, `--ls-circle-<name>` | circles only, where they should differ from the arrows |
 | `arrowTail`, `arrowHead` | `--ls-tail-opacity`, `--ls-head-opacity` | `0.14`, `0.82` |
 
-Also: `--ls-dot-size` (how wide a move dot is, as a share of its square,
+Also: `--ls-piece-cursor` (the mouse pointer over a piece that can be picked
+up and over the squares it may go to, default `pointer`; `grab` gives the
+open hand), `--ls-dot-size` (how wide a move dot is, as a share of its square,
 default `0.3`), `--ls-ease` (the slide's curve) and `--ls-circle-stroke` (how thick a
 circle's line is, in squares, default `0.05`).
 

@@ -159,6 +159,41 @@ describe.each(PROFILES)("moving pieces in $name", (profile) => {
     await page.evaluate(() => document.getElementById("board")!.style.removeProperty("--ls-dot-size"));
   });
 
+  it.skipIf(profile.touch)("a mouse over a piece that can be picked up shows a hand; over any other piece it does not", async () => {
+    const cursors = (): Promise<Record<string, string>> =>
+      page.evaluate(() => {
+        const of = (sel: string): string => {
+          const style = getComputedStyle(document.querySelector(sel)!);
+          return style.pointerEvents === "none" ? "none" : style.cursor;
+        };
+        return { white: of(".ls-piece.ls-wp"), black: of(".ls-piece.ls-bp") };
+      });
+    await fresh(page);
+    expect(await cursors(), "a board to look at").toEqual({ white: "none", black: "none" });
+    await page.evaluate(() => T.set({ movable: "white" }));
+    expect(await cursors(), "White to move").toEqual({ white: "pointer", black: "none" });
+    await page.evaluate(() => T.set({ movable: "none", premovable: "black" }));
+    expect(await cursors(), "Black may premove").toEqual({ white: "none", black: "pointer" });
+    await page.evaluate(() => T.set({ movable: "both", premovable: "none" }));
+    expect(await cursors(), "both sides").toEqual({ white: "pointer", black: "pointer" });
+    await page.evaluate(() => document.getElementById("board")!.style.setProperty("--ls-piece-cursor", "grab"));
+    expect((await cursors()).white).toBe("grab");
+    await page.evaluate(() => document.getElementById("board")!.style.removeProperty("--ls-piece-cursor"));
+    // The piece takes the pointer, and a press on it still reaches the board: it is picked up and carried.
+    await page.evaluate(() => T.set({ movable: "white" }));
+    const from = await at("e2");
+    const to = await at("e4");
+    await page.mouse.move(from.x, from.y);
+    await page.mouse.down();
+    await page.mouse.move(to.x, to.y, { steps: 5 });
+    expect(await page.evaluate(() => getComputedStyle(document.getElementById("board")!).cursor), "while a piece is carried").toBe("grabbing");
+    await page.mouse.up();
+    expect((await events()).at(-1)).toMatchObject({ type: "move", from: "e2", to: "e4" });
+    await page.evaluate(() => (T.board as unknown as { destroy(): void }).destroy());
+    expect(await page.evaluate(() => document.getElementById("board")!.className.includes("-moves"))).toBe(false);
+    await fresh(page);
+  });
+
   it.skipIf(profile.touch)("under a mouse, the square the piece would go to is shaded whole, and no script runs for it", async () => {
     await fresh(page, { position: "4k3/8/8/3p4/4P3/8/8/4K3", movable: "white", targets: { e4: ["e5", "d5"] } });
     await hand.tap(await at("e4"));

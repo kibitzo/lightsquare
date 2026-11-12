@@ -221,6 +221,8 @@ function makeSet(c: Core, acts: Acts, input: Input): Board["set"] {
     const active = s.movable !== "none" || s.premovable !== "none";
     if (!active) input.abort();
     c.host.classList.toggle("ls-interactive", active);
+    // Whose pieces can be picked up, for the stylesheet: a mouse over one of them shows a hand.
+    for (const side of ["white", "black"] as const) c.host.classList.toggle(`ls-${side}-moves`, s.movable === "both" || s.movable === side || s.premovable === side);
     c.coords.render(s.coordinates, s.orientation);
     c.renderMarks();
     drawn = true;
@@ -297,7 +299,7 @@ export function lightsquare(host: HTMLElement, options: Options = {}): Board {
       c.marks.destroy();
       c.coords.render(false, s.orientation);
       for (const el of [...host.querySelectorAll(":scope > .ls-layer")]) el.remove();
-      host.classList.remove("ls-board", "ls-interactive");
+      host.classList.remove("ls-board", "ls-interactive", "ls-white-moves", "ls-black-moves");
     },
   };
 }
