@@ -49,6 +49,9 @@ const GAME = (() => {
   return OPERA.map((san) => (chess.move(san), chess.fen().split(" ")[0]));
 })();
 
+/** One long slide for the "script is frozen" row: a queen alone crosses the board from a1 to h8. */
+const LONG_SLIDE = { from: "4k3/8/8/8/8/8/8/Q3K3", to: "4k2Q/8/8/8/8/8/8/4K3" };
+
 const median = (list) => [...list].sort((a, b) => a - b)[Math.floor(list.length / 2)];
 const round = (n, digits = 2) => Math.round(n * 10 ** digits) / 10 ** digits;
 const gz = (bytes) => gzipSync(bytes, { level: 9 }).length;
@@ -189,8 +192,8 @@ async function perMove(browser, origin, lib) {
 }
 
 /** Pictures the browser still draws of a slide while the page's script is frozen for 600 ms. */
-async function whileStuck(browser, origin, lib) {
-  const { context, page, cdp } = await open(browser, origin, lib, { fen: START, ms: 900 });
+async function whileStuck(browser, origin, lib, framesBefore = 4) {
+  const { context, page, cdp } = await open(browser, origin, lib, { fen: LONG_SLIDE.from, ms: 900 });
   await page.waitForTimeout(500);
   const frames = [];
   cdp.on("Page.screencastFrame", (frame) => {
@@ -199,18 +202,18 @@ async function whileStuck(browser, origin, lib) {
   });
   await cdp.send("Page.startScreencast", { format: "png", everyNthFrame: 1 });
   const stuck = await page.evaluate(
-    (fen) =>
+    ([fen, framesBefore]) =>
       new Promise((resolve) => {
         void window.handle.set(fen, true);
         const wait = (n, then) => (n ? requestAnimationFrame(() => wait(n - 1, then)) : then());
-        wait(4, () => {
+        wait(framesBefore, () => {
           const from = Date.now();
           const until = performance.now() + 600;
           while (performance.now() < until);
           resolve({ from, to: Date.now() });
         });
       }),
-    "rnbqkbnr/pppppppp/8/8/8/8/1PPPPPPP/RNBQKBNR",
+    [LONG_SLIDE.to, framesBefore],
   );
   await page.waitForTimeout(700);
   await cdp.send("Page.stopScreencast");
@@ -389,6 +392,11 @@ ${behind.length ? behind.join("\n") : "In this run, nowhere."}
 - **Same conditions:** every board gets the same 400 by 400 pixel box, the
   starting position with coordinates, a ${results.slideMs} ms slide, and the first moves of
   Morphy's Opera game. Everything else is the board's own default.
+- **The frozen-script row** uses one long slide: a queen alone on the
+  board goes from a1 to h8 in 900 ms, and the page's script is frozen for
+  600 ms of it. (Before 2026-11-12 this row removed a pawn instead of
+  sliding a piece, so it showed a fade, not a slide. The numbers for the
+  boards measured then came out the same with a real slide.)
 - **Each number** is the middle one of ${results.runs} runs.
 - **Counters:** script, style and layout time and counts come from the
   browser's performance metrics; paints and the times of painting,
@@ -457,6 +465,26 @@ if (process.argv.includes("--sizes")) {
 if (process.argv.includes("--report")) {
   writeFileSync(`${here}RESULTS.md`, report(JSON.parse(readFileSync(`${here}results.json`, "utf8"))));
   console.log("RESULTS.md written from results.json");
+  process.exit(0);
+}
+
+// --stuck: how each board slides, to read the "script is frozen" row rightly: what the browser itself animates during a slide, and the pictures drawn when the freeze starts 4 or 15 frames after the move.
+if (process.argv.includes("--stuck")) {
+  const { server, origin } = await serve();
+  const browser = await chromium.launch();
+  for (const lib of LIBS) {
+    const { context, page } = await open(browser, origin, lib, { fen: LONG_SLIDE.from, ms: 900 });
+    await page.waitForTimeout(500);
+    const running = await page.evaluate(async (fen) => {
+      void window.handle.set(fen, true);
+      await new Promise((r) => setTimeout(r, 300));
+      return document.getAnimations().map((a) => `${a.constructor.name} of ${a.transitionProperty ?? a.animationName ?? "?"}`);
+    }, LONG_SLIDE.to);
+    await context.close();
+    console.log(`${lib.name.padEnd(24)} animated by the browser: ${running.length ? [...new Set(running)].join(", ") : "nothing (script moves it)"}; pictures while frozen, freeze after 4 frames: ${await whileStuck(browser, origin, lib, 4)}, after 15 frames: ${await whileStuck(browser, origin, lib, 15)}`);
+  }
+  await browser.close();
+  server.close();
   process.exit(0);
 }
 

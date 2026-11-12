@@ -103,8 +103,6 @@ export interface Surface {
   anchor(el: HTMLElement, square: Square): void;
   pieces(): readonly Placed[];
   lastMove(): readonly [Square, Square] | null;
-  /** The square of the king in check, as the app set it. */
-  check(): Square | null;
   selected(): Square | null;
   /** The same as a tap on the square: select, move or unselect. */
   tap(square: Square): void;

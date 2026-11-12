@@ -15,6 +15,9 @@ is in [ARCHITECTURE.md](ARCHITECTURE.md).
 - **Our own work only.** Never copy code, stylesheet values, class names or
   pictures from chessground (GPL) or from any GPL or non-commercial source.
   Every picture in the package has a NOTICE file with its author and licence.
+  The one exception is outside the package: the demo page shows the Staunty
+  piece set (CC BY-NC-SA 4.0) from `bench/pieces/`, credited on the page.
+  Never move it into `src/` or the build, and never add another.
 - **Every rule has a test.** A new rule comes with its test; never weaken a
   test to make a change pass.
 - **No chess rules inside.** The app says which moves are allowed.
@@ -37,6 +40,6 @@ is in [ARCHITECTURE.md](ARCHITECTURE.md).
 | `docs/API.md` | the reference; update it with every change of the API |
 | `src/pieces/`, `assets/` | the piece set and its source pictures |
 | `tests/unit/`, `tests/browser/` | see ARCHITECTURE.md, section 10 |
-| `bench/` | the playground: play, change the looks, measure on a real phone; served on the local network |
+| `bench/` | the playground: play, change the looks, measure on a real phone; served on the local network and published as the demo (`npm run demo`, the Demo workflow) |
 | `compare/` | Lightsquare measured next to other boards. A project of its own (own `package.json`, lockfile, type check; see its README). Never import from it, never add its dependencies or a script for it to the library |
 | `scripts/` | build, piece stylesheet tools |

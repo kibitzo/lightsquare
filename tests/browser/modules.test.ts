@@ -442,6 +442,14 @@ describe.each(PROFILES)("modules in $name", (profile) => {
       await page.keyboard.press("ArrowLeft");
       await page.keyboard.press("ArrowRight");
       expect(await page.evaluate(() => [document.querySelectorAll(".ls-cursor").length, (window as unknown as { pageKeys: string[] }).pageKeys])).toEqual([0, ["ArrowLeft", "ArrowRight"]]);
+      // The whole window loses focus and gets it back (the user looked at another app): the board stays the page's active element, and the keys stay the page's.
+      await page.evaluate(() => {
+        const board = document.getElementById("board")!;
+        board.dispatchEvent(new FocusEvent("blur"));
+        board.dispatchEvent(new FocusEvent("focus"));
+      });
+      await page.keyboard.press("ArrowRight");
+      expect(await page.evaluate(() => [document.querySelectorAll(".ls-cursor").length, (window as unknown as { pageKeys: string[] }).pageKeys])).toEqual([0, ["ArrowLeft", "ArrowRight", "ArrowRight"]]);
       await page.evaluate(() => {
         document.getElementById("board")!.blur();
         document.getElementById("board")!.focus();

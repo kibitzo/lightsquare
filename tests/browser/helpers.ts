@@ -24,7 +24,6 @@ const BUNDLES: Record<string, string> = {
   "/modules/a11y.js": "src/modules/a11y.ts",
   "/modules/premove.js": "src/modules/premove.ts",
   "/modules/theme.js": "src/modules/theme.ts",
-  "/modules/sounds.js": "src/modules/sounds.ts",
   "/react-app.js": "tests/browser/react-app.ts",
 };
 

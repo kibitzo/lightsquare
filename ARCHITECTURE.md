@@ -75,11 +75,10 @@ that shows a static position downloads only the core.
 | `lightsquare/a11y` | screen-reader description, move announcements, keyboard moves | Accessibility | 1.1 kB |
 | `lightsquare/premove` | where a piece could premove to (geometry only) | (not in cm-chessboard) | 0.8 kB |
 | `lightsquare/theme` | looks as data: `applyTheme`, built-in board colours | (not in cm-chessboard) | 0.6 kB |
-| `lightsquare/sounds` | a sound for each kind of move, built in or from the app's files | (not in cm-chessboard) | 0.9 kB |
 | `lightsquare/react` | React component | (Kibitzo's 1,451-line wrapper, in part) | 0.5 kB |
 | later: `lightsquare/editor` | spare pieces, drag pieces on and off | (not in cm-chessboard) | |
 
-The stylesheet for all of it is 1.9 kB. Everything together is about 14 kB.
+The stylesheet for all of it is 1.9 kB. Everything together is about 13 kB.
 
 A module is a function that receives a `surface` (the board element, the
 orientation, square and screen maths, the pieces, `tap`) and returns its own
@@ -213,7 +212,7 @@ Read from the source and READMEs on 2026-11-12.
 | Drawn as | one SVG drawing | elements, plus SVG for shapes | elements, plus SVG for shapes |
 | A piece slides by | script loop, SVG transform rewritten per frame, drawing repainted | script loop, CSS transform set per frame | one CSS transition, no script per frame |
 | Positions | SVG units | pixels from the measured board; recomputed on resize | fractions of the board's width (container units); nothing to recompute |
-| Size, gzipped | 8.5 kB core, extensions extra | 10 kB | 5.2 kB core; about 14 kB with every module and the stylesheet |
+| Size, gzipped | 8.5 kB core, extensions extra | 10 kB | 5.2 kB core; about 13 kB with every module and the stylesheet |
 | Chess rules inside | no | no | no |
 | Premove | no | yes | yes |
 | User-drawn arrows | extension | yes | module |
@@ -348,6 +347,9 @@ with any other board.
 - **Pictures:** the one piece set in the package is Cburnett's, taken from
   Wikimedia Commons under its BSD licence (`assets/cburnett/NOTICE.md`).
   Piece sets under GPL or non-commercial licences (many of the sets on
-  Lichess, Staunty among them) must not be added.
+  Lichess, Staunty among them) must not be added to the package. The demo
+  page alone shows Staunty (CC BY-NC-SA 4.0) as a second set, with its
+  author and licence said on the page (`bench/pieces/NOTICE.md`); it is
+  outside `src/`, `dist/` and the npm package, and a test holds it there.
 - Rule 12 of RULES.md keeps it that way for contributors.
 

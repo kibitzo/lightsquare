@@ -34,10 +34,6 @@
       "types": "./dist/modules/theme.d.ts",
       "import": "./dist/modules/theme.js"
     },
-    "./sounds": {
-      "types": "./dist/modules/sounds.d.ts",
-      "import": "./dist/modules/sounds.js"
-    },
     "./react": {
       "types": "./dist/react.d.ts",
       "import": "./dist/react.js"

@@ -1,8 +1,6 @@
 // Serves the presentation page (the playground) on the local network and
 // records what phones report.
 //   npm run bench                         then open the printed address on the phone
-//   PIECES=/path/to/sprite.svg npm run bench
-//                                         use the pieces of a cm-chessboard sprite
 import { build } from "esbuild";
 import { appendFileSync, mkdirSync, readFileSync } from "node:fs";
 import { createServer } from "node:http";
@@ -19,6 +17,14 @@ export async function bundle() {
 }
 
 /** The page's files: address, file in the repository, type. `scripts/demo.mjs` builds the published demo from the same list. */
+/** The files that are made, not copied: address, how to make it, type. On the published demo config.json says `static`. */
+export const made = {
+  "/bench.js": [bundle, "text/javascript"],
+  // The page's second piece set, shown here only: see bench/pieces/NOTICE.md.
+  "/pieces-staunty.css": [() => spriteToCss(readFileSync(`${root}bench/pieces/staunty.svg`, "utf8"), "staunty"), "text/css"],
+  "/config.json": [() => "{}", "application/json"],
+};
+
 export const files = {
   "/": ["bench/index.html", "text/html; charset=utf-8"],
   "/lightsquare.css": ["src/lightsquare.css", "text/css"],
@@ -29,11 +35,8 @@ export const files = {
   "/results.json": ["compare/results.json", "application/json"],
 };
 
-/**
- * Start the page's server. `pieces` is the path of a cm-chessboard sprite to
- * offer as a second piece set; `port` 0 takes any free port (the tests do).
- */
-export async function startServer({ port = 3055, host = "0.0.0.0", pieces = process.env.PIECES, quiet = false } = {}) {
+/** Start the page's server. `port` 0 takes any free port (the tests do). */
+export async function startServer({ port = 3055, host = "0.0.0.0", quiet = false } = {}) {
   mkdirSync(logDir, { recursive: true });
   const server = createServer(async (req, res) => {
     const path = (req.url ?? "/").split("?")[0];
@@ -53,9 +56,7 @@ export async function startServer({ port = 3055, host = "0.0.0.0", pieces = proc
       return;
     }
     try {
-      if (path === "/bench.js") return void res.writeHead(200, { "content-type": "text/javascript", "cache-control": "no-store" }).end(await bundle());
-      if (path === "/config.json") return void res.writeHead(200, { "content-type": "application/json", "cache-control": "no-store" }).end(JSON.stringify({ extraPieces: !!pieces }));
-      if (path === "/pieces-extra.css") return void res.writeHead(200, { "content-type": "text/css", "cache-control": "no-store" }).end(pieces ? spriteToCss(readFileSync(pieces, "utf8"), "extra") : "");
+      if (made[path]) return void res.writeHead(200, { "content-type": made[path][1], "cache-control": "no-store" }).end(await made[path][0]());
       const file = files[path];
       if (!file) return void res.writeHead(404).end();
       res.writeHead(200, { "content-type": file[1], "cache-control": "no-store" }).end(readFileSync(root + file[0]));
@@ -73,5 +74,4 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   console.log(`Lightsquare: http://localhost:${port}`);
   for (const address of addresses) console.log(`  on the phone:    http://${address}:${port}`);
   console.log(`  results go to:   ${logDir}phone.jsonl`);
-  console.log(`  extra piece set: ${process.env.PIECES ?? "none (set PIECES=/path/to/sprite.svg)"}`);
 }

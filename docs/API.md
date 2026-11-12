@@ -98,6 +98,40 @@ completes such a move (the rook, the removed pawn, the new piece), or that
 takes the move back, is not told as a second change. Check and the end of a
 game are yours to tell: the board cannot know them.
 
+### Sounds
+
+Lightsquare makes no sound itself: which sounds, and how loud, is your
+app's taste. `onChange` tells all a sound needs to know, so a few lines are
+enough:
+
+```ts
+const sound = {
+  move: new Audio("/sounds/move.mp3"),
+  capture: new Audio("/sounds/capture.mp3"),
+  castle: new Audio("/sounds/castle.mp3"),
+  promote: new Audio("/sounds/promote.mp3"),
+};
+
+const board = lightsquare(element, {
+  onChange({ kind, by, animated }) {
+    if (kind === "position") return;                // a new game or a jump: silent
+    if (by === "app" && !animated) return;          // shown at once, such as fast stepping: silent
+    const audio = sound[kind];
+    audio.currentTime = 0;
+    void audio.play().catch(() => {});              // not allowed before the user's first press
+  },
+});
+```
+
+- **One change, one sound.** A move of the user is told once; your answer
+  that completes it makes no second sound.
+- **Check and the end of the game** are yours to add, where your rules
+  library tells you: play that sound instead of the move's.
+- **The first press.** A browser lets a page make sound only after the user
+  has pressed something. A move on the board is such a press.
+- **On phones**, sounds decoded once with the Web Audio API start faster
+  than `Audio` elements; the calls in `onChange` stay the same.
+
 ## Premove
 
 ```ts
@@ -181,44 +215,6 @@ What the user draws is green; Alt gives blue and Shift yellow, so the user's
 arrows never look like the app's orange and red ones. Change this with
 `nameFor`. An arrow is slim while it is aimed and fills out when the button
 is let go. A left press on the board clears the user's drawing.
-
-### Sounds: `lightsquare/sounds`
-
-```ts
-import { sounds } from "lightsquare/sounds";
-
-const audio = board.use(sounds());      // that is all
-```
-
-A move, a capture, castling, a promotion and a check each have a sound. The
-sounds are made by the module (short knocks): there are no files to host.
-Use your own files for any of them, and add names of your own:
-
-```ts
-const audio = board.use(sounds({
-  files: { move: "/sounds/move.mp3", capture: "/sounds/capture.mp3", win: "/sounds/win.mp3" },
-  volume: 0.7,
-}));
-audio.play("end");                      // the game is over: yours to tell
-audio.play("win");
-audio.set({ muted: true });
-```
-
-- A move of the user sounds when it is made. A position your app sets
-  sounds when its pieces slide; a position shown at once (`animate: false`)
-  and a jump of several moves are silent, so stepping fast through a game
-  does not rattle.
-- One change, one sound. A check (the `check` option, newly set, in your
-  answer to the move or in the same `set`) takes the place of the move's
-  sound. `play()` takes the place of the sound of a change made in the same
-  task.
-- The built-in names are `move`, `capture`, `castle`, `promote`, `check`
-  and `end`.
-- A browser lets a page make sound only after the user has pressed
-  something; nothing is heard before the first press or key.
-
-If your app has its own sound code, use `onChange` instead: it tells the
-same things.
 
 ### Promotion picker: `lightsquare/promotion`
 
@@ -357,7 +353,6 @@ export function ruler(): Module<ModuleHooks & { hello(): string }> {
 ```
 
 `surface` gives the board element, the orientation, square and screen maths,
-the pieces, the last move, the square in check, the selection, and
-`tap(square)`. `update(change)` gets what the pieces did, when they did
+the pieces, the last move, the selection, and `tap(square)`. `update(change)` gets what the pieces did, when they did
 anything (see "What changed"). A module obeys
 [RULES.md](../RULES.md) like the core.

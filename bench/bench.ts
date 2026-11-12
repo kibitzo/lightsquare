@@ -245,7 +245,7 @@ interface Look {
 
 const LOOK_KEY = "lightsquare-playground-look-2";
 const plainColours = (): Record<string, string> => Object.fromEntries(SHAPE_NAMES.map(([name, , colour]) => [name, colour]));
-const look: Look = { board: "wood", pieces: "cburnett", labels: "on", pieceSize: 100, moveMs: 180, arrowWidth: 20, arrowHead: 82, badge: "auto", checkLoops: "3", boardScale: 1, glow: 82, arrowColours: plainColours(), circleColours: plainColours() };
+const look: Look = { board: "wood", pieces: "staunty", labels: "on", pieceSize: 100, moveMs: 180, arrowWidth: 20, arrowHead: 82, badge: "auto", checkLoops: "3", boardScale: 1, glow: 82, arrowColours: plainColours(), circleColours: plainColours() };
 
 /** The look as the theme an app would store for a user. */
 function themeOf(l: Look): Theme {
@@ -297,11 +297,14 @@ function choice(parent: string, key: keyof Look, value: string, content: string,
   };
 }
 
+/** The piece sets of this page. Staunty is shown on this page only (bench/pieces/NOTICE.md); Cburnett is the set the package ships. */
+const PIECE_SETS: Record<string, string> = { staunty: "Staunty", cburnett: "Cburnett" };
+
 /** True on a static host (the published demo): nothing there can take what a phone reports. */
 let onStaticHost = false;
 
 async function buildLooks(): Promise<void> {
-  const config = (await fetch("config.json").then((r) => r.json()).catch(() => ({}))) as { extraPieces?: boolean; static?: boolean };
+  const config = (await fetch("config.json").then((r) => r.json()).catch(() => ({}))) as { static?: boolean };
   onStaticHost = !!config.static;
   if (onStaticHost) for (const el of document.querySelectorAll("[data-needs-server]")) el.remove();
   for (const [name, t] of Object.entries(themes)) choice("boards", "board", name, `<i style="background:linear-gradient(135deg, ${t.light} 50%, ${t.dark} 50%)"></i>`, "swatch");
@@ -312,18 +315,14 @@ async function buildLooks(): Promise<void> {
   for (const kind of BADGE_KINDS) choice("badges", "badge", kind, `<i class="q-${kind}"></i>`, "pick");
   choice("labels", "labels", "on", "On", "");
   choice("labels", "labels", "off", "Off", "");
-  choice("sets", "pieces", "cburnett", "Cburnett", "");
-  if (config.extraPieces) {
-    choice("sets", "pieces", "extra", "Kibitzo", "");
-    look.pieces = "extra";
-  }
+  for (const [set, name] of Object.entries(PIECE_SETS)) choice("sets", "pieces", set, name, "");
   try {
     Object.assign(look, JSON.parse(localStorage.getItem(LOOK_KEY) ?? "{}"));
   } catch {
     /* a broken saved look is ignored */
   }
   if (!(look.board in themes)) look.board = "wood";
-  if (look.pieces === "extra" && !config.extraPieces) look.pieces = "cburnett";
+  if (!(look.pieces in PIECE_SETS)) look.pieces = "staunty";
   for (const id of ["pieceSize", "moveMs", "arrowWidth", "arrowHead", "glow"] as const) {
     $(id).oninput = () => {
       look[id] = Number(($(id) as HTMLInputElement).value);

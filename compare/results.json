@@ -1,4 +1,544 @@
 {
+  "table": [
+    {
+      "group": "To download"
+    },
+    {
+      "label": "Script, gzipped",
+      "note": "the board as it ships, with what it cannot run without",
+      "cells": [
+        {
+          "text": "5.2 kB",
+          "best": true
+        },
+        {
+          "text": "11.9 kB",
+          "best": false
+        },
+        {
+          "text": "8.1 kB",
+          "best": false
+        },
+        {
+          "text": "21.5 kB",
+          "best": false
+        },
+        {
+          "text": "33.0 kB",
+          "best": false
+        }
+      ]
+    },
+    {
+      "label": "Script with arrows, drawing by the user and premove",
+      "note": "some boards need extra parts for these, some ship them in one file",
+      "cells": [
+        {
+          "text": "7.3 kB",
+          "best": true
+        },
+        {
+          "text": "11.9 kB",
+          "best": false
+        },
+        {
+          "text": "10.9 kB",
+          "best": false
+        },
+        {
+          "text": "21.5 kB",
+          "best": false
+        },
+        {
+          "text": "not offered",
+          "best": false
+        }
+      ]
+    },
+    {
+      "label": "Styles, gzipped, without piece pictures",
+      "note": "",
+      "cells": [
+        {
+          "text": "1.9 kB",
+          "best": false
+        },
+        {
+          "text": "1.6 kB",
+          "best": false
+        },
+        {
+          "text": "1.0 kB",
+          "best": false
+        },
+        {
+          "text": "in the script",
+          "best": false
+        },
+        {
+          "text": "0.4 kB",
+          "best": true
+        }
+      ]
+    },
+    {
+      "group": "At rest"
+    },
+    {
+      "label": "Elements on the page (starting position, with coordinates)",
+      "note": "",
+      "cells": [
+        {
+          "text": "53",
+          "best": true
+        },
+        {
+          "text": "68",
+          "best": false
+        },
+        {
+          "text": "154",
+          "best": false
+        },
+        {
+          "text": "515",
+          "best": false
+        },
+        {
+          "text": "130",
+          "best": false
+        }
+      ]
+    },
+    {
+      "label": "Paints, script calls, frames and timers in two seconds",
+      "note": "",
+      "cells": [
+        {
+          "text": "0",
+          "best": true
+        },
+        {
+          "text": "0",
+          "best": true
+        },
+        {
+          "text": "0",
+          "best": true
+        },
+        {
+          "text": "0",
+          "best": true
+        },
+        {
+          "text": "0",
+          "best": true
+        }
+      ]
+    },
+    {
+      "group": "One sliding move (middle value of 20 moves)"
+    },
+    {
+      "label": "Frames asked of the script",
+      "note": "how often the board's script must run during a slide",
+      "cells": [
+        {
+          "text": "0",
+          "best": true
+        },
+        {
+          "text": "25",
+          "best": false
+        },
+        {
+          "text": "25",
+          "best": false
+        },
+        {
+          "text": "0",
+          "best": true
+        },
+        {
+          "text": "26",
+          "best": false
+        }
+      ]
+    },
+    {
+      "label": "Writes to the page",
+      "note": "",
+      "cells": [
+        {
+          "text": "4",
+          "best": true
+        },
+        {
+          "text": "51",
+          "best": false
+        },
+        {
+          "text": "162",
+          "best": false
+        },
+        {
+          "text": "6",
+          "best": false
+        },
+        {
+          "text": "59",
+          "best": false
+        }
+      ]
+    },
+    {
+      "label": "Layout reads",
+      "note": "",
+      "cells": [
+        {
+          "text": "0",
+          "best": true
+        },
+        {
+          "text": "0",
+          "best": true
+        },
+        {
+          "text": "0",
+          "best": true
+        },
+        {
+          "text": "1",
+          "best": false
+        },
+        {
+          "text": "4",
+          "best": false
+        }
+      ]
+    },
+    {
+      "label": "Script time",
+      "note": "",
+      "cells": [
+        {
+          "text": "0.06 ms",
+          "best": true
+        },
+        {
+          "text": "2.82 ms",
+          "best": false
+        },
+        {
+          "text": "2.02 ms",
+          "best": false
+        },
+        {
+          "text": "2.77 ms",
+          "best": false
+        },
+        {
+          "text": "4.73 ms",
+          "best": false
+        }
+      ]
+    },
+    {
+      "label": "Style and layout time",
+      "note": "",
+      "cells": [
+        {
+          "text": "0.81 ms",
+          "best": false
+        },
+        {
+          "text": "1.61 ms",
+          "best": false
+        },
+        {
+          "text": "3.19 ms",
+          "best": false
+        },
+        {
+          "text": "0.78 ms",
+          "best": true
+        },
+        {
+          "text": "2.23 ms",
+          "best": false
+        }
+      ]
+    },
+    {
+      "label": "Paints",
+      "note": "",
+      "cells": [
+        {
+          "text": "7.3",
+          "best": false
+        },
+        {
+          "text": "4.3",
+          "best": true
+        },
+        {
+          "text": "48.4",
+          "best": false
+        },
+        {
+          "text": "6.0",
+          "best": false
+        },
+        {
+          "text": "79.8",
+          "best": false
+        }
+      ]
+    },
+    {
+      "label": "Paint time",
+      "note": "",
+      "cells": [
+        {
+          "text": "0.71 ms",
+          "best": false
+        },
+        {
+          "text": "0.16 ms",
+          "best": true
+        },
+        {
+          "text": "8.04 ms",
+          "best": false
+        },
+        {
+          "text": "0.43 ms",
+          "best": false
+        },
+        {
+          "text": "8.37 ms",
+          "best": false
+        }
+      ]
+    },
+    {
+      "label": "Raster time, off the main thread",
+      "note": "turning painted shapes into pixels",
+      "cells": [
+        {
+          "text": "3.79 ms",
+          "best": false
+        },
+        {
+          "text": "0.04 ms",
+          "best": true
+        },
+        {
+          "text": "9.95 ms",
+          "best": false
+        },
+        {
+          "text": "0.78 ms",
+          "best": false
+        },
+        {
+          "text": "9.84 ms",
+          "best": false
+        }
+      ]
+    },
+    {
+      "label": "Compositing time: layers, commit, drawing",
+      "note": "drawn in software here, so compare boards only",
+      "cells": [
+        {
+          "text": "5.28 ms",
+          "best": false
+        },
+        {
+          "text": "16.47 ms",
+          "best": false
+        },
+        {
+          "text": "9.91 ms",
+          "best": false
+        },
+        {
+          "text": "3.61 ms",
+          "best": true
+        },
+        {
+          "text": "7.08 ms",
+          "best": false
+        }
+      ]
+    },
+    {
+      "group": "When the page's script is not free"
+    },
+    {
+      "label": "Pictures drawn of a 900 ms slide while the script is frozen for 600 ms",
+      "note": "",
+      "cells": [
+        {
+          "text": "51",
+          "best": true
+        },
+        {
+          "text": "0",
+          "best": false
+        },
+        {
+          "text": "0",
+          "best": false
+        },
+        {
+          "text": "51",
+          "best": true
+        },
+        {
+          "text": "0",
+          "best": false
+        }
+      ]
+    },
+    {
+      "label": "Pictures drawn of 12 moves while the script is busy half the time",
+      "note": "more means smoother",
+      "cells": [
+        {
+          "text": "248",
+          "best": true
+        },
+        {
+          "text": "172",
+          "best": false
+        },
+        {
+          "text": "169",
+          "best": false
+        },
+        {
+          "text": "246",
+          "best": false
+        },
+        {
+          "text": "144",
+          "best": false
+        }
+      ]
+    },
+    {
+      "group": "A processor slowed six times"
+    },
+    {
+      "label": "Main-thread work to show one position, no slide",
+      "note": "",
+      "cells": [
+        {
+          "text": "0.005 ms",
+          "best": true
+        },
+        {
+          "text": "0.009 ms",
+          "best": false
+        },
+        {
+          "text": "3.492 ms",
+          "best": false
+        },
+        {
+          "text": "6.238 ms",
+          "best": false
+        },
+        {
+          "text": "0.006 ms",
+          "best": false
+        }
+      ]
+    },
+    {
+      "group": "One piece dragged two squares with the mouse, in 42 steps"
+    },
+    {
+      "label": "Script time",
+      "note": "",
+      "cells": [
+        {
+          "text": "3.9 ms",
+          "best": true
+        },
+        {
+          "text": "3.9 ms",
+          "best": false
+        },
+        {
+          "text": "5.0 ms",
+          "best": false
+        },
+        {
+          "text": "36.8 ms",
+          "best": false
+        },
+        {
+          "text": "8.6 ms",
+          "best": false
+        }
+      ]
+    },
+    {
+      "label": "Style and layout time",
+      "note": "",
+      "cells": [
+        {
+          "text": "3.6 ms",
+          "best": false
+        },
+        {
+          "text": "1.5 ms",
+          "best": true
+        },
+        {
+          "text": "4.5 ms",
+          "best": false
+        },
+        {
+          "text": "2.0 ms",
+          "best": false
+        },
+        {
+          "text": "1.6 ms",
+          "best": false
+        }
+      ]
+    },
+    {
+      "label": "Layout reads",
+      "note": "",
+      "cells": [
+        {
+          "text": "1",
+          "best": false
+        },
+        {
+          "text": "0",
+          "best": true
+        },
+        {
+          "text": "0",
+          "best": true
+        },
+        {
+          "text": "138",
+          "best": false
+        },
+        {
+          "text": "130",
+          "best": false
+        }
+      ]
+    }
+  ],
   "date": "2026-11-12",
   "browser": "Chromium 149.0.7827.55 (headless), phone profile (Pixel 7: 412 by 915, 2.6x, touch)",
   "machine": "Apple M4 Max, 14 cores",
@@ -10,8 +550,8 @@
       "version": "0.0.1",
       "licence": "MIT",
       "size": {
-        "js": 4835,
-        "jsWith": 6997,
+        "js": 5325,
+        "jsWith": 7480,
         "css": 1965
       },
       "atRest": {
@@ -28,24 +568,24 @@
         "timers": 0,
         "layoutReads": 0,
         "domWrites": 4,
-        "scriptMs": 0.05,
-        "styleAndLayoutMs": 0.79,
+        "scriptMs": 0.06,
+        "styleAndLayoutMs": 0.81,
         "styleRecalcs": 8,
         "layouts": 0,
         "paints": 7.3,
-        "paintMs": 0.65,
-        "rasterMs": 4.23,
-        "compositeMs": 5.4
+        "paintMs": 0.71,
+        "rasterMs": 3.79,
+        "compositeMs": 5.28
       },
       "whileStuck": 51,
-      "whileBusy": 246,
+      "whileBusy": 248,
       "replay": {
-        "workMs": 0.009,
-        "wallMs": 0.093
+        "workMs": 0.005,
+        "wallMs": 0.105
       },
       "drag": {
-        "scriptMs": 3.75,
-        "styleAndLayoutMs": 3.26,
+        "scriptMs": 3.9,
+        "styleAndLayoutMs": 3.6,
         "layoutReads": 1,
         "frameCallbacks": 0,
         "domWrites": 53,
@@ -75,24 +615,24 @@
         "timers": 0,
         "layoutReads": 0,
         "domWrites": 51,
-        "scriptMs": 2.31,
-        "styleAndLayoutMs": 1.29,
+        "scriptMs": 2.82,
+        "styleAndLayoutMs": 1.61,
         "styleRecalcs": 25,
         "layouts": 0,
         "paints": 4.3,
-        "paintMs": 0.12,
-        "rasterMs": 0.03,
-        "compositeMs": 13.33
+        "paintMs": 0.16,
+        "rasterMs": 0.04,
+        "compositeMs": 16.47
       },
       "whileStuck": 0,
       "whileBusy": 172,
       "replay": {
-        "workMs": 0.005,
-        "wallMs": 0.043
+        "workMs": 0.009,
+        "wallMs": 0.045
       },
       "drag": {
-        "scriptMs": 4.05,
-        "styleAndLayoutMs": 1.8,
+        "scriptMs": 3.92,
+        "styleAndLayoutMs": 1.54,
         "layoutReads": 0,
         "frameCallbacks": 45,
         "domWrites": 51,
@@ -122,27 +662,123 @@
         "timers": 0,
         "layoutReads": 0,
         "domWrites": 162,
-        "scriptMs": 1.87,
-        "styleAndLayoutMs": 3.13,
+        "scriptMs": 2.02,
+        "styleAndLayoutMs": 3.19,
         "styleRecalcs": 25,
         "layouts": 24,
         "paints": 48.4,
-        "paintMs": 7.64,
-        "rasterMs": 9.55,
-        "compositeMs": 9.57
+        "paintMs": 8.04,
+        "rasterMs": 9.95,
+        "compositeMs": 9.91
       },
       "whileStuck": 0,
-      "whileBusy": 166,
+      "whileBusy": 169,
       "replay": {
-        "workMs": 3.365,
-        "wallMs": 16.709
+        "workMs": 3.492,
+        "wallMs": 16.742
       },
       "drag": {
-        "scriptMs": 4.94,
-        "styleAndLayoutMs": 4.38,
+        "scriptMs": 5.03,
+        "styleAndLayoutMs": 4.5,
         "layoutReads": 0,
         "frameCallbacks": 2,
         "domWrites": 163,
+        "moved": true
+      }
+    },
+    "react-chessboard": {
+      "name": "react-chessboard",
+      "version": "5.12.1",
+      "licence": "MIT",
+      "needs": "React 19.3.1",
+      "size": {
+        "js": 21998,
+        "jsWith": null,
+        "css": null
+      },
+      "atRest": {
+        "elements": 515,
+        "paints": 0,
+        "layouts": 0,
+        "styleRecalcs": 0,
+        "frames": 0,
+        "timers": 0,
+        "scriptCalls": 0
+      },
+      "perMove": {
+        "frameCallbacks": 0,
+        "timers": 1,
+        "layoutReads": 1,
+        "domWrites": 6,
+        "scriptMs": 2.77,
+        "styleAndLayoutMs": 0.78,
+        "styleRecalcs": 9,
+        "layouts": 2,
+        "paints": 6,
+        "paintMs": 0.43,
+        "rasterMs": 0.78,
+        "compositeMs": 3.61
+      },
+      "whileStuck": 51,
+      "whileBusy": 246,
+      "replay": {
+        "workMs": 6.238,
+        "wallMs": 8.018
+      },
+      "drag": {
+        "scriptMs": 36.83,
+        "styleAndLayoutMs": 2.01,
+        "layoutReads": 138,
+        "frameCallbacks": 0,
+        "domWrites": 58,
+        "moved": true
+      }
+    },
+    "chessboardjs": {
+      "name": "chessboard.js",
+      "version": "1.0.0",
+      "licence": "MIT",
+      "needs": "jQuery 4.0.0",
+      "size": {
+        "js": 33758,
+        "jsWith": false,
+        "css": 451
+      },
+      "atRest": {
+        "elements": 130,
+        "paints": 0,
+        "layouts": 0,
+        "styleRecalcs": 0,
+        "frames": 0,
+        "timers": 0,
+        "scriptCalls": 0
+      },
+      "perMove": {
+        "frameCallbacks": 26,
+        "timers": 1,
+        "layoutReads": 4,
+        "domWrites": 59,
+        "scriptMs": 4.73,
+        "styleAndLayoutMs": 2.23,
+        "styleRecalcs": 26,
+        "layouts": 26,
+        "paints": 79.8,
+        "paintMs": 8.37,
+        "rasterMs": 9.84,
+        "compositeMs": 7.08
+      },
+      "whileStuck": 0,
+      "whileBusy": 144,
+      "replay": {
+        "workMs": 0.006,
+        "wallMs": 3.332
+      },
+      "drag": {
+        "scriptMs": 8.64,
+        "styleAndLayoutMs": 1.65,
+        "layoutReads": 130,
+        "frameCallbacks": 5,
+        "domWrites": 71,
         "moved": true
       }
     }

@@ -95,7 +95,7 @@ describe("RULES.md", () => {
   });
 
   it("each module stays small", async () => {
-    const limit: Record<string, number> = { "shapes.ts": 2200, "promotion.ts": 1000, "overlay.ts": 700, "a11y.ts": 1700, "premove.ts": 1100, "theme.ts": 900, "sounds.ts": 1500 };
+    const limit: Record<string, number> = { "shapes.ts": 2200, "promotion.ts": 1000, "overlay.ts": 700, "a11y.ts": 1700, "premove.ts": 1100, "theme.ts": 900 };
     for (const [name, bytes] of Object.entries(limit)) {
       const out = await build({ absWorkingDir: root, entryPoints: [`src/modules/${name}`], bundle: true, format: "esm", minify: true, target: "es2020", write: false });
       expect(gzipSync(out.outputFiles[0].contents, { level: 9 }).length, name).toBeLessThan(bytes);
@@ -133,5 +133,18 @@ describe("RULES.md", () => {
   it("rule 12: nothing borrowed from GPL boards", () => {
     const everything = code + moduleCode + css;
     expect(count(everything, /chessground|cg-wrap|cg-board|cg-container/gi)).toBe(0);
+  });
+
+  it("rule 12: the Staunty set is the demo page's alone: credited there, and not in the library, the build or the package", () => {
+    expect(readdirSync(`${root}bench/pieces`).sort()).toEqual(["NOTICE.md", "staunty.svg"]);
+    const notice = readFileSync(`${root}bench/pieces/NOTICE.md`, "utf8");
+    for (const said of ["sadsnake1", "CC BY-NC-SA 4.0", "https://creativecommons.org/licenses/by-nc-sa/4.0/", "not in the npm package"]) expect(notice, said).toContain(said);
+    const page = readFileSync(`${root}bench/index.html`, "utf8");
+    expect(page).toContain("Staunty</a> by sadsnake1");
+    expect(page).toContain("CC BY-NC-SA 4.0");
+    const library = code + moduleCode + css + readdirSync(`${root}src/pieces`).map((f) => readFileSync(`${root}src/pieces/${f}`, "utf8")).join("");
+    expect(count(library, /staunty/gi)).toBe(0);
+    expect(count(readFileSync(`${root}scripts/build.mjs`, "utf8"), /staunty|bench\//gi)).toBe(0);
+    expect(JSON.parse(readFileSync(`${root}package.json`, "utf8")).files).toEqual(["dist"]);
   });
 });

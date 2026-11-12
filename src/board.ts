@@ -242,7 +242,6 @@ function makeSurface(c: Core, acts: Acts): Surface {
     anchor: c.anchor,
     pieces: () => s.pieces,
     lastMove: () => s.lastMove,
-    check: () => s.check,
     selected: () => s.selected,
     tap: acts.tap,
   };

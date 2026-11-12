@@ -95,8 +95,11 @@ export function a11y(options: A11yOptions = {}): Module<A11y> {
     /**
      * The keys belong to the board only for someone who came to it by
      * keyboard. After a press with a mouse or a finger they are left to the
-     * page (an app's own arrow keys step through the moves), until the board
-     * loses focus and gets it back.
+     * page (an app's own arrow keys step through the moves), until the focus
+     * goes to something else on the page and comes back. When the whole
+     * window loses focus the board is still the page's active element, and
+     * nothing changes: coming back to the window is not coming to the board
+     * by keyboard.
      */
     let byKeyboard = true;
     function onPress(): void {
@@ -105,7 +108,9 @@ export function a11y(options: A11yOptions = {}): Module<A11y> {
       cursorEl?.remove();
       cursorEl = null;
     }
-    const onBlur = (): void => void (byKeyboard = true);
+    const onBlur = (): void => {
+      if (document.activeElement !== host) byKeyboard = true;
+    };
 
     function onKey(e: KeyboardEvent): void {
       if (!byKeyboard) return;

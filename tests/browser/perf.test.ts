@@ -220,11 +220,14 @@ describe("work measured inside Chromium", () => {
   });
 
   /**
-   * Start a 900 ms slide of the a-pawn's element, freeze the page's script
+   * Start a 900 ms slide of a queen from a1 to h8, freeze the page's script
    * for 600 ms, and count the different pictures the browser still draws.
+   * The slide is checked to be a slide: a transition of `transform`. (Until
+   * 2026-11-12 this test removed a pawn instead, so it proved that a fade
+   * goes on, not that a slide does.)
    */
   async function framesWhileStuck(drive: "transition" | "script loop"): Promise<number> {
-    await fresh(page);
+    await fresh(page, { position: "4k3/8/8/8/8/8/8/Q3K3" });
     await page.evaluate(() => document.getElementById("board")!.style.setProperty("--ls-move-ms", "900ms"));
     await page.waitForTimeout(300);
     const frames: Array<{ at: number; data: string }> = [];
@@ -237,13 +240,16 @@ describe("work measured inside Chromium", () => {
     const stuck = await page.evaluate(
       ([how]) =>
         new Promise<{ from: number; to: number }>((resolve) => {
-          if (how === "transition") T.set({ position: "rnbqkbnr/pppppppp/8/8/8/8/1PPPPPPP/RNBQKBNR" });
-          else {
-            const el = T.pieceAt("a2")!;
+          const queen = T.pieceAt("a1")!;
+          if (how === "transition") {
+            T.set({ position: "4k2Q/8/8/8/8/8/8/4K3" });
+            const sliding = queen.getAnimations().map((a) => (a as CSSTransition).transitionProperty);
+            if (sliding.join() !== "transform") throw new Error(`the queen does not slide by a transition of transform: ${sliding.join() || "nothing runs"}`);
+          } else {
             const began = performance.now();
             const step = (now: number): void => {
               const k = Math.min(1, (now - began) / 900);
-              el.style.transform = `translate(${k * 700}%,600%)`;
+              queen.style.transform = `translate(${k * 700}%,${700 - k * 700}%)`;
               if (k < 1) requestAnimationFrame(step);
             };
             requestAnimationFrame(step);

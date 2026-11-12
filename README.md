@@ -14,11 +14,11 @@ change its looks, and measure it on your own phone.
   bench page).
 - At rest the board does nothing: no timers, no frames, no paints.
 - Small: the core is 5.2 kB (minified and gzipped) with no dependencies.
-  Arrows, the promotion picker, sounds, screen-reader support and the React
+  Arrows, the promotion picker, screen-reader support and the React
   component are separate imports of about 1 kB each.
-- Sounds in one line: `board.use(sounds())`. The board tells what every
-  change was (a move, a capture, castling, a promotion), so a sound, a move
-  list or a clock needs no work of its own to find out.
+- The board tells what every change was (a move, a capture, castling, a
+  promotion), by the user or by your app, so your sounds, move list or
+  clock need no work of their own to find out. The board itself is silent.
 - No chess rules inside: your app says which moves are allowed.
 - MIT.
 

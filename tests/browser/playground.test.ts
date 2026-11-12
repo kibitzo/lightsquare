@@ -14,7 +14,7 @@ import { PROFILES, ROOT, open } from "./helpers";
 let site: { server: Server; port: number };
 beforeAll(async () => {
   const { startServer } = (await import("../../bench/server.mjs" as string)) as { startServer(o: object): Promise<{ server: Server; port: number }> };
-  site = await startServer({ port: 0, host: "127.0.0.1", pieces: undefined, quiet: true });
+  site = await startServer({ port: 0, host: "127.0.0.1", quiet: true });
 });
 afterAll(() => site.server.close());
 
@@ -316,7 +316,16 @@ describe.each([PROFILES[0], PROFILES[2]])("the published demo in $name", (profil
     expect(await page.evaluate(() => ["measure", "stress", "layers"].filter((id) => !document.getElementById(id)))).toEqual([]);
   });
 
-  it("offers only the piece set that is the library's own", async () => {
-    expect(await page.evaluate(() => [...document.querySelectorAll("#sets button")].map((b) => b.textContent))).toEqual(["Cburnett"]);
+  it("shows Staunty first and Cburnett second, and says whose pieces they are and under which licence", async () => {
+    const seen = await page.evaluate(() => ({
+      sets: [...document.querySelectorAll("#sets button")].map((b) => `${b.textContent}${b.getAttribute("aria-pressed") === "true" ? " (on)" : ""}`),
+      picture: getComputedStyle(document.querySelector(".ls-piece.ls-wk")!).backgroundImage.length,
+      credit: document.querySelector("footer")!.textContent ?? "",
+    }));
+    expect(seen.sets).toEqual(["Staunty (on)", "Cburnett"]);
+    expect(seen.picture, "the king has a picture").toBeGreaterThan(100);
+    expect(seen.credit).toContain("Staunty by sadsnake1");
+    expect(seen.credit).toContain("CC BY-NC-SA 4.0");
+    expect((await page.request.get(new URL("pieces-staunty-NOTICE.md", page.url()).href)).status()).toBe(200);
   });
 });
