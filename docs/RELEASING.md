@@ -38,8 +38,14 @@ tagged commit (`npm publish --access public`, approved in the browser).
        git tag v0.1.0
        git push origin main v0.1.0
 
-5. Watch the run (`gh run watch -R kibitzo/lightsquare`). When it is green:
-   `npm view @kibitzo/lightsquare version` shows the new number.
+5. Watch the run (`gh run watch -R kibitzo/lightsquare`). npm checks a new
+   version before it serves it: for some minutes `npm view
+   @kibitzo/lightsquare version` still shows the old number (0.1.0 took
+   five minutes; others have waited an hour). Then it shows the new one.
+
+The registry also lists a version `0.0.0-stage`. npm made it itself as a
+placeholder while 0.1.0 was being checked; it is not ours and holds
+nothing.
 
 The workflow does nothing if that version is on npm already, so pushing a
 tag twice is harmless.

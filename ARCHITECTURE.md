@@ -326,7 +326,7 @@ held-back script heard of them, not the slide's true length.
 | M3 | a11y module, React component | done |
 | M4 | Kibitzo: an adapter with the props of its current board component, then every page (puzzles, lessons, coach, vision, play) | done; live on kibitzo.com since 2026-11-12, and the old board is removed there. The founder's judgement of production on the phone is still to come |
 | M5 | fenshot's board; cm-chessboard removed | no import of cm-chessboard is left |
-| M6 | npm: `@kibitzo/lightsquare` 0.1.0, with the demo at kibitzo.github.io/lightsquare | prepared; how a release is made is in [docs/RELEASING.md](docs/RELEASING.md) |
+| M6 | npm: `@kibitzo/lightsquare`, with the demo at kibitzo.github.io/lightsquare | done; 0.1.0 is on npm since 2026-11-12. How a release is made is in [docs/RELEASING.md](docs/RELEASING.md) |
 | M7 | 1.0: the API is frozen | after some weeks in production |
 | later | the board editor module | when a product needs it |
 
