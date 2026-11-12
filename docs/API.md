@@ -136,9 +136,9 @@ drawing.clear();
 `--ls-shape-red: crimson`, `--ls-shape-mine: #7c3aed` (see Looks). Each shape
 also carries the class `ls-arrow-<name>` or `ls-circle-<name>`.
 
-An arrow with a label gets a head made for it: the shaft opens into a disc
-that holds the text, upright and white (`--ls-label-text`), and the disc
-narrows to the point.
+A label is set into the arrow's head, which grows a little to hold it:
+upright, light, with a rim in a deeper tone of the arrow's colour
+(`--ls-label-text`, `--ls-label-rim`).
 
 An arrow runs from the centre of its first square to the centre of its
 last one, where its point stops. Its colour grows from faint at the tail, so

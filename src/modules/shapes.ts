@@ -16,7 +16,7 @@ export interface Arrow {
   to: Square;
   /** Picks the colour: the class `ls-arrow-<name>`. Leave out for the default. */
   name?: string;
-  /** A short text, such as "1". The arrow's head becomes a disc that holds it and narrows to the point. */
+  /** A short text in the arrow's head, such as "1". The head grows a little to hold it. */
   label?: string;
 }
 
@@ -101,11 +101,14 @@ interface Outline {
   d: string;
   tail: [number, number];
   tip: [number, number];
-  /** Where a label sits: the centre of the disc in the head. */
+  /** Where a label sits: the centre of the largest circle that fits in the head. */
   label: [number, number];
-  /** The radius of that disc. */
+  /** The radius of that circle. */
   room: number;
 }
+
+/** A head that carries a label is a little larger, so the text has room. */
+const LABELLED = 1.2;
 
 function arrowOutline(from: [number, number], to: [number, number], look: Required<ArrowLook>, scale: number, labelled = false): Outline {
   const dx = to[0] - from[0];
@@ -116,33 +119,18 @@ function arrowOutline(from: [number, number], to: [number, number], look: Requir
   const point = (along: number, across: number): [number, number] => [n(from[0] + 0.5 + ux * along - uy * across), n(from[1] + 0.5 + uy * along + ux * across)];
   const at = (along: number, across: number): string => point(along, across).join(" ");
   const half = (look.width * scale) / 2;
-  const tailEnd = `L${at(0, -half)}A${n(half)} ${n(half)} 0 0 0 ${at(0, half)}Z`;
-  if (labelled) {
-    // A head made for its label: the shaft opens into a disc that holds the
-    // text, and the disc narrows to a point on the centre of the target.
-    const r = Math.max(half * 1.25, look.headWidth * 0.4 * scale);
-    const back = Math.min(r * 1.72, length - r * 1.05);
-    const centre = length - back;
-    const enter = centre - Math.sqrt(r * r - half * half);
-    const touch = centre + (r * r) / back;
-    const reach = (r * Math.sqrt(back * back - r * r)) / back;
-    const arc = `A${n(r)} ${n(r)} 0 0 0 `;
-    return {
-      d: `M${at(0, half)}L${at(enter, half)}${arc}${at(touch, reach)}L${at(length, 0)}L${at(touch, -reach)}${arc}${at(enter, -half)}${tailEnd}`,
-      tail: point(0, 0),
-      tip: point(length, 0),
-      label: point(centre, 0),
-      room: r,
-    };
-  }
-  const wing = (look.headWidth * scale) / 2;
-  const neck = Math.max(0, length - look.headLength * scale);
+  const grown = scale * (labelled ? LABELLED : 1);
+  const wing = (look.headWidth * grown) / 2;
+  const headLength = Math.min(length, look.headLength * grown);
+  const neck = length - headLength;
+  // The largest circle that fits in the head: where a label sits, and how much room it has.
+  const room = (2 * wing * headLength) / (2 * wing + 2 * Math.hypot(wing, headLength));
   return {
-    d: `M${at(0, half)}L${at(neck, half)}L${at(neck, wing)}L${at(length, 0)}L${at(neck, -wing)}L${at(neck, -half)}${tailEnd}`,
+    d: `M${at(0, half)}L${at(neck, half)}L${at(neck, wing)}L${at(length, 0)}L${at(neck, -wing)}L${at(neck, -half)}L${at(0, -half)}A${n(half)} ${n(half)} 0 0 0 ${at(0, half)}Z`,
     tail: point(0, 0),
     tip: point(length, 0),
-    label: point(neck, 0),
-    room: 0,
+    label: point(neck + room, 0),
+    room,
   };
 }
 
@@ -165,7 +153,7 @@ export function shapes(options: ShapesOptions = {}): Module<Shapes> {
       fade.appendChild(svg("stop", { offset: 1 }));
       group.appendChild(svg("path", { d, fill: `url(#${id})` }));
       if (a.label) {
-        const size = n((room * 1.32) / Math.max(1, a.label.length * 0.62));
+        const size = n((room * 1.55) / Math.max(1, a.label.length * 0.62));
         group.appendChild(svg("text", { x: label[0], y: label[1], dy: "0.35em", style: `font-size:${size}px` })).textContent = a.label;
       }
       return group;

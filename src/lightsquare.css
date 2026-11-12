@@ -236,11 +236,17 @@
   transition: none;
 }
 
-/* A label on an arrow ("1", "2") is written in its head, upright, in white.
-   The script sets its size to fit the head. */
+/* A label on an arrow ("1", "2") is set into its head: upright, light, with
+   a rim in a deeper tone of the arrow's own colour, so it reads as pressed
+   into the arrow, not laid on top. The script sets its size to fit. */
 .ls-arrow text {
   fill: var(--ls-label-text, #fff);
-  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  stroke: #000;
+  stroke: var(--ls-label-rim, color-mix(in srgb, var(--_shape) 58%, #000));
+  stroke-width: 0.034;
+  stroke-linejoin: round;
+  paint-order: stroke;
+  font-family: ui-rounded, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
   font-weight: 800;
   font-variant-numeric: tabular-nums;
   text-anchor: middle;

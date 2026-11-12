@@ -115,8 +115,8 @@
   /* Checkmate, as in Kibitzo. Under the king: one crimson core that lands
      with an impact and then holds still. Over it: a rose "#" on the
      square's top-right corner (inside the square at the board's edges)
-     that drops in, bounces and wobbles while eight sparks fly out. Every
-     part runs once. The glow is a mark; the "#" and its sparks are HTML
+     that grows out of its own centre in one smooth move while eight sparks
+     fly out (Kibitzo's drops from above and wobbles). Every part runs once. The glow is a mark; the "#" and its sparks are HTML
      put on the square with the overlay module. */
   .ls-mark-mated {
     background: radial-gradient(circle, rgba(159, 18, 18, 0.7) 0%, rgba(159, 18, 18, 0.45) 40%, rgba(159, 18, 18, 0.1) 68%, rgba(159, 18, 18, 0) 80%);
@@ -129,21 +129,15 @@
     display: flex; align-items: center; justify-content: center; border-radius: 9999px;
     background: #be123c; color: #fff; font: 800 28cqw/1 system-ui, -apple-system, "Segoe UI", sans-serif;
     box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.3), 0 1px 2px rgba(0, 0, 0, 0.3); opacity: 0.85;
-    animation: mate-badge 0.75s ease-out 0.2s backwards; pointer-events: none;
+    animation: mate-badge 0.45s cubic-bezier(0.3, 1.35, 0.6, 1) 0.18s backwards; pointer-events: none;
   }
   .ls-at-right > .mate .mate-badge { left: 77%; }
   .ls-at-top > .mate .mate-badge { top: 23%; }
   @container lightsquare (max-width: 460px) { .ls-anchor .mate-badge { width: 56%; height: 56%; font-size: 34cqw; } }
-  @keyframes mate-badge {
-    0% { transform: translate(-50%, -160%) scale(0.3) rotate(-30deg); }
-    40% { transform: translate(-50%, -50%) scale(1.28) rotate(14deg); }
-    58% { transform: translate(-50%, -50%) scale(0.88) rotate(-9deg); }
-    74% { transform: translate(-50%, -50%) scale(1.08) rotate(5deg); }
-    88% { transform: translate(-50%, -50%) scale(0.97) rotate(-2deg); }
-    100% { transform: translate(-50%, -50%) scale(1) rotate(0deg); }
-  }
+  /* One curve, from nothing at its own centre to full size, with a single soft overshoot. */
+  @keyframes mate-badge { from { transform: translate(-50%, -50%) scale(0); opacity: 0; } }
   .mate-sparks { position: absolute; left: 50%; top: 50%; width: 0; height: 0; }
-  .mate-spark { position: absolute; left: -2.5cqw; top: -2.5cqw; width: 5cqw; height: 5cqw; border-radius: 9999px; opacity: 0; animation: mate-spark 0.6s cubic-bezier(0.22, 1, 0.36, 1) 0.48s; }
+  .mate-spark { position: absolute; left: -2.5cqw; top: -2.5cqw; width: 5cqw; height: 5cqw; border-radius: 9999px; opacity: 0; animation: mate-spark 0.6s cubic-bezier(0.22, 1, 0.36, 1) 0.36s; }
   .mate-spark-0 { background: #fb7185; }
   .mate-spark-1 { background: #fda4af; }
   .mate-spark-2 { background: #fff; }
