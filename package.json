@@ -1,6 +1,6 @@
 {
   "name": "@kibitzo/lightsquare",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "A chessboard that stays smooth on every phone. Pieces move with CSS transforms on the GPU, no animation loop, no dependencies.",
   "type": "module",
   "main": "./dist/index.js",
