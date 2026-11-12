@@ -57,7 +57,7 @@
   /* ── the stage: the board and its panel ── */
   .stage { display: grid; gap: 18px; grid-template-columns: minmax(0, 1fr); margin-top: 22px; }
   .board-side { min-width: 0; }
-  .frame { position: relative; width: calc(min(100%, calc(100vh - 190px)) * var(--board-scale)); min-width: 200px; margin: 0 auto; padding: clamp(5px, 1.2vw, 12px); border-radius: 16px; background: linear-gradient(180deg, #17202b, #111821); border: 1px solid var(--line); box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5); }
+  .frame { position: relative; width: calc(min(100%, calc(100vh - 190px)) * var(--board-scale)); min-width: 200px; margin: 0 auto; --pad: clamp(5px, 1.2vw, 12px); padding: var(--pad); border-radius: 16px; background: linear-gradient(180deg, #17202b, #111821); border: 1px solid var(--line); box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5); }
   #board, #board .ls-squares { border-radius: 5px; }
   /* A dimension line under the board, as on a technical drawing. */
   .dimension { display: flex; align-items: center; gap: 10px; width: calc(min(100%, calc(100vh - 190px)) * var(--board-scale)); margin: 10px auto 0; padding: 0 clamp(5px, 1.2vw, 12px); font: 11.5px/1 var(--mono); color: var(--faint); font-variant-numeric: tabular-nums; }
@@ -66,9 +66,14 @@
   /* The board can be made smaller with the grip at its corner, where there
      is a mouse. On a phone it always takes the full width. */
   .board-side { --board-scale: 1; }
-  .resize { position: absolute; right: -1px; bottom: -1px; display: none; align-items: center; justify-content: center; width: 22px; height: 22px; border: 1px solid var(--line-strong); border-radius: 5px 0 15px 0; background: #17202b; color: var(--dim); cursor: nwse-resize; touch-action: none; }
-  @media (hover: hover) and (pointer: fine) { .resize { display: flex; } }
-  .resize:hover, .resize:focus-visible { color: var(--amber-soft); border-color: var(--amber); outline: none; }
+  /* The grip lives in the corner of the frame, beside the board and never
+     over it: its box starts at the board's corner and reaches a little past
+     the frame, so that it is easy to catch. Its two strokes are drawn in
+     the frame's own padding, inside the rounded corner. */
+  .resize { position: absolute; right: -8px; bottom: -8px; display: none; width: calc(var(--pad) + 8px); height: calc(var(--pad) + 8px); color: var(--faint); cursor: nwse-resize; touch-action: none; transition: color 0.15s; }
+  .resize svg { display: block; width: var(--pad); height: var(--pad); overflow: visible; }
+  @media (hover: hover) and (pointer: fine) { .resize { display: block; } }
+  .resize:hover, .resize:focus-visible, .resize:active { color: var(--amber); outline: none; }
 
   /* ── the inspector: one instrument panel with ruled rows ── */
   .panel { min-width: 0; border: 1px solid var(--line-strong); border-radius: 6px; background: #0d131a; overflow: hidden; }
@@ -298,7 +303,7 @@
     <div class="board-side">
       <div class="frame">
         <div id="board"></div>
-        <div class="resize" id="resize" role="slider" tabindex="0" aria-label="Board size" aria-valuemin="40" aria-valuemax="100" aria-valuenow="100" title="Drag to resize the board. Double-click for full size."><svg viewBox="0 0 12 12" width="12" height="12" aria-hidden="true"><path d="M11 4 4 11M11 8 8 11" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></div>
+        <div class="resize" id="resize" role="slider" tabindex="0" aria-label="Board size" aria-valuemin="40" aria-valuemax="100" aria-valuenow="100" title="Drag to resize the board. Double-click for full size."><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M6-1-1 6M6.75 3.25 3.25 6.75" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></div>
       </div>
       <div class="dimension" id="where" aria-hidden="true"></div>
     </div>

@@ -193,6 +193,10 @@ describe.each([PROFILES[0], PROFILES[1], PROFILES[2]])("the page in $name", (pro
     await page.waitForFunction("!document.getAnimations().length");
     const full = await width();
     const grip = (await page.locator("#resize").boundingBox())!;
+    // The grip sits beside the board, in the frame's corner: no part of a square is under it.
+    const board = (await page.locator("#board").boundingBox())!;
+    expect(grip.x).toBeGreaterThanOrEqual(board.x + board.width - 0.5);
+    expect(grip.y).toBeGreaterThanOrEqual(board.y + board.height - 0.5);
     await page.mouse.move(grip.x + grip.width / 2, grip.y + grip.height / 2);
     await page.mouse.down();
     await page.mouse.move(grip.x - 110, grip.y - 110, { steps: 6 });
