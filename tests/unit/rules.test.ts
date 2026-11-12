@@ -30,13 +30,14 @@ describe("RULES.md", () => {
 
   it("rules 1 and 4: script places things with transform only, pieces in percent", () => {
     expect(count(code, /\.style\.(left|top|width|height|right|bottom|margin|padding)/g)).toBe(0);
+    expect(source["board.ts"]).toContain("translate(${col * 12.5}cqw,${row * 12.5}cqw)");
     expect(source["board.ts"]).toContain("translate(${col * 100}%,${row * 100}%)");
   });
 
   it("rule 1: the stylesheet transitions transform and opacity, nothing else", () => {
-    const transitions = [...css.matchAll(/transition\s*:\s*([^;]+);/g)].map((m) => m[1].trim().split(/\s+/)[0]);
+    const transitions = [...css.matchAll(/transition\s*:\s*([^;]+);/g)].flatMap((m) => m[1].split(",").map((part) => part.trim().split(/\s+/)[0]));
     expect(transitions.length).toBeGreaterThan(0);
-    for (const property of transitions) expect(["transform", "opacity"]).toContain(property);
+    for (const property of transitions) expect(["transform", "opacity", "none"]).toContain(property);
   });
 
   it("nothing is placed with a transform and then scaled or turned by a separate property", () => {
@@ -66,7 +67,7 @@ describe("RULES.md", () => {
     expect(imports.length).toBeGreaterThan(0);
     for (const from of imports) expect(from.startsWith("./")).toBe(true);
     for (const text of Object.values(modules)) {
-      for (const [, from] of text.matchAll(/from\s+"([^"]+)"/g)) expect(from.startsWith("../")).toBe(true);
+      for (const [, from] of text.matchAll(/^import[^;]*from\s+"([^"]+)"/gm)) expect(from.startsWith("../")).toBe(true);
     }
     const pkg = JSON.parse(readFileSync(`${root}package.json`, "utf8"));
     expect(pkg.dependencies ?? {}).toEqual({});
@@ -94,7 +95,7 @@ describe("RULES.md", () => {
   });
 
   it("each module stays small", async () => {
-    const limit: Record<string, number> = { "shapes.ts": 2200, "promotion.ts": 1000, "overlay.ts": 700, "a11y.ts": 1700, "premove.ts": 1100 };
+    const limit: Record<string, number> = { "shapes.ts": 2200, "promotion.ts": 1000, "overlay.ts": 700, "a11y.ts": 1700, "premove.ts": 1100, "theme.ts": 900 };
     for (const [name, bytes] of Object.entries(limit)) {
       const out = await build({ absWorkingDir: root, entryPoints: [`src/modules/${name}`], bundle: true, format: "esm", minify: true, target: "es2020", write: false });
       expect(gzipSync(out.outputFiles[0].contents, { level: 9 }).length, name).toBeLessThan(bytes);

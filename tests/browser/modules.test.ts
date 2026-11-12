@@ -69,22 +69,53 @@ describe.each(PROFILES)("modules in $name", (profile) => {
       await page.evaluate(() => {
         (window as unknown as W).A = T.board.use(M.shapes({ arrows: [{ from: "e2", to: "e4" }, { from: "g1", to: "f3", name: "red", label: "1" }], circles: [{ square: "d4", name: "green" }] }));
       });
-      const arrow = await box(".ls-arrow path", 0);
-      expect(arrow.left).toBeCloseTo(4.3, 1);
-      expect(arrow.right).toBeCloseTo(4.7, 1);
-      expect(arrow.top).toBeCloseTo(4.58, 1);
-      expect(arrow.bottom).toBeCloseTo(6.2, 1);
+      await settle(page);
+      const arrow = await box(".ls-arrow path");
+      expect((arrow.left + arrow.right) / 2).toBeCloseTo(4.5, 1);
+      expect(arrow.right - arrow.left).toBeCloseTo(0.54, 1);
+      expect(Math.abs(arrow.top - 4.5), "the point stops in the centre of e4").toBeLessThan(0.03);
+      expect(Math.abs(arrow.bottom - 6.6), "the tail is round, about the centre of e2").toBeLessThan(0.03);
       const knight = await box(".ls-arrow-red path");
-      expect(knight.left).toBeGreaterThan(5.4);
-      expect(knight.right).toBeLessThan(6.6);
-      expect(knight.top).toBeGreaterThan(5.4);
-      expect(knight.bottom).toBeLessThan(7.4);
+      expect(Math.abs(knight.top - 5.5), "the point stops in the centre of f3").toBeLessThan(0.03);
+      expect(knight.left).toBeLessThan(5.55);
+      expect(knight.right).toBeGreaterThan(6.5);
+      expect(knight.bottom).toBeGreaterThan(7.5);
       expect(await page.evaluate(() => document.querySelector(".ls-arrow-red text")!.textContent)).toBe("1");
       const circle = await box(".ls-circle-green");
       expect((circle.left + circle.right) / 2).toBeCloseTo(3.5, 1);
       expect((circle.top + circle.bottom) / 2).toBeCloseTo(4.5, 1);
-      expect(await page.evaluate(() => getComputedStyle(document.querySelector(".ls-arrow path")!).fill)).toBe("rgba(245, 158, 11, 0.88)");
-      expect(await page.evaluate(() => getComputedStyle(document.querySelector(".ls-arrow-red path")!).fill)).toBe("rgba(220, 38, 38, 0.85)");
+      const paint = await page.evaluate(() => {
+        const stops = [...document.querySelectorAll(".ls-arrow stop")].slice(0, 2).map((el) => getComputedStyle(el));
+        const red = getComputedStyle(document.querySelector(".ls-arrow-red stop")!);
+        const path = document.querySelector(".ls-arrow path")!;
+        return { colour: stops[0].stopColor, red: red.stopColor, grows: Number(stops[0].stopOpacity) < Number(stops[1].stopOpacity), filled: !!document.querySelector(path.getAttribute("fill")!.slice(4, -1)) };
+      });
+      expect(paint).toEqual({ colour: "rgb(234, 88, 12)", red: "rgb(185, 28, 28)", grows: true, filled: true });
+    });
+
+    it("an arrow runs from the centre of its first square to the centre of its last, in every direction", async () => {
+      await fresh(page, { position: "empty" });
+      const far = await page.evaluate(async () => {
+        const targets = ["d8", "h8", "h4", "h1", "d1", "a1", "a4", "a7", "f5", "e6", "c3", "b5"];
+        T.board.use(M.shapes({ arrows: targets.map((to) => ({ from: "d4", to })) }));
+        await new Promise((r) => setTimeout(r, 400));
+        const size = document.getElementById("board")!.getBoundingClientRect().width / 8;
+        const origin = T.point("d4");
+        const round = (v: number): number => Math.round(v * 100) / 100;
+        return [...document.querySelectorAll(".ls-arrow path")].map((el, i) => {
+          const tip = T.point(targets[i]);
+          const r = el.getBoundingClientRect();
+          const beyond = Math.max(tip.x - r.right, r.left - tip.x, tip.y - r.bottom, r.top - tip.y) / size;
+          const short = Math.min(Math.abs(tip.x - r.right), Math.abs(tip.x - r.left), Math.abs(tip.y - r.bottom), Math.abs(tip.y - r.top)) / size;
+          const holdsOrigin = origin.x > r.left && origin.x < r.right && origin.y > r.top && origin.y < r.bottom;
+          return { to: targets[i], beyond: round(beyond), short: round(short), holdsOrigin };
+        });
+      });
+      for (const a of far) {
+        expect(a.beyond, `${a.to}: nothing reaches past the centre of the target`).toBeLessThanOrEqual(0.02);
+        expect(a.short, `${a.to}: the point reaches the centre of the target`).toBeLessThanOrEqual(0.02);
+        expect(a.holdsOrigin, `${a.to}: the tail covers the centre of the first square`).toBe(true);
+      }
     });
 
     it("a change touches only the shapes that changed", async () => {
@@ -119,10 +150,11 @@ describe.each(PROFILES)("modules in $name", (profile) => {
         T.board.use(M.shapes({ arrows: [{ from: "e2", to: "e4" }] }));
         T.set({ orientation: "black" });
       });
+      await settle(page);
       const flipped = await box(".ls-arrow path");
       expect((flipped.left + flipped.right) / 2).toBeCloseTo(3.5, 1);
-      expect(flipped.top).toBeCloseTo(1.8, 1);
-      expect(flipped.bottom).toBeCloseTo(3.42, 1);
+      expect(flipped.top).toBeCloseTo(1.4, 1);
+      expect(flipped.bottom).toBeCloseTo(3.5, 1);
       const log = await page.evaluate(() => {
         const watch = P.watch(document.getElementById("board")!);
         document.getElementById("wrap")!.style.width = "240px";
@@ -131,8 +163,8 @@ describe.each(PROFILES)("modules in $name", (profile) => {
       const small = await box(".ls-arrow path");
       await page.evaluate(() => (document.getElementById("wrap")!.style.width = ""));
       expect(log).toEqual([]);
-      expect(small.top).toBeCloseTo(1.8, 1);
-      expect(small.bottom).toBeCloseTo(3.42, 1);
+      expect(small.top).toBeCloseTo(1.4, 1);
+      expect(small.bottom).toBeCloseTo(3.5, 1);
     });
 
     it("the user draws with the right button: arrows and circles toggle, a left press clears", async () => {
@@ -146,14 +178,14 @@ describe.each(PROFILES)("modules in $name", (profile) => {
       await stroke("d5", "d5");
       await stroke("g1", "f3", { shiftKey: true });
       expect(await page.evaluate(() => (window as unknown as W).A.drawing())).toEqual({
-        arrows: [{ from: "e2", to: "e4" }, { from: "g1", to: "f3", name: "red" }],
-        circles: [{ square: "d5" }],
+        arrows: [{ from: "e2", to: "e4", name: "green" }, { from: "g1", to: "f3", name: "yellow" }],
+        circles: [{ square: "d5", name: "green" }],
       });
-      expect(await page.evaluate(() => [document.querySelectorAll(".ls-arrow").length, document.querySelectorAll(".ls-circle").length, document.querySelectorAll(".ls-arrow-red").length])).toEqual([2, 1, 1]);
+      expect(await page.evaluate(() => [document.querySelectorAll(".ls-arrow").length, document.querySelectorAll(".ls-circle").length, document.querySelectorAll(".ls-arrow-yellow").length])).toEqual([2, 1, 1]);
       expect(await page.evaluate(() => T.events)).toEqual([]);
       await stroke("e2", "e4");
       await stroke("d5", "d5");
-      expect(await page.evaluate(() => (window as unknown as W).A.drawing())).toEqual({ arrows: [{ from: "g1", to: "f3", name: "red" }], circles: [] });
+      expect(await page.evaluate(() => (window as unknown as W).A.drawing())).toEqual({ arrows: [{ from: "g1", to: "f3", name: "yellow" }], circles: [] });
       await press("a5");
       expect(await page.evaluate(() => (window as unknown as W).A.drawing())).toEqual({ arrows: [], circles: [] });
       expect(await page.evaluate(() => document.querySelectorAll(".ls-arrow, .ls-circle").length)).toBe(0);
@@ -172,12 +204,15 @@ describe.each(PROFILES)("modules in $name", (profile) => {
         const fire = (type: string, at: { x: number; y: number }) => host.dispatchEvent(new PointerEvent(type, { pointerId: 3, pointerType: "mouse", isPrimary: true, button: 2, clientX: at.x, clientY: at.y, bubbles: true }));
         fire("pointerdown", p);
         fire("pointermove", q);
+        const aimed = document.querySelector(".ls-arrow-preview");
         const preview = document.querySelectorAll(".ls-arrow").length;
+        const slim = aimed!.querySelector("path")!.getBoundingClientRect().width;
         const stored = A.drawing().arrows.length;
         fire("pointerup", q);
-        return { before, during: menu(), preview, stored, after: A.drawing().arrows.length };
+        const full = document.querySelector(".ls-arrow path")!.getBoundingClientRect().width;
+        return { before, during: menu(), preview, stored, after: A.drawing().arrows.length, left: document.querySelectorAll(".ls-arrow-preview").length, grows: full > slim };
       });
-      expect(result).toEqual({ before: false, during: true, preview: 1, stored: 0, after: 1 });
+      expect(result).toEqual({ before: false, during: true, preview: 1, stored: 0, after: 1, left: 0, grows: true });
     });
 
     it("is still at rest once drawn, and leaves nothing behind when the board is destroyed", async () => {
@@ -343,7 +378,7 @@ describe.each(PROFILES)("modules in $name", (profile) => {
         document.getElementById("board")!.focus();
       });
       await page.keyboard.press("ArrowUp");
-      expect(await page.evaluate(() => [(document.querySelector(".ls-cursor") as HTMLElement).style.transform, document.querySelector("[aria-live]")!.textContent])).toEqual(["translate(400%, 600%)", "e2, White pawn"]);
+      expect(await page.evaluate(() => [(document.querySelector(".ls-cursor") as HTMLElement).style.transform, document.querySelector("[aria-live]")!.textContent])).toEqual(["translate(50cqw, 75cqw)", "e2, White pawn"]);
       await page.keyboard.press("Enter");
       expect(await page.evaluate(() => T.marks())).toEqual(["dot e3", "dot e4", "select e2"]);
       await page.keyboard.press("ArrowUp");
@@ -384,6 +419,104 @@ describe.each(PROFILES)("modules in $name", (profile) => {
         return document.getElementById("board")!.hasAttribute("tabindex");
       });
       expect(off).toBe(false);
+    });
+  });
+
+  describe("looks", () => {
+    const look = (): Promise<Record<string, string>> =>
+      page.evaluate(() => {
+        const host = document.getElementById("board")!;
+        const piece = getComputedStyle(host.querySelector(".ls-wk")!);
+        return {
+          light: getComputedStyle(host).backgroundColor,
+          dark: getComputedStyle(host.querySelector(".ls-squares")!).fill,
+          last: getComputedStyle(host.querySelector(".ls-mark-last")!).backgroundColor,
+          king: piece.backgroundImage.slice(0, 23),
+          size: piece.backgroundSize,
+          arrow: getComputedStyle(host.querySelector(".ls-arrow stop")!).stopColor,
+          red: getComputedStyle(host.querySelector(".ls-arrow-red stop")!).stopColor,
+          mine: getComputedStyle(host.querySelector(".ls-arrow-mine stop")!).stopColor,
+          tail: getComputedStyle(host.querySelector(".ls-arrow stop")!).stopOpacity,
+        };
+      });
+    const setUp = async (): Promise<void> => {
+      await fresh(page, { lastMove: ["e2", "e4"] });
+      await page.evaluate(() => void T.board.use(M.shapes({ arrows: [{ from: "a2", to: "a4" }, { from: "b2", to: "b4", name: "red" }, { from: "c2", to: "c4", name: "mine" }] })));
+    };
+
+    it("out of the box: the wood board, the Cburnett pieces, orange and deep red arrows", async () => {
+      await setUp();
+      expect(await look()).toEqual({
+        light: "rgb(236, 218, 185)",
+        dark: "rgb(197, 160, 118)",
+        last: "rgba(255, 235, 0, 0.5)",
+        king: 'url("data:image/svg+xml',
+        size: "100% 100%",
+        arrow: "rgb(234, 88, 12)",
+        red: "rgb(185, 28, 28)",
+        mine: "rgb(234, 88, 12)",
+        tail: "0.14",
+      });
+    });
+
+    it("a theme on any element above the board changes squares, marks, pieces and arrows, with no script per board", async () => {
+      await setUp();
+      const log = await page.evaluate(() => {
+        const watch = P.watch(document.getElementById("board")!);
+        M.applyTheme(document.documentElement, { ...M.themes().ocean, lastMove: "rgba(0, 200, 0, 0.4)", pieces: "discs", pieceSize: 0.8, shapes: { default: "#7c3aed", red: "#ff0000", mine: "#00ffff" }, arrowTail: 0.3 });
+        return watch.stop();
+      });
+      expect(log).toEqual([]);
+      expect(await look()).toEqual({
+        light: "rgb(221, 232, 241)",
+        dark: "rgb(106, 143, 181)",
+        last: "rgba(0, 200, 0, 0.4)",
+        king: "radial-gradient(rgb(255",
+        size: "80% 80%",
+        arrow: "rgb(124, 58, 237)",
+        red: "rgb(255, 0, 0)",
+        mine: "rgb(0, 255, 255)",
+        tail: "0.3",
+      });
+    });
+
+    it("the next theme replaces the one before; an empty theme brings the defaults back", async () => {
+      await setUp();
+      await page.evaluate(() => {
+        M.applyTheme(document.documentElement, { ...M.themes().ocean, pieces: "discs", shapes: { red: "#ff0000" } });
+        M.applyTheme(document.documentElement, M.themes().forest);
+      });
+      const forest = await look();
+      expect([forest.light, forest.dark, forest.king, forest.red]).toEqual(["rgb(230, 234, 210)", "rgb(111, 143, 90)", 'url("data:image/svg+xml', "rgb(185, 28, 28)"]);
+      await page.evaluate(() => M.applyTheme(document.documentElement, {}));
+      const plain = await look();
+      expect([plain.light, plain.dark]).toEqual(["rgb(236, 218, 185)", "rgb(197, 160, 118)"]);
+      expect(await page.evaluate(() => [document.documentElement.getAttribute("style") ?? "", document.documentElement.className])).toEqual(["", ""]);
+    });
+
+    it("a theme on the board itself wins over one on the page", async () => {
+      await setUp();
+      await page.evaluate(() => {
+        M.applyTheme(document.documentElement, M.themes().ocean);
+        M.applyTheme(document.getElementById("board")!, M.themes().rose);
+      });
+      expect((await look()).dark).toBe("rgb(196, 140, 130)");
+      await page.evaluate(() => {
+        M.applyTheme(document.documentElement, {});
+        M.applyTheme(document.getElementById("board")!, {});
+      });
+    });
+
+    it("arrows can be made thicker and their heads larger", async () => {
+      await fresh(page);
+      const widths = await page.evaluate(() => {
+        const A = T.board.use(M.shapes({ arrows: [{ from: "a2", to: "a5" }] }));
+        const width = (): number => Math.round((document.querySelector(".ls-arrow path") as SVGPathElement).getBBox().width * 100) / 100;
+        const before = width();
+        A.set({ look: { width: 0.3, headWidth: 0.8, headLength: 0.6 } });
+        return { before, after: width(), count: document.querySelectorAll(".ls-arrow").length };
+      });
+      expect(widths).toEqual({ before: 0.54, after: 0.8, count: 1 });
     });
   });
 

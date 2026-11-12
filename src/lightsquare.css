@@ -1,32 +1,34 @@
 /* Lightsquare. Every rule here follows RULES.md: pieces move by transform
-   only, positions in percent, one background for the squares, nothing
-   animates at rest. */
+   only, places are fractions of the board's width, the squares are one
+   static shape, nothing animates at rest.
+
+   Looks are CSS variables. Set a public one (--ls-light, --ls-wk, ...) on
+   the board or on anything above it, up to the page's root, and every board
+   below follows. The private ones (--_light, ...) hold "the public value or
+   the default" and are what the rules below read. */
 
 .ls-board {
-  --ls-light: #ecdab9;
-  --ls-dark: #c5a076;
-  --ls-move-ms: 180ms;
-  --ls-ease: cubic-bezier(0.2, 0.7, 0.25, 1);
-  --ls-last: rgba(255, 235, 0, 0.5);
-  --ls-select: rgba(30, 22, 14, 0.28);
-  --ls-check: rgba(220, 38, 38, 0.78);
-  --ls-target: rgba(0, 0, 0, 0.2);
-  --ls-hover: rgba(0, 0, 0, 0.16);
-  --ls-premove: rgba(90, 90, 90, 0.45);
+  --_light: var(--ls-light, #ecdab9);
+  --_dark: var(--ls-dark, #c5a076);
+  --_ms: var(--ls-move-ms, 180ms);
+  --_ease: var(--ls-ease, cubic-bezier(0.2, 0.7, 0.25, 1));
+  --_last: var(--ls-last, rgba(255, 235, 0, 0.5));
+  --_select: var(--ls-select, rgba(30, 22, 14, 0.28));
+  --_check: var(--ls-check, rgba(220, 38, 38, 0.78));
+  --_target: var(--ls-target, rgba(0, 0, 0, 0.2));
+  --_hover: var(--ls-hover, rgba(0, 0, 0, 0.16));
+  --_premove: var(--ls-premove, rgba(90, 90, 90, 0.45));
   position: relative;
   width: 100%;
-  /* A whole number of pixels per square. Pieces stay sharp, and Safari,
-     which measures a percent transform on the pixel-snapped box, puts
-     every piece exactly on its square. */
-  width: round(down, 100%, 8px);
   aspect-ratio: 1;
-  /* One background for 64 squares. The top-left square is always light. */
-  background: repeating-conic-gradient(var(--ls-dark) 0 25%, var(--ls-light) 0 50%) 0 0 / 25% 25%;
+  /* The light squares, over an optional picture. The dark squares are one
+     shape on top (.ls-squares). */
+  background: var(--_light) var(--ls-board-image, none) center / 100% 100% no-repeat;
   user-select: none;
   -webkit-user-select: none;
   -webkit-touch-callout: none;
   -webkit-tap-highlight-color: transparent;
-  /* Children may size text by the board's width (cqw). */
+  /* Children are placed and sized by the board's width (cqw). */
   container-type: inline-size;
   contain: layout style inline-size;
   isolation: isolate;
@@ -44,6 +46,13 @@
   pointer-events: none;
 }
 
+.ls-squares {
+  width: 100%;
+  height: 100%;
+  fill: var(--_dark);
+  shape-rendering: crispEdges;
+}
+
 /* Bottom to top. A dragged piece is lifted above everything with its layer. */
 .ls-marks { z-index: 1; }
 .ls-coords { z-index: 2; }
@@ -54,6 +63,8 @@
 .ls-pieces.ls-lift { z-index: 7; }
 .ls-promotion { z-index: 8; }
 
+/* One square in size, top-left of the board; the script's transform puts
+   each on its square. */
 .ls-piece,
 .ls-mark,
 .ls-coord {
@@ -62,18 +73,33 @@
   top: 0;
   width: 12.5%;
   height: 12.5%;
-  /* transform: translate(col * 100%, row * 100%), set per element */
 }
 
+/* A piece set is twelve variables, --ls-wk to --ls-bp, each a CSS image.
+   A piece-set stylesheet sets them on a class (.ls-set-<name>); put that
+   class on the board or anywhere above it. */
 .ls-piece {
-  background: center / 100% 100% no-repeat;
+  background: center / var(--ls-piece-size, 100%) var(--ls-piece-size, 100%) no-repeat;
 }
+
+.ls-wk { background-image: var(--ls-wk); }
+.ls-wq { background-image: var(--ls-wq); }
+.ls-wr { background-image: var(--ls-wr); }
+.ls-wb { background-image: var(--ls-wb); }
+.ls-wn { background-image: var(--ls-wn); }
+.ls-wp { background-image: var(--ls-wp); }
+.ls-bk { background-image: var(--ls-bk); }
+.ls-bq { background-image: var(--ls-bq); }
+.ls-br { background-image: var(--ls-br); }
+.ls-bb { background-image: var(--ls-bb); }
+.ls-bn { background-image: var(--ls-bn); }
+.ls-bp { background-image: var(--ls-bp); }
 
 /* A move. The class and the new transform arrive in the same write, so the
-   browser starts the slide by itself. The class stays until the piece is
-   placed again; at rest it does nothing. */
+   browser starts the slide by itself. The class is dropped when the slide
+   ends: a piece at rest has no transition. */
 .ls-piece.ls-slide {
-  transition: transform var(--ls-move-ms) var(--ls-ease);
+  transition: transform var(--_ms) var(--_ease);
 }
 
 /* The pieces of the latest move pass over the others. */
@@ -85,7 +111,7 @@
    next change at the latest. */
 .ls-piece.ls-gone {
   opacity: 0;
-  transition: opacity var(--ls-move-ms) linear;
+  transition: opacity var(--_ms) linear;
 }
 
 /* Under the pointer. The only time a piece asks for its own GPU layer. */
@@ -101,31 +127,31 @@
 }
 
 .ls-mark-last {
-  background: var(--ls-last);
+  background: var(--_last);
 }
 
 .ls-mark-premove {
-  background: var(--ls-premove);
+  background: var(--_premove);
 }
 
 .ls-mark-select {
-  background: var(--ls-select);
+  background: var(--_select);
 }
 
 .ls-mark-check {
-  background: radial-gradient(circle, var(--ls-check) 0 30%, transparent 70%);
+  background: radial-gradient(circle, var(--_check) 0 30%, transparent 70%);
 }
 
 .ls-mark-dot {
-  background: radial-gradient(circle, var(--ls-target) 0 15%, transparent 16.5%);
+  background: radial-gradient(circle, var(--_target) 0 15%, transparent 16.5%);
 }
 
 .ls-mark-ring {
-  background: radial-gradient(circle, transparent 0 39%, var(--ls-target) 40.5% 47%, transparent 48.5%);
+  background: radial-gradient(circle, transparent 0 39%, var(--_target) 40.5% 47%, transparent 48.5%);
 }
 
 .ls-mark-hover {
-  box-shadow: inset 0 0 0 0.22em var(--ls-hover);
+  box-shadow: inset 0 0 0 0.22em var(--_hover);
 }
 
 /* A finger covers the square it is on: show a halo around it instead. */
@@ -138,7 +164,7 @@
     position: absolute;
     inset: -55%;
     border-radius: 50%;
-    background: var(--ls-hover);
+    background: var(--_hover);
   }
 }
 
@@ -158,15 +184,18 @@
 }
 
 .ls-coord-light {
-  color: var(--ls-dark);
+  color: var(--ls-coord-on-light, var(--_dark));
 }
 
 .ls-coord-dark {
-  color: var(--ls-light);
+  color: var(--ls-coord-on-dark, var(--_light));
 }
 
 /* Module "shapes": arrows and circles, in board units (the layer's viewBox
-   is 8 by 8). Drawn once when they appear; they may fade in. */
+   is 8 by 8). A shape is drawn once. It grows out of its tail as it
+   appears; an arrow still being aimed is slimmer and lighter. The script
+   gives each shape its colour as --_shape: the public --ls-shape or
+   --ls-shape-<name>, or the built-in tone. */
 .ls-shapes {
   width: 100%;
   height: 100%;
@@ -175,21 +204,28 @@
 
 .ls-arrow,
 .ls-circle {
-  --ls-shape: rgba(245, 158, 11, 0.88);
-  transition: opacity 120ms linear;
+  transition: opacity 140ms linear, transform 180ms var(--_ease);
 }
 
-.ls-arrow-red, .ls-circle-red { --ls-shape: rgba(220, 38, 38, 0.85); }
-.ls-arrow-green, .ls-circle-green { --ls-shape: rgba(22, 163, 74, 0.85); }
-.ls-arrow-blue, .ls-circle-blue { --ls-shape: rgba(37, 99, 235, 0.85); }
+/* An arrow's colour grows from faint at its tail, so the piece there stays
+   readable, to strong at its head. */
+.ls-arrow stop {
+  stop-color: var(--_shape);
+  stop-opacity: var(--ls-head-opacity, 0.82);
+}
 
-.ls-arrow path {
-  fill: var(--ls-shape);
+.ls-arrow stop:first-child {
+  stop-opacity: var(--ls-tail-opacity, 0.14);
+}
+
+.ls-arrow-preview {
+  opacity: 0.65;
+  transition: none;
 }
 
 .ls-arrow circle {
   fill: #fff;
-  stroke: var(--ls-shape);
+  stroke: var(--_shape);
   stroke-width: 0.04;
 }
 
@@ -202,14 +238,16 @@
 
 .ls-circle {
   fill: none;
-  stroke: var(--ls-shape);
-  stroke-width: 0.07;
+  stroke: var(--_shape);
+  stroke-width: var(--ls-circle-width, 0.05);
+  opacity: var(--ls-head-opacity, 0.82);
 }
 
 @starting-style {
-  .ls-arrow,
+  .ls-arrow:not(.ls-arrow-preview),
   .ls-circle {
     opacity: 0;
+    transform: scale(0.8);
   }
 }
 
@@ -229,7 +267,11 @@
   padding: 0;
   border: 0;
   border-radius: 50%;
-  background: #f8fafc center / 86% 86% no-repeat;
+  /* Longhands: the picture comes from the piece's own class (.ls-wq, ...). */
+  background-color: #f8fafc;
+  background-position: center;
+  background-size: 86% 86%;
+  background-repeat: no-repeat;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.45);
   cursor: pointer;
 }
@@ -282,6 +324,10 @@
 
 @media (prefers-reduced-motion: reduce) {
   .ls-board {
-    --ls-move-ms: 0ms;
+    --_ms: 0ms;
+  }
+  .ls-arrow,
+  .ls-circle {
+    transition: none;
   }
 }

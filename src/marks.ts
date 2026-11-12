@@ -1,6 +1,21 @@
 import type { Color, Square } from "./position";
 import type { Wanted } from "./state";
 
+const SVG = "http://www.w3.org/2000/svg";
+
+/** The dark squares as one shape, exact at every size. The light ones are the board's background. */
+export function squares(host: HTMLElement): SVGElement {
+  const el = host.appendChild(document.createElementNS(SVG, "svg"));
+  el.setAttribute("class", "ls-layer ls-squares");
+  el.setAttribute("viewBox", "0 0 8 8");
+  el.setAttribute("preserveAspectRatio", "none");
+  el.setAttribute("aria-hidden", "true");
+  let d = "";
+  for (let row = 0; row < 8; row++) for (let col = 1 - (row % 2); col < 8; col += 2) d += `M${col} ${row}h1v1h-1z`;
+  el.appendChild(document.createElementNS(SVG, "path")).setAttribute("d", d);
+  return el;
+}
+
 export function layer(host: HTMLElement, name: string): HTMLElement {
   const el = document.createElement("div");
   el.className = `ls-layer ${name}`;
@@ -55,7 +70,7 @@ export interface CoordView {
 }
 
 /** File letters along the bottom row, rank numbers down the left column. */
-export function coordView(host: HTMLElement, before: HTMLElement): CoordView {
+export function coordView(host: HTMLElement, before: HTMLElement, place: (col: number, row: number) => string): CoordView {
   let el: HTMLElement | null = null;
   let drawnFor: Color | null = null;
 
@@ -75,7 +90,7 @@ export function coordView(host: HTMLElement, before: HTMLElement): CoordView {
           const label = el.appendChild(document.createElement("div"));
           const [col, row] = i < 8 ? [0, i] : [i - 8, 7];
           label.className = `ls-coord ls-coord-${i < 8 ? "rank" : "file"} ls-coord-${(col + row) % 2 ? "dark" : "light"}`;
-          label.style.transform = `translate(${col * 100}%,${row * 100}%)`;
+          label.style.transform = place(col, row);
         }
         host.insertBefore(el, before);
       }

@@ -44,8 +44,8 @@ describe.each(PROFILES)("board in $name", (profile) => {
     const colours = await page.evaluate(async () => {
       const host = document.getElementById("board")!;
       const style = getComputedStyle(host);
-      const light = style.getPropertyValue("--ls-light").trim();
-      const dark = style.getPropertyValue("--ls-dark").trim();
+      const light = style.getPropertyValue("--_light").trim();
+      const dark = style.getPropertyValue("--_dark").trim();
       return { light, dark };
     });
     const shot = await page.locator("#board").screenshot();
@@ -175,11 +175,11 @@ describe.each(PROFILES)("board in $name", (profile) => {
     await fresh(page, { position: AFTER_E4, marks: [{ square: "e4", name: "hint" }, { square: "e4", name: "brilliant", above: true }] });
     const layers = await page.evaluate(() => {
       const host = document.getElementById("board")!;
-      const order = [...host.children].map((el) => el.className.replace("ls-layer ", ""));
+      const order = [...host.children].map((el) => el.getAttribute("class")!.replace("ls-layer ", ""));
       const parent = (name: string) => host.querySelector(`.ls-mark-${name}`)!.parentElement!.className.replace("ls-layer ", "");
       return { order, hint: parent("hint"), badge: parent("brilliant"), marks: T.marks() };
     });
-    expect(layers).toEqual({ order: ["ls-marks", "ls-coords", "ls-pieces", "ls-over"], hint: "ls-marks", badge: "ls-over", marks: ["brilliant e4", "hint e4"] });
+    expect(layers).toEqual({ order: ["ls-squares", "ls-marks", "ls-coords", "ls-pieces", "ls-over"], hint: "ls-marks", badge: "ls-over", marks: ["brilliant e4", "hint e4"] });
     const log = await page.evaluate(() => {
       const watch = P.watch(document.getElementById("board")!);
       T.set({ position: "rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR", marks: [{ square: "e5", name: "best", above: true }] }, { animate: false });
@@ -208,7 +208,7 @@ describe.each(PROFILES)("board in $name", (profile) => {
       const probe = document.createElement("div");
       host.appendChild(probe);
       const resolve = (v: string) => ((probe.style.color = v), getComputedStyle(probe).color);
-      const out = { light: resolve(style.getPropertyValue("--ls-light")), dark: resolve(style.getPropertyValue("--ls-dark")), first: getComputedStyle(host.querySelector(".ls-coord")!).color, second: getComputedStyle(host.querySelectorAll(".ls-coord")[1]).color };
+      const out = { light: resolve(style.getPropertyValue("--_light")), dark: resolve(style.getPropertyValue("--_dark")), first: getComputedStyle(host.querySelector(".ls-coord")!).color, second: getComputedStyle(host.querySelectorAll(".ls-coord")[1]).color };
       probe.remove();
       return out;
     });
@@ -252,7 +252,7 @@ describe.each(PROFILES)("board in $name", (profile) => {
       T.make();
       return { hello, log };
     }, AFTER_E4);
-    expect(calls.hello).toBe("white 4,6 e2 null translate(700%,700%) 32");
+    expect(calls.hello).toBe("white 4,6 e2 null translate(87.5cqw,87.5cqw) 32");
     expect(calls.log).toEqual(["update white null", 'update white ["e2","e4"]', 'update black ["e2","e4"]', 'update black ["e2","e4"]', "destroy"]);
   });
 
@@ -271,11 +271,59 @@ describe.each(PROFILES)("board in $name", (profile) => {
       return { seen, log: watch.stop() };
     });
     expect(result.log).toEqual([]);
-    expect(result.seen.map((s) => s.width)).toEqual([200, 312, 144]);
+    expect(result.seen.map((s) => s.width)).toEqual([203, 317, 151]);
     for (const s of result.seen) {
       expect(s.off).toBeLessThan(0.02);
       expect(s.fen).toBe(START);
     }
+  });
+
+  it("resizing right after a slide starts no animation: a piece at rest has no transition", async () => {
+    await fresh(page);
+    await page.evaluate((fen) => T.set({ position: fen, lastMove: ["e2", "e4"] }), AFTER_E4);
+    await settle(page);
+    const result = await page.evaluate(async () => {
+      const wrap = document.getElementById("wrap")!;
+      const out: number[] = [];
+      for (const width of [300, 222, 411]) {
+        wrap.style.width = `${width}px`;
+        await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+        out.push(document.getAnimations().length, Math.round(Math.max(...T.pieces().map((p) => p.off)) * 100));
+      }
+      wrap.style.width = "";
+      return { out, sliding: document.querySelectorAll(".ls-slide, .ls-top").length };
+    });
+    expect(result).toEqual({ out: [0, 0, 0, 0, 0, 0], sliding: 0 });
+  });
+
+  it("the squares meet the pieces at any width: every edge within a pixel of the exact grid", async () => {
+    await fresh(page, { position: "empty", coordinates: false });
+    for (const width of [151, 203, 317]) {
+      await page.evaluate((w) => (document.getElementById("wrap")!.style.width = `${w}px`), width);
+      const shot = await page.locator("#board").screenshot();
+      const edges = await page.evaluate(async (data) => {
+        const img = new Image();
+        img.src = `data:image/png;base64,${data}`;
+        await img.decode();
+        const canvas = document.createElement("canvas");
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext("2d")!;
+        ctx.drawImage(img, 0, 0);
+        const row = ctx.getImageData(0, Math.round(img.height / 16), img.width, 1).data;
+        const found: number[] = [];
+        let light = row[2] > 150;
+        for (let x = 1; x < img.width; x++) {
+          const now = row[x * 4 + 2] > 150;
+          if (now !== light) found.push(x);
+          light = now;
+        }
+        return { found, width: img.width };
+      }, shot.toString("base64"));
+      expect(edges.found, `board ${width} px wide`).toHaveLength(7);
+      edges.found.forEach((x, i) => expect(Math.abs(x - ((i + 1) * edges.width) / 8), `edge ${i + 1} of a board ${width} px wide`).toBeLessThanOrEqual(1));
+    }
+    await page.evaluate(() => (document.getElementById("wrap")!.style.width = ""));
   });
 
   it("move() slides one piece and takes what stands on the target", async () => {

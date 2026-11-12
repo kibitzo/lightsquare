@@ -23,6 +23,7 @@ const BUNDLES: Record<string, string> = {
   "/modules/overlay.js": "src/modules/overlay.ts",
   "/modules/a11y.js": "src/modules/a11y.ts",
   "/modules/premove.js": "src/modules/premove.ts",
+  "/modules/theme.js": "src/modules/theme.ts",
   "/react-app.js": "tests/browser/react-app.ts",
 };
 

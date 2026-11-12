@@ -30,6 +30,10 @@
       "types": "./dist/modules/premove.d.ts",
       "import": "./dist/modules/premove.js"
     },
+    "./theme": {
+      "types": "./dist/modules/theme.d.ts",
+      "import": "./dist/modules/theme.js"
+    },
     "./react": {
       "types": "./dist/react.d.ts",
       "import": "./dist/react.js"

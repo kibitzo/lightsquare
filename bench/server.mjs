@@ -42,7 +42,8 @@ createServer(async (req, res) => {
   }
   try {
     if (path === "/bench.js") return void res.writeHead(200, { "content-type": "text/javascript", "cache-control": "no-store" }).end(await bundle());
-    if (path === "/pieces.css" && process.env.PIECES) return void res.writeHead(200, { "content-type": "text/css", "cache-control": "no-store" }).end(spriteToCss(readFileSync(process.env.PIECES, "utf8")));
+    if (path === "/config.json") return void res.writeHead(200, { "content-type": "application/json", "cache-control": "no-store" }).end(JSON.stringify({ extraPieces: !!process.env.PIECES }));
+    if (path === "/pieces-extra.css") return void res.writeHead(200, { "content-type": "text/css", "cache-control": "no-store" }).end(process.env.PIECES ? spriteToCss(readFileSync(process.env.PIECES, "utf8"), "extra") : "");
     const file = files[path];
     if (!file) return void res.writeHead(404).end();
     res.writeHead(200, { "content-type": file[1], "cache-control": "no-store" }).end(readFileSync(root + file[0]));
@@ -54,5 +55,5 @@ createServer(async (req, res) => {
   console.log(`Lightsquare bench: http://localhost:${port}`);
   for (const address of addresses) console.log(`  on the phone:    http://${address}:${port}`);
   console.log(`  results go to:   ${logDir}phone.jsonl`);
-  console.log(`  pieces:          ${process.env.PIECES ?? "Cburnett (src/pieces/cburnett.css)"}`);
+  console.log(`  extra piece set: ${process.env.PIECES ?? "none (set PIECES=/path/to/sprite.svg)"}`);
 });

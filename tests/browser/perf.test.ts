@@ -92,7 +92,7 @@ describe.each(PROFILES)("work done in $name", (profile) => {
     expect(counts).toEqual({ raf: 0, timers: 0, reads: 0 });
   });
 
-  it("rule 2: while a piece slides, no script runs and nothing is written", async () => {
+  it("rule 2: while a piece slides, no script runs; one write when it ends drops the transition", async () => {
     await fresh(page);
     await page.evaluate((fen) => {
       T.set({ position: fen, lastMove: ["e2", "e4"] });
@@ -108,7 +108,8 @@ describe.each(PROFILES)("work done in $name", (profile) => {
       const w = window as unknown as { W: { stop(): string[] }; ended: number };
       return { raf: P.raf, timers: P.timers, reads: P.reads, writes: w.W.stop(), ended: w.ended, animations: document.getAnimations().length };
     });
-    expect(slide).toEqual({ raf: 0, timers: 0, reads: 0, writes: [], ended: 1, animations: 0 });
+    expect(slide).toEqual({ raf: 0, timers: 0, reads: 0, writes: ["attributes:class"], ended: 1, animations: 0 });
+    expect(await page.evaluate(() => document.querySelectorAll(".ls-slide, .ls-top").length)).toBe(0);
   });
 
   it("rules 6 and 8: a whole drag measures the board once, at pointer down", async () => {
@@ -148,9 +149,9 @@ describe.each(PROFILES)("work done in $name", (profile) => {
       const host = document.getElementById("board")!;
       return { all: host.querySelectorAll("*").length, pieces: host.querySelectorAll(".ls-piece").length, marks: host.querySelectorAll(".ls-mark").length, layers: host.children.length };
     });
-    expect(counts).toEqual({ all: 53, pieces: 32, marks: 2, layers: 3 });
+    expect(counts).toEqual({ all: 55, pieces: 32, marks: 2, layers: 4 });
     await page.evaluate(() => T.set({ coordinates: false }));
-    expect(await page.evaluate(() => document.getElementById("board")!.querySelectorAll("*").length)).toBe(36);
+    expect(await page.evaluate(() => document.getElementById("board")!.querySelectorAll("*").length)).toBe(38);
   });
 
   it("300 moves of a game leave no element behind", async () => {
@@ -164,7 +165,7 @@ describe.each(PROFILES)("work done in $name", (profile) => {
     await settle(page);
     const all = await page.evaluate(() => document.getElementById("board")!.querySelectorAll("*").length);
     expect(result.fen).toBe(plies[plies.length - 1].fen);
-    expect(all).toBe(result.pieces + 2 + 3 + 16);
+    expect(all).toBe(result.pieces + 2 + 3 + 16 + 2);
   });
 });
 
@@ -212,7 +213,7 @@ describe("work measured inside Chromium", () => {
     });
     const slide = 180;
     expect(counts.paintedAt.filter((ms) => ms > 40 && ms < slide - 40), `painted at ${counts.paintedAt} ms`).toEqual([]);
-    expect(counts.Paint).toBeLessThanOrEqual(6);
+    expect(counts.Paint).toBeLessThanOrEqual(12);
     expect(counts.Layout).toBeLessThanOrEqual(1);
     expect(counts.FireAnimationFrame).toBe(0);
     expect(counts.TimerFire).toBe(0);

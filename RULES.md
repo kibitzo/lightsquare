@@ -36,17 +36,24 @@ unevenly (gaps of 33 and 50 ms).
 3. **Nothing animates when nothing moves.** No infinite animation, no idle
    timer, no polling. A board at rest does no work: zero paints, zero frames.
 
-4. **Positions in percent.** A piece is placed with `translate(N * 100%,
-   M * 100%)` relative to its own size. Resizing the board needs no script,
-   no measuring, no re-render. The stylesheet keeps the board's width a
-   multiple of 8 pixels, so a square is a whole number of pixels (Safari
-   needs this to place percent transforms exactly). Never add the separate
-   `scale`, `rotate` or `translate` properties to a piece or a mark: they
-   multiply the transform that places it.
+4. **Places are fractions of the board's width.** A piece is placed with
+   `translate(N * 12.5cqw, M * 12.5cqw)`: the board is a CSS container, so
+   the browser works the place out at every size. Resizing the board needs
+   no script, no measuring, no re-render, and the board may have any width.
+   Percent of the piece's own box (`translate(N * 100%, ...)`) is only the
+   fallback for browsers without container units: Safari measures it on the
+   pixel-snapped box, and pieces drift by up to 3 pixels at odd widths
+   (measured 2026-11-12). Never add the separate `scale`, `rotate` or
+   `translate` properties to a piece or a mark: they multiply the transform
+   that places it. A piece at rest carries no transition, or a resize would
+   make it trail behind.
 
-5. **One background for the squares.** The 64 squares are one CSS background,
-   not 64 elements and not an SVG. Highlights and markers are a few
-   elements on their own layer, created only while they are shown.
+5. **The squares are one static shape.** The light squares are the board's
+   background colour; the dark ones are a single path, drawn once and never
+   touched. Not 64 elements, and not a tiled background: browsers snap
+   tiles to whole pixels, which puts the squares up to 1.5 pixels away from
+   the pieces at odd widths (measured 2026-11-12). Highlights and markers
+   are a few elements on their own layer, created only while they are shown.
 
 6. **One set of input listeners for the whole board.** Pointer events on the
    board element, never one listener per piece or per square. During a drag

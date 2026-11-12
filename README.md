@@ -8,7 +8,7 @@ ones and phones in Low Power Mode.
   busy (a test shows this in Chromium; real phones are measured with the
   bench page).
 - At rest the board does nothing: no timers, no frames, no paints.
-- Small: the core is 4.4 kB (minified and gzipped) with no dependencies.
+- Small: the core is 4.7 kB (minified and gzipped) with no dependencies.
   Arrows, the promotion picker, screen-reader support and the React
   component are separate imports of about 1 kB each.
 - No chess rules inside: your app says which moves are allowed.
@@ -38,11 +38,15 @@ What it has: sliding pieces, captures, castling, en passant and promotion
 worked out from two positions; tap and drag; premove; last move, check,
 selection and move dots; coordinates; your own marks and badges; arrows and
 circles, drawn by the app or by the user; a promotion picker; HTML on
-squares; screen-reader text and moves by keyboard; a React component.
+squares; screen-reader text and moves by keyboard; a React component;
+themes as data (squares, pieces, arrows) that one call applies to a whole
+page.
 
 ## Read first
 
 - [docs/API.md](docs/API.md): everything the library offers.
+- `npm run bench`: the playground. Play, change the looks, measure on a
+  phone.
 - [RULES.md](RULES.md): the hard rules every change obeys.
 - [ARCHITECTURE.md](ARCHITECTURE.md): the design, the comparison with other
   boards, how it is tested, the order of work.

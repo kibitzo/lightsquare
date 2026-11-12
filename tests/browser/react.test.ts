@@ -34,7 +34,7 @@ describe.each([PROFILES[0], PROFILES[3]])("React component in $name", (profile) 
       pieces: document.querySelectorAll(".ls-piece").length,
       fen: (window as unknown as { R: R }).R.ref.current!.position(),
     }));
-    expect(dom).toEqual({ boards: 1, inside: true, layers: 3, pieces: 32, fen: AFTER_E4 });
+    expect(dom).toEqual({ boards: 1, inside: true, layers: 4, pieces: 32, fen: AFTER_E4 });
     expect(await marks(page)).toEqual(["check", "last", "last"]);
   });
 

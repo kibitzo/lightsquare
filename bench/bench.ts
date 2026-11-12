@@ -1,19 +1,23 @@
 /**
- * The page for rule 11: feel and measure Lightsquare on a real phone.
- * Everything that ticks here (the frame meter, the auto-play timer, the
- * stuck-script stress) belongs to this page, not to the library.
+ * The playground: play on the board, change its looks, and measure it on a
+ * real phone (RULES.md, rule 11). Everything that ticks here (the frame
+ * meter, the auto-play timer, the stuck-script stress) belongs to this
+ * page, not to the library.
  */
 import { Chess, type Square as ChessSquare } from "chess.js";
 import { lightsquare } from "../src/index";
 import { a11y } from "../src/modules/a11y";
 import { premoveTargets } from "../src/modules/premove";
 import { promotion } from "../src/modules/promotion";
-import { shapes } from "../src/modules/shapes";
+import { shapes, type Arrow, type Circle } from "../src/modules/shapes";
+import { applyTheme, themes, type Theme } from "../src/modules/theme";
 
 const OPERA = "e4 e5 Nf3 d6 d4 Bg4 dxe5 Bxf3 Qxf3 dxe5 Bc4 Nf6 Qb3 Qe7 Nc3 c6 Bg5 b5 Nxb5 cxb5 Bxb5+ Nbd7 O-O-O Rd8 Rxd7 Rxd7 Rd1 Qe6 Bxd7+ Nxd7 Qb8+ Nxb8 Rd8#".split(" ");
-
 /** Move-quality badges for the replay, by ply. Their look is this page's CSS, not the library's. */
 const BADGES: Record<number, string> = { 19: "great", 25: "great", 31: "brilliant", 33: "great" };
+const ARROW_COLOURS = ["#ea580c", "#d97706", "#047857", "#1d4ed8", "#6d28d9", "#334155"];
+const SAMPLE_ARROWS: Arrow[] = [{ from: "b1", to: "c3" }, { from: "c8", to: "g4", name: "red" }, { from: "d1", to: "d4", name: "green", label: "1" }, { from: "f1", to: "b5", name: "blue", label: "2" }, { from: "h7", to: "h5", name: "yellow" }];
+const SAMPLE_CIRCLES: Circle[] = [{ square: "e5", name: "red" }, { square: "a4" }, { square: "g6", name: "green" }];
 
 const $ = (id: string): HTMLElement => document.getElementById(id)!;
 const host = $("board");
@@ -23,11 +27,10 @@ let orientation: "white" | "black" = "white";
 
 /** The switches of the page, readable before their buttons are wired. */
 const toggles: Record<string, boolean> = {};
-const vsComputer = (): boolean => !!toggles.versus;
-const hinting = (): boolean => !!toggles.hints;
-
 const samples = { set: [] as number[], input: [] as number[], gaps: [] as number[], slides: [] as number[] };
-const counts = { moves: 0, drags: 0 };
+const counts = { moves: 0, presses: 0 };
+
+// ── the game ───────────────────────────────────────────────────────────
 
 function kingSquare(): string | null {
   if (!chess.inCheck()) return null;
@@ -45,7 +48,7 @@ function show(): void {
   const last = chess.history({ verbose: true }).at(-1);
   const fen = chess.fen();
   const whiteToMove = chess.turn() === "w";
-  const versus = vsComputer();
+  const versus = toggles.versus;
   const next = {
     position: fen,
     movable: versus ? (whiteToMove ? "white" : "none") : whiteToMove ? "white" : "black",
@@ -60,16 +63,18 @@ function show(): void {
   board.set(next);
   samples.set.push(performance.now() - began);
   counts.moves++;
-  showHint();
+  showShapes();
 }
 
-/** With "Arrows" on: the next move of the Opera game, as the app would show a hint. */
-function showHint(): void {
-  const san = hinting() && ply >= 0 ? OPERA[ply] : undefined;
-  if (!san) return drawing.set({ arrows: [] });
-  const probe = new Chess(chess.fen());
-  const move = probe.move(san);
-  drawing.set({ arrows: [{ from: move.from, to: move.to }] });
+/** The hint arrow is the next move of the Opera game; the samples show every colour at once. */
+function showShapes(): void {
+  const arrows: Arrow[] = toggles.samples ? [...SAMPLE_ARROWS] : [];
+  const san = toggles.hints && ply >= 0 ? OPERA[ply] : undefined;
+  if (san) {
+    const move = new Chess(chess.fen()).move(san);
+    arrows.push({ from: move.from, to: move.to });
+  }
+  drawing.set({ arrows, circles: toggles.samples ? SAMPLE_CIRCLES : [] });
 }
 
 let replyTimer = 0;
@@ -97,12 +102,12 @@ const board = lightsquare(host, {
     }
     show();
     clearTimeout(replyTimer);
-    if (vsComputer() && chess.turn() === "b") replyTimer = window.setTimeout(reply, 900);
+    if (toggles.versus && chess.turn() === "b") replyTimer = window.setTimeout(reply, 900);
   },
 });
 const picker = board.use(promotion());
 const drawing = board.use(shapes({ draw: true }));
-board.use(a11y({ label: "Lightsquare bench board" }));
+board.use(a11y({ label: "Lightsquare playground board" }));
 
 function goTo(target: number): void {
   const next = Math.max(0, Math.min(OPERA.length, target));
@@ -112,28 +117,30 @@ function goTo(target: number): void {
   show();
 }
 
+// ── buttons ────────────────────────────────────────────────────────────
+
+function toggle(id: string, onChange: (on: boolean) => void, start = false): void {
+  const button = $(id);
+  const set = (on: boolean): void => {
+    toggles[id] = on;
+    button.setAttribute("aria-pressed", String(on));
+  };
+  set(start);
+  button.onclick = () => {
+    set(!toggles[id]);
+    onChange(toggles[id]);
+  };
+}
+
 $("next").onclick = () => goTo(ply < 0 ? 1 : ply + 1);
 $("back").onclick = () => goTo(ply < 0 ? 0 : ply - 1);
 $("flip").onclick = () => board.set({ orientation: (orientation = orientation === "white" ? "black" : "white") });
-
-function toggle(id: string, onChange: (on: boolean) => void): () => boolean {
-  toggles[id] = false;
-  const button = $(id);
-  let on = false;
-  button.onclick = () => {
-    on = !on;
-    toggles[id] = on;
-    button.setAttribute("aria-pressed", String(on));
-    onChange(on);
-  };
-  return () => on;
-}
-
 toggle("versus", () => {
   clearTimeout(replyTimer);
   show();
 });
-toggle("hints", showHint);
+toggle("hints", showShapes, true);
+toggle("samples", showShapes);
 
 let autoTimer = 0;
 toggle("play", (on) => {
@@ -142,7 +149,7 @@ toggle("play", (on) => {
 });
 
 let stressTimer = 0;
-const stressed = toggle("stress", (on) => {
+toggle("stress", (on) => {
   clearInterval(stressTimer);
   if (!on) return;
   stressTimer = window.setInterval(() => {
@@ -150,23 +157,96 @@ const stressed = toggle("stress", (on) => {
     while (performance.now() < until);
   }, 320);
 });
+toggle("lpm", () => {});
 
-const lowPower = toggle("lpm", () => {});
+// ── looks ──────────────────────────────────────────────────────────────
+
+interface Look {
+  board: keyof typeof themes;
+  pieces: string;
+  pieceSize: number;
+  moveMs: number;
+  arrow: string;
+  arrowWidth: number;
+  arrowHead: number;
+}
+
+const LOOK_KEY = "lightsquare-playground-look";
+const look: Look = { board: "wood", pieces: "cburnett", pieceSize: 100, moveMs: 180, arrow: ARROW_COLOURS[0], arrowWidth: 20, arrowHead: 82 };
+
+/** The look as the theme an app would store for a user. */
+function themeOf(l: Look): Theme {
+  return { ...themes[l.board], pieces: l.pieces, pieceSize: l.pieceSize / 100, moveMs: l.moveMs, shapes: { default: l.arrow }, arrowTail: Math.round(l.arrowHead * 0.17) / 100, arrowHead: l.arrowHead / 100 };
+}
+
+function applyLook(): void {
+  const theme = themeOf(look);
+  applyTheme($("page"), theme);
+  const width = look.arrowWidth / 100;
+  drawing.set({ look: { width, headWidth: width * 2.7, headLength: width * 2.3 } });
+  $("theme").textContent = `applyTheme(element, ${JSON.stringify(theme, null, 1).replace(/\n\s*/g, " ")})`;
+  for (const el of document.querySelectorAll<HTMLElement>("[data-look]")) el.setAttribute("aria-pressed", String(String(look[el.dataset.look as keyof Look]) === el.dataset.value));
+  for (const id of ["pieceSize", "moveMs", "arrowWidth", "arrowHead"] as const) {
+    ($(id) as HTMLInputElement).value = String(look[id]);
+    $(`${id}Out`).textContent = id === "moveMs" ? `${look[id]} ms` : `${look[id]}%`;
+  }
+  localStorage.setItem(LOOK_KEY, JSON.stringify(look));
+}
+
+function choice(parent: string, key: keyof Look, value: string, content: string, className: string): void {
+  const button = $(parent).appendChild(document.createElement("button"));
+  button.className = className;
+  button.dataset.look = key;
+  button.dataset.value = value;
+  button.innerHTML = content;
+  button.setAttribute("aria-label", `${key} ${value}`);
+  button.onclick = () => {
+    (look as unknown as Record<string, string>)[key] = value;
+    applyLook();
+  };
+}
+
+async function buildLooks(): Promise<void> {
+  const config = (await fetch("/config.json").then((r) => r.json()).catch(() => ({}))) as { extraPieces?: boolean };
+  for (const [name, t] of Object.entries(themes)) choice("boards", "board", name, `<i style="background:linear-gradient(135deg, ${t.light} 50%, ${t.dark} 50%)"></i>`, "swatch");
+  for (const colour of ARROW_COLOURS) choice("arrows", "arrow", colour, `<i style="background:${colour}"></i>`, "swatch");
+  choice("sets", "pieces", "cburnett", "Cburnett", "");
+  if (config.extraPieces) {
+    choice("sets", "pieces", "extra", "Kibitzo", "");
+    look.pieces = "extra";
+  }
+  try {
+    Object.assign(look, JSON.parse(localStorage.getItem(LOOK_KEY) ?? "{}"));
+  } catch {
+    /* a broken saved look is ignored */
+  }
+  if (!(look.board in themes)) look.board = "wood";
+  if (look.pieces === "extra" && !config.extraPieces) look.pieces = "cburnett";
+  for (const id of ["pieceSize", "moveMs", "arrowWidth", "arrowHead"] as const) {
+    $(id).oninput = () => {
+      look[id] = Number(($(id) as HTMLInputElement).value);
+      applyLook();
+    };
+  }
+  applyLook();
+}
+
+// ── measuring ──────────────────────────────────────────────────────────
 
 let lastFrame = 0;
-const measuring = toggle("measure", (on) => {
+toggle("measure", (on) => {
   lastFrame = 0;
   if (on) requestAnimationFrame(frame);
 });
 function frame(now: number): void {
-  if (!measuring()) return;
+  if (!toggles.measure) return;
   if (lastFrame) samples.gaps.push(now - lastFrame);
   lastFrame = now;
   requestAnimationFrame(frame);
 }
 
 host.addEventListener("pointermove", (e) => samples.input.push(Math.max(0, performance.now() - e.timeStamp)), true);
-host.addEventListener("pointerdown", () => counts.drags++, true);
+host.addEventListener("pointerdown", () => counts.presses++, true);
 const slideBegan = new WeakMap<EventTarget, number>();
 host.addEventListener("transitionrun", (e) => e.propertyName === "transform" && slideBegan.set(e.target!, performance.now()));
 host.addEventListener("transitionend", (e) => {
@@ -190,22 +270,22 @@ function summary(): Record<string, unknown> {
     slideMedian: round(median(samples.slides)),
     slideWorst: round(worst(samples.slides)),
     moves: counts.moves,
-    presses: counts.drags,
-    lowPower: lowPower(),
-    stuckScript: stressed(),
-    measuring: measuring(),
-    board: host.getBoundingClientRect().width,
+    presses: counts.presses,
+    lowPower: toggles.lpm,
+    stuckScript: toggles.stress,
+    measuring: toggles.measure,
+    board: Math.round(host.getBoundingClientRect().width),
     dpr: devicePixelRatio,
     screen: `${screen.width}x${screen.height}`,
+    look,
     ua: navigator.userAgent,
   };
 }
 
 function send(kind: string): void {
-  const body = JSON.stringify({ kind, ...summary() });
-  void fetch("/log", { method: "POST", body, keepalive: true })
+  void fetch("/log", { method: "POST", body: JSON.stringify({ kind, ...summary() }), keepalive: true })
     .then(() => ($("sent").textContent = `Sent "${kind}" at ${new Date().toLocaleTimeString()}.`))
-    .catch(() => ($("sent").textContent = "Could not reach the Mac."));
+    .catch(() => ($("sent").textContent = "Could not reach the computer that serves this page."));
 }
 
 setInterval(() => {
@@ -214,6 +294,7 @@ setInterval(() => {
   $("s-gap").textContent = s.fps === null ? "–" : String(s.worstGap);
   $("s-set").textContent = counts.moves > 1 ? String(s.setMedian) : "–";
   $("s-input").textContent = samples.input.length ? String(s.inputMedian) : "–";
+  $("where").textContent = `${s.board} px · ${devicePixelRatio}x`;
   for (const list of Object.values(samples)) if (list.length > 600) list.splice(0, list.length - 600);
 }, 1000);
 
@@ -221,6 +302,5 @@ $("smooth").onclick = () => send("feels smooth");
 $("rough").onclick = () => send("not smooth");
 addEventListener("pagehide", () => send("leaving"));
 
-$("where").textContent = `${Math.round(host.getBoundingClientRect().width)} px · ${devicePixelRatio}x`;
-($("old") as HTMLAnchorElement).href = `http://${location.hostname}:3009/perf-board?kind=cm`;
 show();
+void buildLooks();

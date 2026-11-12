@@ -13,8 +13,8 @@ import "lightsquare/pieces/cburnett.css";
 const board = lightsquare(document.getElementById("board")!, { movable: "white" });
 ```
 
-The element becomes the board. It takes the width of its container (rounded
-down to a multiple of 8 pixels) and is square. Give the container a width.
+The element becomes the board. It takes the width of its container and is
+square, at any size. Give the container a width.
 
 Lightsquare knows no chess rules. Your app (with a library such as chess.js)
 says which moves are allowed and what the position is after a move.
@@ -128,11 +128,20 @@ drawing.drawing();                // what the user drew
 drawing.clear();
 ```
 
-`name` picks the colour through the class `ls-arrow-<name>` or
-`ls-circle-<name>`. Built in: the default (amber), `red`, `green`, `blue`.
-Add your own by setting `--ls-shape` on such a class. While drawing, Shift
-gives `red`, Alt `blue`, both `green`; change this with `nameFor`. A left
-press on the board clears the user's drawing.
+`name` picks the colour. Built in: the default (orange), `red`, `green`,
+`blue`, `yellow`. Change one, or add your own name, with a variable:
+`--ls-shape-red: crimson`, `--ls-shape-mine: #7c3aed` (see Looks). Each shape
+also carries the class `ls-arrow-<name>` or `ls-circle-<name>`.
+
+An arrow runs from the centre of its first square to the centre of its
+last one, where its point stops. Its colour grows from faint at the tail, so
+the piece there stays readable, to strong at the head (`--ls-tail-opacity`,
+`--ls-head-opacity`). It grows out of its tail as it appears.
+
+What the user draws is green; Alt gives blue and Shift yellow, so the user's
+arrows never look like the app's orange and red ones. Change this with
+`nameFor`. An arrow is slim while it is aimed and fills out when the button
+is let go. A left press on the board clears the user's drawing.
 
 ### Promotion picker: `lightsquare/promotion`
 
@@ -177,19 +186,65 @@ The ref gives the board (`move`, `playPremove`, `use`, ...).
 
 ## Looks
 
-Set these on the board element or any ancestor:
+Looks are CSS variables and one class. Set them on the board, on a wrapper,
+or on the page's root: every board below follows, and the nearest setting
+wins. Nothing here costs script per board.
 
-| Variable | Default | What |
+### Themes: `lightsquare/theme`
+
+```ts
+import { applyTheme, themes, themeVariables } from "lightsquare/theme";
+
+applyTheme(document.documentElement, {
+  ...themes.ocean,                   // wood, sand, forest, ocean, slate, rose, night
+  pieces: "cburnett",                // a loaded piece set
+  pieceSize: 0.92,                   // share of the square
+  moveMs: 150,                       // slide time
+  lastMove: "rgba(255, 235, 0, 0.5)",
+  shapes: { default: "#ea580c", red: "#b91c1c", mine: "#7c3aed" },
+  arrowTail: 0.14, arrowHead: 0.82,  // how strong an arrow is at each end
+});
+```
+
+A theme is a plain object, so an app can store one per user. Applying the
+next theme replaces the one before; `applyTheme(element, {})` takes it
+away. `themeVariables(theme)` returns the variables for an inline style
+(React's `style`, a server-rendered page).
+
+| Theme key | Variable | Default |
 |---|---|---|
-| `--ls-light`, `--ls-dark` | `#ecdab9`, `#c5a076` | The squares. |
-| `--ls-move-ms` | `180ms` | How long a slide takes. `0ms` under "reduce motion". |
-| `--ls-ease` | a soft ease-out | The slide's curve. |
-| `--ls-last`, `--ls-select`, `--ls-check`, `--ls-premove` | | The built-in marks. |
-| `--ls-target`, `--ls-hover` | | Move dots and the square under a dragged piece. |
+| `light`, `dark` | `--ls-light`, `--ls-dark` | `#ecdab9`, `#c5a076` |
+| `boardImage` | `--ls-board-image` | none. A CSS image under the squares; with a picture of a whole board, set `dark: "transparent"`. |
+| `lastMove`, `selected`, `check`, `premove` | `--ls-last`, `--ls-select`, `--ls-check`, `--ls-premove` | the built-in marks |
+| `target`, `hover` | `--ls-target`, `--ls-hover` | move dots; the square under a dragged piece |
+| `pieces` | the class `ls-set-<name>` | the page's default set |
+| `pieceSize` | `--ls-piece-size` | `100%` |
+| `moveMs` | `--ls-move-ms` | `180ms` (`0ms` under "reduce motion") |
+| `shapes.default`, `shapes.<name>` | `--ls-shape`, `--ls-shape-<name>` | orange; deep red, green, blue, yellow |
+| `arrowTail`, `arrowHead` | `--ls-tail-opacity`, `--ls-head-opacity` | `0.14`, `0.82` |
 
-A piece set is a stylesheet with twelve rules, `.ls-wk` to `.ls-bp`, each a
-`background-image`. `node scripts/sprite-to-css.mjs sprite.svg pieces.css`
-makes one from a cm-chessboard sprite.
+Also: `--ls-ease` (the slide's curve), `--ls-circle-width` (in squares,
+default `0.05`), `--ls-coord-on-light`, `--ls-coord-on-dark`.
+
+### Piece sets
+
+A piece set is twelve variables, `--ls-wk` to `--ls-bp`, each a CSS image,
+on the class `ls-set-<name>`:
+
+```css
+.ls-set-mine { --ls-wk: url(/pieces/wk.svg); /* ... */ --ls-bp: url(/pieces/bp.svg); }
+```
+
+`lightsquare/pieces/cburnett.css` is such a set and also the page's default.
+`node scripts/sprite-to-css.mjs sprite.svg pieces.css mine` makes a set from
+a cm-chessboard sprite. The same variables work outside the board:
+`background-image: var(--ls-wq)` shows the user's queen anywhere in the app.
+
+### Arrow shape
+
+```ts
+drawing.set({ look: { width: 0.2, headLength: 0.46, headWidth: 0.54 } });   // in squares
+```
 
 ## Write a module
 

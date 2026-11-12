@@ -53,7 +53,7 @@ export function promotion(options: PromotionOptions = {}): Module<Promotion> {
         button.className = `ls-choice ls-${color[0]}${piece}`;
         button.dataset.piece = piece;
         button.setAttribute("aria-label", options.labels?.[piece] ?? LABELS[piece]);
-        button.style.transform = `translate(${col * 100}%,${(row + step * i) * 100}%)`;
+        button.style.transform = surface.spot(surface.square(col, row + step * i)!);
       });
       layer.addEventListener("pointerdown", (e) => e.stopPropagation());
       layer.addEventListener("click", (e) => close(((e.target as Element).closest<HTMLElement>(".ls-choice")?.dataset.piece as PromotionPiece) ?? null));

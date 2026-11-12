@@ -68,16 +68,17 @@ that shows a static position downloads only the core.
 
 | Entry point | What | Replaces in cm-chessboard | Size, gzipped |
 |---|---|---|---|
-| `lightsquare` (core) | position, pieces, marks, coordinates, orientation, tap and drag, premove, events, module host | Chessboard, Markers, AutoBorderNone | 4.4 kB |
-| `lightsquare/shapes` | arrows, circles, arrow labels, drawing by the user | Arrows, RightClickAnnotator | 1.5 kB |
+| `lightsquare` (core) | position, pieces, marks, coordinates, orientation, tap and drag, premove, events, module host | Chessboard, Markers, AutoBorderNone | 4.7 kB |
+| `lightsquare/shapes` | arrows, circles, arrow labels, drawing by the user | Arrows, RightClickAnnotator | 1.9 kB |
 | `lightsquare/promotion` | promotion picker | PromotionDialog | 0.6 kB |
 | `lightsquare/overlay` | HTML anchored to squares | HtmlLayer | 0.4 kB |
 | `lightsquare/a11y` | screen-reader description, move announcements, keyboard moves | Accessibility | 1.1 kB |
 | `lightsquare/premove` | where a piece could premove to (geometry only) | (not in cm-chessboard) | 0.8 kB |
+| `lightsquare/theme` | looks as data: `applyTheme`, built-in board colours | (not in cm-chessboard) | 0.6 kB |
 | `lightsquare/react` | React component | (Kibitzo's 1,451-line wrapper, in part) | 0.5 kB |
 | later: `lightsquare/editor` | spare pieces, drag pieces on and off | (not in cm-chessboard) | |
 
-The stylesheet for all of it is 1.4 kB. Everything together is about 11 kB.
+The stylesheet for all of it is 1.6 kB. Everything together is about 12 kB.
 
 A module is a function that receives a `surface` (the board element, the
 orientation, square and screen maths, the pieces, `tap`) and returns its own
@@ -174,15 +175,33 @@ takes each new square, which resolves castling, recaptures and en passant.
 
 ## 8. Looks
 
-- Colours, timings and sizes are CSS variables on the board element.
-- A piece set is a stylesheet with 12 rules. Changing the set is a class.
-- Sizing is CSS: the board takes the width of its container, rounded down
-  to a multiple of 8 pixels (`round(down, 100%, 8px)`), pieces are 12.5%
-  wide and placed in percent. A resize runs no script. Whole pixels per
-  square keep the pieces sharp, and they are needed in Safari, which
-  measures a percent transform on the pixel-snapped box: on a board 203 px
-  wide the h-file pieces sat 2.6 px off their squares until the width was
-  rounded (found by the resize test).
+Looks are CSS, so they cost no script and one setting reaches every board.
+
+- **Variables.** Colours, timings and sizes are CSS variables (`--ls-light`,
+  `--ls-dark`, `--ls-move-ms`, `--ls-shape`, ...). The stylesheet reads each
+  one with its default as a fallback and declares none of them itself, so a
+  variable set on the board, on a wrapper or on the page's root all work,
+  and the nearest one wins.
+- **Piece sets.** A piece set is twelve variables, `--ls-wk` to `--ls-bp`,
+  on a class (`ls-set-<name>`). Switching sets is switching one class, on
+  any element above the boards. The rest of an app can use the same
+  variables: a tray of captured pieces shows the user's set with
+  `background-image: var(--ls-wq)`.
+- **Themes as data** (`lightsquare/theme`). A theme is a plain object
+  (squares, marks, piece set, piece size, slide time, arrow colours and
+  strength). `applyTheme(element, theme)` writes the variables and the
+  class. An app stores one theme per user and applies it to the page.
+- **Arrows.** Colours are variables per name (`--ls-shape-red`); the
+  thickness and the head are numbers given to the shapes module.
+- **Sizing is CSS.** The board takes the width of its container and is
+  square. Pieces, marks and coordinates are placed in fractions of the
+  board's width (`cqw`), so a resize runs no script and every width is
+  exact. The first version placed pieces in percent of their own box and
+  had to round the board to a multiple of 8 pixels, because Safari measures
+  such a transform on the pixel-snapped box (on a board 203 px wide the
+  h-file pieces sat 2.6 px off). Container units removed both the drift
+  and the rounding. The dark squares are one path for the same reason: a
+  tiled background is snapped to whole pixels by the browser.
 
 ## 9. Compared
 
@@ -192,8 +211,8 @@ Read from the source and READMEs on 2026-11-12.
 |---|---|---|---|
 | Drawn as | one SVG drawing | elements, plus SVG for shapes | elements, plus SVG for shapes |
 | A piece slides by | script loop, SVG transform rewritten per frame, drawing repainted | script loop, CSS transform set per frame | one CSS transition, no script per frame |
-| Positions | SVG units | pixels from the measured board; recomputed on resize | percent; nothing to recompute |
-| Size, gzipped | 8.5 kB core, extensions extra | 10 kB | 4.4 kB core; about 11 kB with every module and the stylesheet |
+| Positions | SVG units | pixels from the measured board; recomputed on resize | fractions of the board's width (container units); nothing to recompute |
+| Size, gzipped | 8.5 kB core, extensions extra | 10 kB | 4.7 kB core; about 12 kB with every module and the stylesheet |
 | Chess rules inside | no | no | no |
 | Premove | no | yes | yes |
 | User-drawn arrows | extension | yes | module |
@@ -238,7 +257,8 @@ Two tests carry the design:
   still draws: 50 for Lightsquare in our run in Chromium (the test demands
   20). The control, a slide driven from script frame by frame (how
   cm-chessboard and chessground animate), draws none.
-- **Resizing needs no script** and leaves every piece exactly on its square.
+- **Resizing needs no script** and leaves every piece exactly on its
+  square, at any width, with no animation started.
 
 For comparison, chessground's own test suite (read 2026-11-12) is two unit
 files, FEN and premove geometry, run in jsdom; it has no browser, speed or

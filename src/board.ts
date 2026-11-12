@@ -1,5 +1,5 @@
 import { attachInput, type Input } from "./input";
-import { coordView, layer, markView, type CoordView, type MarkView } from "./marks";
+import { coordView, layer, markView, squares, type CoordView, type MarkView } from "./marks";
 import { pieceView, type PieceView } from "./pieces";
 import { EMPTY, START, cellSquare, readFen, screenCell, writeFen, type Placed, type Square } from "./position";
 import { allows, at, canMove, canPremove, initial, wantedMarks, type State } from "./state";
@@ -55,12 +55,16 @@ function take(s: State, o: Options): boolean {
 function makeCore(host: HTMLElement): Core {
   const s = initial();
   host.classList.add("ls-board");
+  squares(host);
   const marksLayer = layer(host, "ls-marks");
   const piecesLayer = layer(host, "ls-pieces");
-  const spot = (square: Square): string => {
-    const [col, row] = screenCell(square, s.orientation);
-    return `translate(${col * 100}%,${row * 100}%)`;
-  };
+  // Places are fractions of the board's width (cqw): exact at every size in
+  // every engine, and nothing to recompute on a resize. Percent of the
+  // element's own box is the fallback; Safari measures that on the
+  // pixel-snapped box, which lets pieces drift at odd board widths.
+  const wide = typeof CSS !== "undefined" && CSS.supports("width", "1cqw");
+  const place = (col: number, row: number): string => (wide ? `translate(${col * 12.5}cqw,${row * 12.5}cqw)` : `translate(${col * 100}%,${row * 100}%)`);
+  const spot = (square: Square): string => place(...screenCell(square, s.orientation));
   const marks = markView(host, marksLayer, spot);
   const modules: ModuleHooks[] = [];
   return {
@@ -69,7 +73,7 @@ function makeCore(host: HTMLElement): Core {
     piecesLayer,
     pieces: pieceView(piecesLayer, spot),
     marks,
-    coords: coordView(host, piecesLayer),
+    coords: coordView(host, piecesLayer, place),
     modules,
     spot,
     renderMarks: () => marks.render(wantedMarks(s)),

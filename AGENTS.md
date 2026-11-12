@@ -32,10 +32,10 @@ is in [ARCHITECTURE.md](ARCHITECTURE.md).
 | Path | What |
 |------|------|
 | `src/` | the core: `position.ts` (FEN, pairing), `state.ts`, `pieces.ts`, `marks.ts`, `input.ts` (pointer), `board.ts` (puts them together), `lightsquare.css` |
-| `src/modules/` | optional modules: `shapes`, `promotion`, `overlay`, `a11y`, `premove`. They import only types from the core |
+| `src/modules/` | optional modules: `shapes`, `promotion`, `overlay`, `a11y`, `premove`, `theme`. They import only types from the core |
 | `src/react.ts` | the React component |
 | `docs/API.md` | the reference; update it with every change of the API |
 | `src/pieces/`, `assets/` | the piece set and its source pictures |
 | `tests/unit/`, `tests/browser/` | see ARCHITECTURE.md, section 10 |
-| `bench/` | the page for a real phone, served on the local network |
+| `bench/` | the playground: play, change the looks, measure on a real phone; served on the local network |
 | `scripts/` | build, piece stylesheet tools |

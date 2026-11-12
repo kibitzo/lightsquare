@@ -49,11 +49,16 @@ export function pieceView(layer: HTMLElement, spot: (square: Square) => string):
     onTop.clear();
   }
 
-  function onFaded(e: TransitionEvent): void {
+  /**
+   * A fade ended: the piece is gone. A slide ended: the piece gives up its
+   * transition, so that resizing the board cannot make it trail behind.
+   */
+  function onEnded(e: TransitionEvent): void {
     const el = e.target as Element;
     if (fading.delete(el)) el.remove();
+    else if (e.propertyName === "transform") el.classList.remove("ls-slide", "ls-top");
   }
-  layer.addEventListener("transitionend", onFaded);
+  layer.addEventListener("transitionend", onEnded);
 
   return {
     element: (p) => elements.get(p.id)!,
@@ -83,7 +88,7 @@ export function pieceView(layer: HTMLElement, spot: (square: Square) => string):
       return taken;
     },
     destroy() {
-      layer.removeEventListener("transitionend", onFaded);
+      layer.removeEventListener("transitionend", onEnded);
     },
   };
 }
