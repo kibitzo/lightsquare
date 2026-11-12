@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <radialGradient id="pp" cx=".55" cy=".4" r=".8"><stop offset="0" stop-color="#f8eccd"/><stop offset=".6" stop-color="#ead8ad"/><stop offset="1" stop-color="#cfb27a"/></radialGradient>
+    <pattern id="hatch" width="1.5" height="1.5" patternUnits="userSpaceOnUse" patternTransform="rotate(38)"><line x1="0" y1="0" x2="0" y2="1.5" stroke="#5a3719" stroke-width=".34"/></pattern>
+    <linearGradient id="fade" x1="0" x2="1"><stop offset=".25" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#fff" stop-opacity=".95"/></linearGradient>
+    <mask id="shade" maskUnits="userSpaceOnUse" x="0" y="0" width="64" height="64"><rect width="64" height="64" fill="url(#fade)"/></mask>
+    <clipPath id="tile"><rect width="64" height="64" rx="14"/></clipPath>
+  </defs>
+  <rect width="64" height="64" rx="14" fill="url(#pp)"/>
+  <g clip-path="url(#tile)" fill="none" stroke="#5a3719" stroke-linecap="round" stroke-linejoin="round">
+    <!-- the study: a circle in a square, with its axes, as in a notebook -->
+    <g stroke-width=".45" opacity=".5">
+      <rect x="11" y="9" width="42" height="42"/>
+      <circle cx="32" cy="30" r="21"/>
+      <circle cx="32" cy="30" r="24.6" stroke-dasharray="1.2 1.6" opacity=".7"/>
+      <path d="M11 9 53 51M53 9 11 51M32 5v50M7 30h50" stroke-width=".3"/>
+    </g>
+    <!-- a line of mirror writing, top left and bottom right -->
+    <g stroke-width=".4" opacity=".55">
+      <path d="M6 5.200c.8-.9 1.300.9 2.100 0s1.200.9 2 0 1.300.9 2.100 0 1.200.9 2 0M6 7.400c.8-.9 1.300.9 2.100 0s1.200.9 2 0 1.300.9 2.100 0"/>
+      <path d="M44 58.200c.8-.9 1.300.9 2.100 0s1.200.9 2 0 1.300.9 2.100 0 1.200.9 2 0 1.300.9 2.100 0M47 60.300c.8-.9 1.300.9 2.100 0s1.200.9 2 0 1.300.9 2.100 0"/>
+    </g>
+    <!-- the knight, behind -->
+    <g transform="translate(14.5 9.5) scale(1.08)">
+      <g transform="translate(0,0.3)">
+        <path d="M 22,10 C 32.5,11 38.5,18 38,39 L 15,39 C 15,30 25,32.5 23,18" fill="#f1e3c0" stroke-width="1.05"/>
+        <path d="M 24,18 C 24.38,20.91 18.45,25.37 16,27 C 13,29 13.18,31.34 11,31 C 9.958,30.06 12.41,27.96 11,28 C 10,28 11.19,29.23 10,30 C 9,30 5.997,31 6,26 C 6,24 12,14 12,14 C 12,14 13.89,12.1 14,10.5 C 13.27,9.506 13.5,8.5 13.5,7.5 C 14.5,6.5 16.5,10 16.5,10 L 18.5,10 C 18.5,10 19.28,8.008 21,7 C 22,7 22,10 22,10" fill="#f1e3c0" stroke-width="1.05"/>
+        <g mask="url(#shade)" stroke="none"><path d="M 22,10 C 32.5,11 38.5,18 38,39 L 15,39 C 15,30 25,32.5 23,18 Z" fill="url(#hatch)"/><path d="M 24,18 C 24.38,20.91 18.45,25.37 16,27 C 13,29 13.18,31.34 11,31 C 9.958,30.06 12.41,27.96 11,28 C 10,28 11.19,29.23 10,30 C 9,30 5.997,31 6,26 C 6,24 12,14 12,14 C 12,14 13.89,12.1 14,10.5 C 13.27,9.506 13.5,8.5 13.5,7.5 C 14.5,6.5 16.5,10 16.5,10 L 18.5,10 C 18.5,10 19.28,8.008 21,7 C 22,7 22,10 22,10 Z" fill="url(#hatch)" opacity=".6"/></g>
+        <circle cx="9" cy="25.5" r=".5" fill="#5a3719" stroke="none"/>
+        <ellipse cx="14.5" cy="15.5" rx=".7" ry="1.7" transform="rotate(30 14.5 15.5)" fill="#5a3719" stroke="none"/>
+        <path d="M25 11.200c5.400 1.700 9.600 6.500 10.300 26.300" stroke-width=".55" opacity=".7"/>
+      </g>
+    </g>
+    <!-- the pawn, in front -->
+    <g transform="translate(0 19.2) scale(0.9)">
+      <path d="m 22.5,9 c -2.21,0 -4,1.79 -4,4 0,0.89 0.29,1.71 0.78,2.38 C 17.33,16.5 16,18.59 16,21 c 0,2.03 0.94,3.84 2.41,5.03 C 15.41,27.09 11,31.58 11,39.5 H 34 C 34,31.58 29.59,27.09 26.59,26.03 28.06,24.84 29,23.03 29,21 29,18.59 27.67,16.5 25.72,15.38 26.21,14.71 26.5,13.89 26.5,13 c 0,-2.21 -1.79,-4 -4,-4 z" fill="#f1e3c0" stroke-width="1.25"/>
+      <path d="m 22.5,9 c -2.21,0 -4,1.79 -4,4 0,0.89 0.29,1.71 0.78,2.38 C 17.33,16.5 16,18.59 16,21 c 0,2.03 0.94,3.84 2.41,5.03 C 15.41,27.09 11,31.58 11,39.5 H 34 C 34,31.58 29.59,27.09 26.59,26.03 28.06,24.84 29,23.03 29,21 29,18.59 27.67,16.5 25.72,15.38 26.21,14.71 26.5,13.89 26.5,13 c 0,-2.21 -1.79,-4 -4,-4 z" fill="url(#hatch)" stroke="none" mask="url(#shade)" opacity=".85"/>
+      <path d="M18.200 26.300c2.800 1.100 5.800 1.100 8.600 0M12 37h21" stroke-width=".5" opacity=".6"/>
+    </g>
+    <!-- the ground they stand on -->
+    <path d="M5 54.400h54" stroke-width=".6" opacity=".7"/>
+    <path d="M9 56.300h20M34 56.600h22" stroke-width=".35" opacity=".45"/>
+  </g>
+</svg>
