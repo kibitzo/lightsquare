@@ -23,6 +23,9 @@ const files = {
   "/": ["bench/index.html", "text/html; charset=utf-8"],
   "/lightsquare.css": ["src/lightsquare.css", "text/css"],
   "/pieces.css": ["src/pieces/cburnett.css", "text/css"],
+  "/icon.svg": ["docs/icons/icon.svg", "image/svg+xml"],
+  "/icon-small.svg": ["docs/icons/icon-small.svg", "image/svg+xml"],
+  "/apple-touch-icon.png": ["docs/icons/apple-touch-icon.png", "image/png"],
 };
 
 createServer(async (req, res) => {

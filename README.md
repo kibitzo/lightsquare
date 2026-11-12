@@ -1,3 +1,5 @@
+<p align="center"><img src="docs/icons/icon.svg" width="112" height="112" alt=""></p>
+
 # Lightsquare
 
 A chessboard for the web that stays smooth on every phone, including old
