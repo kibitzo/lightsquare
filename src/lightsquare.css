@@ -62,10 +62,19 @@
    whole pixel where the marks and pieces, placed by a transform, stayed
    put: the line beside the mark again, wherever a square is not a whole
    number of pixels (a zoomed page, many Android phones). */
+/* The dark squares are a layer of their own, drawn once and never again.
+   Without it, Safari (26.1, macOS) redrew them with every change of a mark
+   or shape above, and missed a strip a few pixels wide along the right and
+   bottom edge of the area it redrew: thin light lines through the dark
+   squares beside a circle or arrow, until the next move (seen on
+   kibitzo.com, 2026-11-13). Measured in the founder's Safari with real
+   right-clicks drawing a circle on h5: a gap of 2,646 pixels after every
+   circle as it was, none in 16 runs with this layer. */
 .ls-squares {
   width: 100%;
   height: 100%;
   fill: var(--_dark);
+  will-change: transform;
 }
 
 /* Bottom to top. A dragged piece is lifted above everything with its layer. */

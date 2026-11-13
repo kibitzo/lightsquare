@@ -60,8 +60,12 @@ unevenly (gaps of 33 and 50 ms).
    the pieces at odd widths (measured 2026-11-12). The path is drawn
    without `shape-rendering: crispEdges`, which moves a square's edge to
    the next whole pixel while a mark placed by a transform stays where it
-   is. Highlights and markers are a few elements on their own layer,
-   created only while they are shown.
+   is. The path has a compositing layer of its own (`will-change`), so a
+   change above it never makes the browser draw it again: Safari 26.1 left
+   a strip of it undrawn along the edge of each area it redrew (measured
+   2026-11-13, see `.ls-squares` in the stylesheet). It is the only layer
+   besides a dragged piece. Highlights and markers are a few elements on
+   their own layer, created only while they are shown.
 
 6. **One set of input listeners for the whole board.** Pointer events on the
    board element, never one listener per piece or per square. During a drag

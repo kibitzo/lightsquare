@@ -45,9 +45,11 @@ describe("RULES.md", () => {
     expect(count(css, /(^|[;{\s])(scale|rotate|translate)\s*:/g)).toBe(0);
   });
 
-  it("no will-change at rest: only a dragged piece asks for a layer", () => {
-    const rules = [...css.matchAll(/([^{}]+)\{([^{}]*will-change[^{}]*)\}/g)].map((m) => m[1].trim());
-    expect(rules).toEqual([".ls-piece.ls-dragging"]);
+  it("layers: a dragged piece, and the dark squares, which never change; nothing else asks for one", () => {
+    // The squares' layer stops Safari from redrawing them, badly, when a mark or shape above them changes
+    // (lightsquare.css, .ls-squares). It is drawn once; it adds no work at rest.
+    const rules = [...css.matchAll(/([^{}]+)\{([^{}]*will-change[^{}]*)\}/g)].map((m) => m[1].trim()).sort();
+    expect(rules).toEqual([".ls-piece.ls-dragging", ".ls-squares"]);
   });
 
   it("rule 6: one set of listeners, on the board, not per piece or square", () => {
