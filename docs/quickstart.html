@@ -1,0 +1,74 @@
+<!doctype html>
+<!--
+  Lightsquare quickstart: one file, no build step. Save it and open it, or
+  see it at https://kibitzo.github.io/lightsquare/quickstart.html
+  The board comes from npm through a CDN; the chess rules are chess.js.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lightsquare quickstart</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@kibitzo/lightsquare@0.1/dist/lightsquare.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@kibitzo/lightsquare@0.1/dist/pieces/cburnett.css">
+<style>
+  body { margin: 0; padding: 16px; font: 16px/1.4 system-ui, sans-serif; background: #161512; color: #ddd; }
+  main { max-width: 480px; margin: 0 auto; }
+  #status { margin: 12px 0; }
+  button { font: inherit; padding: 6px 14px; }
+</style>
+</head>
+<body>
+<main>
+  <div id="board"></div>
+  <p id="status"></p>
+  <button id="new">New game</button>
+</main>
+<script type="module">
+import { lightsquare } from "https://cdn.jsdelivr.net/npm/@kibitzo/lightsquare@0.1/dist/index.js";
+import { Chess } from "https://cdn.jsdelivr.net/npm/chess.js@1/+esm";
+
+const chess = new Chess();
+
+// What the board needs to know about the position: Lightsquare has no
+// chess rules, so chess.js answers and the board shows it.
+function view() {
+  const targets = new Map();
+  for (const { from, to } of chess.moves({ verbose: true })) targets.set(from, [...(targets.get(from) ?? []), to]);
+  const turn = chess.turn();
+  const king = chess.board().flat().find((piece) => piece && piece.type === "k" && piece.color === turn);
+  return {
+    position: chess.fen(),
+    targets,
+    check: chess.inCheck() ? king.square : null,
+    movable: chess.isGameOver() ? "none" : turn === "w" ? "white" : "black",
+  };
+}
+
+function status() {
+  const side = chess.turn() === "w" ? "White" : "Black";
+  document.getElementById("status").textContent = chess.isCheckmate() ? `Checkmate. ${side} lost.` : chess.isDraw() ? "Draw." : `${side} to move.`;
+}
+
+const board = lightsquare(document.getElementById("board"), {
+  ...view(),
+  // The board has already shown the move. Play it in chess.js and answer
+  // with the true position: that puts a castling rook, a pawn taken en
+  // passant or a new queen in place. A pawn becomes a queen here; the
+  // promotion module offers a picker instead.
+  onMove({ from, to }) {
+    chess.move({ from, to, promotion: "q" });
+    board.set(view());
+    status();
+  },
+});
+status();
+
+document.getElementById("new").onclick = () => {
+  chess.reset();
+  board.set({ ...view(), lastMove: null });
+  status();
+};
+</script>
+</body>
+</html>

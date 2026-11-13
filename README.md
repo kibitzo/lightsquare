@@ -62,24 +62,53 @@ Status: the library draws every board of [Kibitzo](https://kibitzo.com) in
 production since November 2026, and is tested in Chromium and WebKit. It is
 young: until 1.0 a minor version may change the API.
 
-    npm install @kibitzo/lightsquare
+## Quickstart
+
+**[Run it in the browser](https://kibitzo.github.io/lightsquare/quickstart.html)**:
+a playable board in one HTML file with no build step
+([the file](docs/quickstart.html); save it and open it).
+
+In a project:
+
+    npm install @kibitzo/lightsquare chess.js
 
 ```ts
 import { lightsquare } from "@kibitzo/lightsquare";
-import { shapes } from "@kibitzo/lightsquare/shapes";
 import "@kibitzo/lightsquare/lightsquare.css";
 import "@kibitzo/lightsquare/pieces/cburnett.css";
+import { Chess } from "chess.js";
+
+const chess = new Chess();
+
+// Lightsquare has no chess rules: chess.js answers, the board shows it.
+function view() {
+  const targets = new Map<string, string[]>();
+  for (const { from, to } of chess.moves({ verbose: true })) targets.set(from, [...(targets.get(from) ?? []), to]);
+  const turn = chess.turn();
+  const king = chess.board().flat().find((piece) => piece?.type === "k" && piece.color === turn);
+  return {
+    position: chess.fen(),
+    targets,
+    check: chess.inCheck() ? king!.square : null,
+    movable: chess.isGameOver() ? "none" : turn === "w" ? "white" : "black",
+  } as const;
+}
 
 const board = lightsquare(document.getElementById("board")!, {
-  movable: "white",
-  targets: new Map([["e2", ["e3", "e4"]]]),
+  ...view(),
+  // The board has already shown the move. Play it in chess.js and answer
+  // with the true position.
   onMove({ from, to }) {
-    // check the move with your chess rules, then confirm or take back:
-    board.set({ position: fenAfterTheMove });
+    chess.move({ from, to, promotion: "q" });
+    board.set(view());
   },
 });
-board.use(shapes({ arrows: [{ from: "e2", to: "e4" }], draw: true }));
 ```
+
+That is a whole game for two players on one screen: only legal moves, dots
+on the squares a piece may go to, the king marked in check. Arrows, a
+promotion picker, premove hints and screen-reader support are modules you
+add with `board.use(...)`: [docs/API.md](docs/API.md).
 
 What it has: sliding pieces, captures, castling, en passant and promotion
 worked out from two positions; tap and drag; premove; last move, check,

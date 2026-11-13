@@ -34,6 +34,7 @@ export const files = {
   "/apple-touch-icon.png": ["docs/icons/apple-touch-icon.png", "image/png"],
   "/results.json": ["compare/results.json", "application/json"],
   "/pieces-kibitzo-NOTICE.md": ["piece-sets/NOTICE.md", "text/markdown; charset=utf-8"],
+  "/quickstart.html": ["docs/quickstart.html", "text/html; charset=utf-8"],
 };
 
 /** Start the page's server. `port` 0 takes any free port (the tests do). */
