@@ -49,8 +49,13 @@ package existed for a Trusted Publisher to be set on.
    the version is staged.
 6. A maintainer signs in to npmjs.com, opens Staged Packages (in the
    account's settings), looks at the version and its checksum, and clicks
-   Approve; npm asks for the second factor. (`npm stage approve <stage-id>`
-   does the same from a terminal.)
+   Approve; npm asks for the second factor.
+
+   From a terminal instead (done for 0.1.5; needs npm 11.15 or later):
+   `npm login`, then `npm stage list @kibitzo/lightsquare` (the id and the
+   checksum), `npm stage download <stage-id>` to look inside the file,
+   `npm stage approve <stage-id>` (it opens a page where the maintainer
+   signs), then `npm logout`, so that no token stays on the machine.
 7. npm checks a new version before it serves it: for some minutes `npm view
    @kibitzo/lightsquare version` still shows the old number (0.1.0 took
    five minutes; others have waited an hour). Then it shows the new one.
