@@ -339,16 +339,19 @@ describe.each([PROFILES[0], PROFILES[2]])("the published demo in $name", (profil
     expect(await page.evaluate(() => ["measure", "stress", "layers"].filter((id) => !document.getElementById(id)))).toEqual([]);
   });
 
-  it("shows Staunty first and Cburnett second, and says whose pieces they are and under which licence", async () => {
+  it("shows Kibitzo first and Cburnett second, and says whose pieces they are, under which licence, and that Kibitzo is not in the package yet", async () => {
     const seen = await page.evaluate(() => ({
       sets: [...document.querySelectorAll("#sets button")].map((b) => `${b.textContent}${b.getAttribute("aria-pressed") === "true" ? " (on)" : ""}`),
       picture: getComputedStyle(document.querySelector(".ls-piece.ls-wk")!).backgroundImage.length,
       credit: document.querySelector("footer")!.textContent ?? "",
     }));
-    expect(seen.sets).toEqual(["Staunty (on)", "Cburnett"]);
+    expect(seen.sets).toEqual(["Kibitzo (on)", "Cburnett"]);
     expect(seen.picture, "the king has a picture").toBeGreaterThan(100);
-    expect(seen.credit).toContain("Staunty by sadsnake1");
-    expect(seen.credit).toContain("CC BY-NC-SA 4.0");
-    expect((await page.request.get(new URL("pieces-staunty-NOTICE.md", page.url()).href)).status()).toBe(200);
+    expect(seen.credit).toContain("Kibitzo chess pieces, © Danubian Research AG, CC BY 4.0");
+    expect(seen.credit).toContain("not in the package yet");
+    expect((await page.request.get(new URL("pieces-kibitzo-NOTICE.md", page.url()).href)).status(), "the notice of the set is served").toBe(200);
+    expect(seen.credit).toContain("Cburnett by Colin M.L. Burnett (BSD)");
+    expect(seen.credit).not.toMatch(/staunty/i);
+    expect((await page.request.get(new URL("pieces-kibitzo.css", page.url()).href)).status(), "our own set is served").toBe(200);
   });
 });

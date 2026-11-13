@@ -242,10 +242,10 @@ interface Look {
   circleColours: Record<string, string>;
 }
 
-// The number goes up when a saved look must not outlive a change of the page (3: Staunty became the first piece set).
-const LOOK_KEY = "lightsquare-playground-look-3";
+// The number goes up when a saved look must not outlive a change of the page (4: Kibitzo became the first piece set).
+const LOOK_KEY = "lightsquare-playground-look-4";
 const plainColours = (): Record<string, string> => Object.fromEntries(SHAPE_NAMES.map(([name, , colour]) => [name, colour]));
-const look: Look = { board: "wood", pieces: "staunty", labels: "on", pieceSize: 100, moveMs: 180, arrowWidth: 20, arrowHead: 82, badge: "auto", checkLoops: "3", boardScale: 1, glow: 82, arrowColours: plainColours(), circleColours: plainColours() };
+const look: Look = { board: "wood", pieces: "kibitzo", labels: "on", pieceSize: 100, moveMs: 180, arrowWidth: 20, arrowHead: 82, badge: "auto", checkLoops: "3", boardScale: 1, glow: 82, arrowColours: plainColours(), circleColours: plainColours() };
 
 /** The look as the theme an app would store for a user. */
 function themeOf(l: Look): Theme {
@@ -297,8 +297,8 @@ function choice(parent: string, key: keyof Look, value: string, content: string,
   };
 }
 
-/** The piece sets of this page. Staunty is shown on this page only (bench/pieces/NOTICE.md); Cburnett is the set the package ships. */
-const PIECE_SETS: Record<string, string> = { staunty: "Staunty", cburnett: "Cburnett" };
+/** The piece sets of this page. Kibitzo is our own (CC BY 4.0, piece-sets/NOTICE.md), shown on this page and not in the package yet; Cburnett is the set the package ships. */
+const PIECE_SETS: Record<string, string> = { kibitzo: "Kibitzo", cburnett: "Cburnett" };
 
 /** True on a static host (the published demo): nothing there can take what a phone reports. */
 let onStaticHost = false;
@@ -322,7 +322,7 @@ async function buildLooks(): Promise<void> {
     /* a broken saved look is ignored */
   }
   if (!(look.board in themes)) look.board = "wood";
-  if (!(look.pieces in PIECE_SETS)) look.pieces = "staunty";
+  if (!(look.pieces in PIECE_SETS)) look.pieces = "kibitzo";
   for (const id of ["pieceSize", "moveMs", "arrowWidth", "arrowHead", "glow"] as const) {
     $(id).oninput = () => {
       look[id] = Number(($(id) as HTMLInputElement).value);

@@ -15,9 +15,10 @@ is in [ARCHITECTURE.md](ARCHITECTURE.md).
 - **Our own work only.** Never copy code, stylesheet values, class names or
   pictures from chessground (GPL) or from any GPL or non-commercial source.
   Every picture in the package has a NOTICE file with its author and licence.
-  The one exception is outside the package: the demo page shows the Staunty
-  piece set (CC BY-NC-SA 4.0) from `bench/pieces/`, credited on the page.
-  Never move it into `src/` or the build, and never add another.
+  The demo page shows Kibitzo, a piece set of our own drawn in `piece-sets/`
+  (CC BY 4.0, see its NOTICE and README), next to the package's Cburnett. It
+  is not in `src/` or the build until a release takes it in with its NOTICE.
+  Never add a picture of anyone else's to the demo page.
 - **Every rule has a test.** A new rule comes with its test; never weaken a
   test to make a change pass.
 - **No chess rules inside.** The app says which moves are allowed.

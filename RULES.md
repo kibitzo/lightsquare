@@ -103,11 +103,11 @@ unevenly (gaps of 33 and 50 ms).
     how they behave; write what you learned in your own words and code.
     Every picture in the package has a NOTICE file that names its author and
     licence. See ARCHITECTURE.md, section 13.
-    One exception, outside the package: the demo page (`bench/`) shows the
-    Staunty piece set (sadsnake1, CC BY-NC-SA 4.0) as a second set, with
-    its author and licence said on the page and in `bench/pieces/NOTICE.md`.
-    It is never in `src/`, `dist/` or the npm package, and no other such
-    picture is added.
+    The demo page (`bench/`) shows two piece sets: Kibitzo, our own, drawn
+    in `piece-sets/` (CC BY 4.0, `piece-sets/NOTICE.md`), and the package's
+    Cburnett. Kibitzo is not in `src/`, `dist/` or the npm package until a
+    release takes it in with its NOTICE, and the page says so. No picture
+    of anyone else's is added to the demo page.
 
 13. **Every rule has a test.** `tests/unit/rules.test.ts` reads the source
     against this file and `tests/browser/perf.test.ts` counts the work asked

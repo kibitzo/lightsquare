@@ -363,9 +363,10 @@ with any other board.
 - **Pictures:** the one piece set in the package is Cburnett's, taken from
   Wikimedia Commons under its BSD licence (`assets/cburnett/NOTICE.md`).
   Piece sets under GPL or non-commercial licences (many of the sets on
-  Lichess, Staunty among them) must not be added to the package. The demo
-  page alone shows Staunty (CC BY-NC-SA 4.0) as a second set, with its
-  author and licence said on the page (`bench/pieces/NOTICE.md`); it is
-  outside `src/`, `dist/` and the npm package, and a test holds it there.
+  Lichess) must not be added to the package, nor shown on the demo page.
+  The demo page shows Kibitzo, a piece set of our own drawn in
+  `piece-sets/` (CC BY 4.0, `piece-sets/NOTICE.md`), next to Cburnett. It
+  is outside `src/`, `dist/` and the npm package until a release takes it
+  in, and a test holds it there.
 - Rule 12 of RULES.md keeps it that way for contributors.
 

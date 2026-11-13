@@ -15,8 +15,6 @@ mkdirSync(out, { recursive: true });
 for (const [path, [file]] of Object.entries(files)) writeFileSync(out + (path === "/" ? "index.html" : path.slice(1)), readFileSync(root + file));
 for (const [path, [make]] of Object.entries(made)) writeFileSync(out + path.slice(1), await make());
 writeFileSync(`${out}config.json`, JSON.stringify({ static: true }));
-// The notice of the second piece set goes where the set goes.
-cpSync(`${root}bench/pieces/NOTICE.md`, `${out}pieces-staunty-NOTICE.md`);
 cpSync(`${root}docs/icons/social-preview.png`, `${out}social-preview.png`);
 // The design as one picture, linked from the page and from the README.
 cpSync(`${root}docs/architecture.html`, `${out}architecture.html`);

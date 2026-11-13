@@ -30,8 +30,9 @@ execFileSync("tar", ["-xzf", work + packed, "-C", home, "--strip-components=1"])
 const stray = listing.filter((file) => !/^(dist\/|README\.md$|LICENSE$|package\.json$)/.test(file));
 check(stray.length === 0, `files that do not belong in the package: ${stray.join(", ")}`);
 check(listing.includes("LICENSE") && listing.includes("README.md"), "the licence or the README is missing");
-const notOurs = listing.filter((file) => /staunty/i.test(file) || /staunty/i.test(readFileSync(home + file, "utf8")));
-check(notOurs.length === 0, `the Staunty piece set is for the demo page only (rule 12): ${notOurs.join(", ")}`);
+// Only the package's own piece set: nothing of another set, and not the Kibitzo set, which is for the demo page until its licence is chosen.
+const notOurs = listing.filter((file) => /staunty|piece-sets/i.test(file) || /staunty|ls-set-kibitzo|piece-sets\//i.test(readFileSync(home + file, "utf8")));
+check(notOurs.length === 0, `a piece set that is not the package's own is in the package (rule 12): ${notOurs.join(", ")}`);
 
 // 2. Every entry names a file in it.
 const entries = Object.entries(manifest.exports).map(([name, target]) => ({ name, files: typeof target === "string" ? [target] : Object.values(target) }));

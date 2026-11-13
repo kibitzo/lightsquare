@@ -3,7 +3,7 @@
  * cannot be broken quietly.
  */
 import { build } from "esbuild";
-import { readFileSync, readdirSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { gzipSync } from "node:zlib";
 import { describe, expect, it } from "vitest";
@@ -137,16 +137,19 @@ describe("RULES.md", () => {
     expect(count(everything, /chessground|cg-wrap|cg-board|cg-container/gi)).toBe(0);
   });
 
-  it("rule 12: the Staunty set is the demo page's alone: credited there, and not in the library, the build or the package", () => {
-    expect(readdirSync(`${root}bench/pieces`).sort()).toEqual(["NOTICE.md", "staunty.svg"]);
-    const notice = readFileSync(`${root}bench/pieces/NOTICE.md`, "utf8");
-    for (const said of ["sadsnake1", "CC BY-NC-SA 4.0", "https://creativecommons.org/licenses/by-nc-sa/4.0/", "not in the npm package"]) expect(notice, said).toContain(said);
+  it("rule 12: the demo page shows our own Kibitzo set and the package's Cburnett, nobody else's; Kibitzo is not in the library, the build or the package", () => {
+    expect(existsSync(`${root}bench/pieces`), "no pictures of anyone else's beside the demo page").toBe(false);
     const page = readFileSync(`${root}bench/index.html`, "utf8");
-    expect(page).toContain("Staunty</a> by sadsnake1");
-    expect(page).toContain("CC BY-NC-SA 4.0");
+    const demo = page + readFileSync(`${root}bench/bench.ts`, "utf8") + readFileSync(`${root}bench/server.mjs`, "utf8") + readFileSync(`${root}scripts/demo.mjs`, "utf8");
+    expect(count(demo, /staunty|sadsnake/gi)).toBe(0);
+    for (const said of ["Kibitzo</a> chess pieces", "© Danubian Research AG", "CC BY 4.0</a>", "not in the package yet", "Cburnett by Colin M.L. Burnett (BSD)"]) expect(page, said).toContain(said);
+    expect(existsSync(`${root}piece-sets/kibitzo.svg`)).toBe(true);
+    const notice = readFileSync(`${root}piece-sets/NOTICE.md`, "utf8");
+    for (const said of ["Danubian Research AG", "CC BY 4.0", "https://creativecommons.org/licenses/by/4.0/", "give credit", "not in the npm"]) expect(notice, said).toContain(said);
+    expect(readFileSync(`${root}piece-sets/kibitzo.svg`, "utf8"), "the picture says whose it is").toContain("CC BY 4.0");
     const library = code + moduleCode + css + readdirSync(`${root}src/pieces`).map((f) => readFileSync(`${root}src/pieces/${f}`, "utf8")).join("");
-    expect(count(library, /staunty/gi)).toBe(0);
-    expect(count(readFileSync(`${root}scripts/build.mjs`, "utf8"), /staunty|bench\//gi)).toBe(0);
+    expect(count(library, /staunty|piece-sets|ls-set-kibitzo/gi)).toBe(0);
+    expect(count(readFileSync(`${root}scripts/build.mjs`, "utf8"), /staunty|bench\/|piece-sets/gi)).toBe(0);
     expect(JSON.parse(readFileSync(`${root}package.json`, "utf8")).files).toEqual(["dist"]);
   });
 });

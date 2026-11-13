@@ -2,7 +2,7 @@
 // records what phones report.
 //   npm run bench                         then open the printed address on the phone
 import { build } from "esbuild";
-import { appendFileSync, mkdirSync, readFileSync } from "node:fs";
+import { appendFileSync, existsSync, mkdirSync, readFileSync } from "node:fs";
 import { createServer } from "node:http";
 import { networkInterfaces } from "node:os";
 import { fileURLToPath } from "node:url";
@@ -20,8 +20,8 @@ export async function bundle() {
 /** The files that are made, not copied: address, how to make it, type. On the published demo config.json says `static`. */
 export const made = {
   "/bench.js": [bundle, "text/javascript"],
-  // The page's second piece set, shown here only: see bench/pieces/NOTICE.md.
-  "/pieces-staunty.css": [() => spriteToCss(readFileSync(`${root}bench/pieces/staunty.svg`, "utf8"), "staunty"), "text/css"],
+  // Kibitzo, our own piece set and the first one on the page (piece-sets/README.md).
+  "/pieces-kibitzo.css": [() => spriteToCss(readFileSync(`${root}piece-sets/kibitzo.svg`, "utf8"), "kibitzo"), "text/css"],
   "/config.json": [() => "{}", "application/json"],
 };
 
@@ -33,6 +33,7 @@ export const files = {
   "/icon-small.svg": ["docs/icons/icon-small.svg", "image/svg+xml"],
   "/apple-touch-icon.png": ["docs/icons/apple-touch-icon.png", "image/png"],
   "/results.json": ["compare/results.json", "application/json"],
+  "/pieces-kibitzo-NOTICE.md": ["piece-sets/NOTICE.md", "text/markdown; charset=utf-8"],
 };
 
 /** Start the page's server. `port` 0 takes any free port (the tests do). */
@@ -57,6 +58,8 @@ export async function startServer({ port = 3055, host = "0.0.0.0", quiet = false
     }
     try {
       if (made[path]) return void res.writeHead(200, { "content-type": made[path][1], "cache-control": "no-store" }).end(await made[path][0]());
+      // The pages on which a piece of the Kibitzo set is chosen (piece-sets/make.mjs writes them; they are not kept in git).
+      if (/^\/(knights|bishops|rooks|kings|queens|bases)$/.test(path) && existsSync(`${root}piece-sets${path}.html`)) return void res.writeHead(200, { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" }).end(readFileSync(`${root}piece-sets${path}.html`));
       const file = files[path];
       if (!file) return void res.writeHead(404).end();
       res.writeHead(200, { "content-type": file[1], "cache-control": "no-store" }).end(readFileSync(root + file[0]));
