@@ -1,7 +1,9 @@
 # Kibitzo, a chess piece set
 
 A piece set drawn for [Kibitzo](https://kibitzo.com) and for this board.
-It is the first set of the demo page; the package ships Cburnett.
+It is the first set of the demo page and is in the npm package
+(`@kibitzo/lightsquare/pieces/kibitzo.css`) since version 0.1.5, next to
+Cburnett.
 
 `kibitzo.svg` is one sprite with a group per piece (`wk` ... `bp`), the
 shape `scripts/sprite-to-css.mjs` turns into a Lightsquare piece set.
@@ -12,7 +14,8 @@ CC BY 4.0: use the pieces, change them, sell what you build with them, and
 give credit ("Kibitzo chess pieces, kibitzo.com"). The full statement is in
 [NOTICE.md](NOTICE.md). © 2026 Danubian Research AG.
 
-The set is not in the npm package yet: the package ships Cburnett.
+After a change to the set, `npm run pieces` writes it into the package's
+source (`src/pieces/kibitzo.css`); a test fails while the two disagree.
 
 ## Where it comes from
 

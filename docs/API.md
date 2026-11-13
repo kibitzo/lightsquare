@@ -8,7 +8,7 @@ Everything the library offers, in one page. The reasons behind it are in
 ```ts
 import { lightsquare } from "@kibitzo/lightsquare";
 import "@kibitzo/lightsquare/lightsquare.css";
-import "@kibitzo/lightsquare/pieces/cburnett.css";
+import "@kibitzo/lightsquare/pieces/kibitzo.css";
 
 const board = lightsquare(document.getElementById("board")!, { movable: "white" });
 ```
@@ -334,7 +334,11 @@ on the class `ls-set-<name>`:
 .ls-set-mine { --ls-wk: url(/pieces/wk.svg); /* ... */ --ls-bp: url(/pieces/bp.svg); }
 ```
 
-`@kibitzo/lightsquare/pieces/cburnett.css` is such a set and also the page's default.
+The package has two sets. `@kibitzo/lightsquare/pieces/kibitzo.css` is the
+Kibitzo set, our own (CC BY 4.0: give credit, "Kibitzo chess pieces,
+kibitzo.com"; the notice is beside the file). `@kibitzo/lightsquare/pieces/cburnett.css`
+is Cburnett's (BSD). Each is also the page's default when loaded; with
+both loaded, the class (`ls-set-kibitzo`, `ls-set-cburnett`) picks one.
 `node scripts/sprite-to-css.mjs sprite.svg pieces.css mine` makes a set from
 a cm-chessboard sprite. The same variables work outside the board:
 `background-image: var(--ls-wq)` shows the user's queen anywhere in the app.

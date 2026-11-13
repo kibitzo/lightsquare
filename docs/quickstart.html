@@ -3,6 +3,10 @@
   Lightsquare quickstart: one file, no build step. Save it and open it, or
   see it at https://kibitzo.github.io/lightsquare/quickstart.html
   The board comes from npm through a CDN; the chess rules are chess.js.
+  The pieces are the Kibitzo set (kibitzo.com, (c) 2026 Danubian Research AG,
+  CC BY 4.0: keep the credit line at the foot of the page if you use them).
+  In a project they are "@kibitzo/lightsquare/pieces/kibitzo.css" (from
+  version 0.1.5); the package also has the Cburnett set, pieces/cburnett.css.
 -->
 <html lang="en">
 <head>
@@ -10,19 +14,22 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Lightsquare quickstart</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@kibitzo/lightsquare@0.1/dist/lightsquare.css">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@kibitzo/lightsquare@0.1/dist/pieces/cburnett.css">
+<link rel="stylesheet" href="https://kibitzo.github.io/lightsquare/pieces-kibitzo.css">
 <style>
   body { margin: 0; padding: 16px; font: 16px/1.4 system-ui, sans-serif; background: #161512; color: #ddd; }
   main { max-width: 480px; margin: 0 auto; }
   #status { margin: 12px 0; }
   button { font: inherit; padding: 6px 14px; }
+  footer { margin-top: 24px; font-size: 13px; color: #888; }
+  footer a { color: inherit; }
 </style>
 </head>
 <body>
 <main>
-  <div id="board"></div>
+  <div id="board" class="ls-set-kibitzo"></div>
   <p id="status"></p>
   <button id="new">New game</button>
+  <footer><a href="https://kibitzo.com">Kibitzo chess pieces, kibitzo.com</a>, CC BY 4.0. Board: <a href="https://github.com/kibitzo/lightsquare">Lightsquare</a>, MIT.</footer>
 </main>
 <script type="module">
 import { lightsquare } from "https://cdn.jsdelivr.net/npm/@kibitzo/lightsquare@0.1/dist/index.js";

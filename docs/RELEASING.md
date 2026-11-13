@@ -71,8 +71,9 @@ and release the next number; `npm deprecate` marks the wrong one.
 It packs the library, unpacks the file into a small project of its own, and
 there:
 
-- the file holds only `dist/`, the README, the licence and the manifest, and
-  nothing of a piece set that is not the package's own (rule 12);
+- the file holds only `dist/`, the README, the licence and the manifest;
+  its piece sets are Cburnett and Kibitzo and no other, and the Kibitzo
+  set has its credit and its notice with it (rule 12);
 - every entry of `exports` names a file that is in it;
 - Node imports every script entry by the package's name without a page, as a
   server that renders pages does;

@@ -1,6 +1,6 @@
 {
   "name": "@kibitzo/lightsquare",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "A chessboard that stays smooth on every phone. Pieces move with CSS transforms on the GPU, no animation loop, no dependencies.",
   "type": "module",
   "main": "./dist/index.js",
@@ -40,6 +40,7 @@
     },
     "./lightsquare.css": "./dist/lightsquare.css",
     "./pieces/cburnett.css": "./dist/pieces/cburnett.css",
+    "./pieces/kibitzo.css": "./dist/pieces/kibitzo.css",
     "./package.json": "./package.json"
   },
   "typesVersions": {
@@ -86,6 +87,7 @@
     "icons": "node scripts/icons.mjs",
     "demo": "node scripts/demo.mjs",
     "diagram": "node scripts/diagram.mjs",
+    "hero": "node scripts/hero.mjs",
     "prepublishOnly": "npm run build && npm test && npm run check:package",
     "check:package": "node scripts/check-package.mjs"
   },

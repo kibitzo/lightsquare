@@ -1,7 +1,8 @@
 # Kibitzo chess pieces
 
-`kibitzo.svg`, and every picture `make.mjs` draws, is the Kibitzo chess
-piece set.
+`kibitzo.svg`, every picture `make.mjs` draws, and the piece set made from
+them in the npm package (`pieces/kibitzo.css`) are the Kibitzo chess piece
+set.
 
 © 2026 Danubian Research AG, Zug, Switzerland.
 
@@ -17,5 +18,6 @@ https://creativecommons.org/licenses/by/4.0/
 The script that draws them (`make.mjs`) is code and is under the MIT
 licence of Lightsquare, like the rest of this repository.
 
-The set is shown on the demo page of Lightsquare. It is not in the npm
-package (the package ships Cburnett).
+The set is in the npm package `@kibitzo/lightsquare` since version 0.1.5
+(`@kibitzo/lightsquare/pieces/kibitzo.css`, with this notice beside it),
+next to Cburnett, and it is the first set of Lightsquare's demo page.

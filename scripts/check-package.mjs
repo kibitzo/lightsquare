@@ -30,9 +30,14 @@ execFileSync("tar", ["-xzf", work + packed, "-C", home, "--strip-components=1"])
 const stray = listing.filter((file) => !/^(dist\/|README\.md$|LICENSE$|package\.json$)/.test(file));
 check(stray.length === 0, `files that do not belong in the package: ${stray.join(", ")}`);
 check(listing.includes("LICENSE") && listing.includes("README.md"), "the licence or the README is missing");
-// Only the package's own piece set: nothing of another set, and not the Kibitzo set, which is for the demo page until its licence is chosen.
-const notOurs = listing.filter((file) => /staunty|piece-sets/i.test(file) || /staunty|ls-set-kibitzo|piece-sets\//i.test(readFileSync(home + file, "utf8")));
+// Only the package's own piece sets, Cburnett and Kibitzo: nothing of another set, and the Kibitzo set (CC BY 4.0) with its credit and its notice.
+const sets = listing.filter((file) => file.startsWith("dist/pieces/")).sort();
+check(sets.join() === "dist/pieces/cburnett.css,dist/pieces/kibitzo-NOTICE.md,dist/pieces/kibitzo.css", `dist/pieces/ holds ${sets.join(", ")} (rule 12)`);
+const notOurs = listing.filter((file) => /staunty|piece-sets/i.test(file) || /staunty/i.test(readFileSync(home + file, "utf8")));
 check(notOurs.length === 0, `a piece set that is not the package's own is in the package (rule 12): ${notOurs.join(", ")}`);
+const kibitzoCss = existsSync(`${home}dist/pieces/kibitzo.css`) ? readFileSync(`${home}dist/pieces/kibitzo.css`, "utf8") : "";
+check(/^\/\*! Kibitzo chess pieces, kibitzo\.com\. \(c\) 2026 Danubian Research AG\. Licence: CC BY 4\.0/.test(kibitzoCss), "dist/pieces/kibitzo.css does not begin with the credit of the set");
+check(existsSync(`${home}dist/pieces/kibitzo-NOTICE.md`) && readFileSync(`${home}dist/pieces/kibitzo-NOTICE.md`, "utf8").includes("CC BY 4.0"), "the notice of the Kibitzo set is not in the package");
 
 // 2. Every entry names a file in it.
 const entries = Object.entries(manifest.exports).map(([name, target]) => ({ name, files: typeof target === "string" ? [target] : Object.values(target) }));

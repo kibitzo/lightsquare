@@ -137,19 +137,28 @@ describe("RULES.md", () => {
     expect(count(everything, /chessground|cg-wrap|cg-board|cg-container/gi)).toBe(0);
   });
 
-  it("rule 12: the demo page shows our own Kibitzo set and the package's Cburnett, nobody else's; Kibitzo is not in the library, the build or the package", () => {
+  it("rule 12: the package and the demo page have our own Kibitzo set and Cburnett, nobody else's; the package's Kibitzo set is the drawn one, with its credit", async () => {
     expect(existsSync(`${root}bench/pieces`), "no pictures of anyone else's beside the demo page").toBe(false);
     const page = readFileSync(`${root}bench/index.html`, "utf8");
     const demo = page + readFileSync(`${root}bench/bench.ts`, "utf8") + readFileSync(`${root}bench/server.mjs`, "utf8") + readFileSync(`${root}scripts/demo.mjs`, "utf8");
     expect(count(demo, /staunty|sadsnake/gi)).toBe(0);
-    for (const said of ["Kibitzo</a> chess pieces", "© Danubian Research AG", "CC BY 4.0</a>", "not in the package yet", "Cburnett by Colin M.L. Burnett (BSD)"]) expect(page, said).toContain(said);
+    for (const said of ["Kibitzo</a> chess pieces", "© Danubian Research AG", "CC BY 4.0</a>", "Both are in the package", "Cburnett by Colin M.L. Burnett (BSD)"]) expect(page, said).toContain(said);
     expect(existsSync(`${root}piece-sets/kibitzo.svg`)).toBe(true);
     const notice = readFileSync(`${root}piece-sets/NOTICE.md`, "utf8");
-    for (const said of ["Danubian Research AG", "CC BY 4.0", "https://creativecommons.org/licenses/by/4.0/", "give credit", "not in the npm"]) expect(notice, said).toContain(said);
+    for (const said of ["Danubian Research AG", "CC BY 4.0", "https://creativecommons.org/licenses/by/4.0/", "give credit", "pieces/kibitzo.css"]) expect(notice, said).toContain(said);
     expect(readFileSync(`${root}piece-sets/kibitzo.svg`, "utf8"), "the picture says whose it is").toContain("CC BY 4.0");
-    const library = code + moduleCode + css + readdirSync(`${root}src/pieces`).map((f) => readFileSync(`${root}src/pieces/${f}`, "utf8")).join("");
+    expect(readdirSync(`${root}src/pieces`).sort()).toEqual(["cburnett.css", "kibitzo.css"]);
+    const library = code + moduleCode + css + readFileSync(`${root}src/pieces/cburnett.css`, "utf8");
     expect(count(library, /staunty|piece-sets|ls-set-kibitzo/gi)).toBe(0);
-    expect(count(readFileSync(`${root}scripts/build.mjs`, "utf8"), /staunty|bench\/|piece-sets/gi)).toBe(0);
+    // The package's Kibitzo set is the sprite in piece-sets/, turned into a set and nothing else: `npm run pieces` writes it.
+    const { spriteToCss } = (await import("../../scripts/sprite-to-css.mjs" as string)) as { spriteToCss(svg: string, name: string, isDefault: boolean): string };
+    const shipped = readFileSync(`${root}src/pieces/kibitzo.css`, "utf8");
+    expect(shipped.startsWith("/*! Kibitzo chess pieces, kibitzo.com. (c) 2026 Danubian Research AG. Licence: CC BY 4.0"), "the credit comes first, in a comment the build keeps").toBe(true);
+    expect(shipped.endsWith(spriteToCss(readFileSync(`${root}piece-sets/kibitzo.svg`, "utf8"), "kibitzo", true)), "src/pieces/kibitzo.css is behind piece-sets/kibitzo.svg: run npm run pieces").toBe(true);
+    expect(count(shipped, /staunty/gi)).toBe(0);
+    const build = readFileSync(`${root}scripts/build.mjs`, "utf8");
+    expect(count(build, /staunty|bench\//gi)).toBe(0);
+    expect(build, "the notice goes into the package beside the set").toContain("copyFileSync(`${root}piece-sets/NOTICE.md`, `${root}dist/pieces/kibitzo-NOTICE.md`)");
     expect(JSON.parse(readFileSync(`${root}package.json`, "utf8")).files).toEqual(["dist"]);
   });
 });

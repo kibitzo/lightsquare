@@ -297,7 +297,7 @@ function choice(parent: string, key: keyof Look, value: string, content: string,
   };
 }
 
-/** The piece sets of this page. Kibitzo is our own (CC BY 4.0, piece-sets/NOTICE.md), shown on this page and not in the package yet; Cburnett is the set the package ships. */
+/** The piece sets of this page. Kibitzo is our own (CC BY 4.0, piece-sets/NOTICE.md); Cburnett is Colin M.L. Burnett's (BSD). Both are in the package. */
 const PIECE_SETS: Record<string, string> = { kibitzo: "Kibitzo", cburnett: "Cburnett" };
 
 /** True on a static host (the published demo): nothing there can take what a phone reports. */

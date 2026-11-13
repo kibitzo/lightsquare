@@ -103,11 +103,12 @@ unevenly (gaps of 33 and 50 ms).
     how they behave; write what you learned in your own words and code.
     Every picture in the package has a NOTICE file that names its author and
     licence. See ARCHITECTURE.md, section 13.
-    The demo page (`bench/`) shows two piece sets: Kibitzo, our own, drawn
-    in `piece-sets/` (CC BY 4.0, `piece-sets/NOTICE.md`), and the package's
-    Cburnett. Kibitzo is not in `src/`, `dist/` or the npm package until a
-    release takes it in with its NOTICE, and the page says so. No picture
-    of anyone else's is added to the demo page.
+    The package and the demo page (`bench/`) have two piece sets: Kibitzo,
+    our own, drawn in `piece-sets/` (CC BY 4.0, `piece-sets/NOTICE.md`; in
+    the package since 0.1.5 with that notice beside it and the credit in
+    the stylesheet), and Cburnett. `src/pieces/kibitzo.css` is written from
+    `piece-sets/kibitzo.svg` by `npm run pieces` and never by hand. No
+    picture of anyone else's is added to the package or the demo page.
 
 13. **Every rule has a test.** `tests/unit/rules.test.ts` reads the source
     against this file and `tests/browser/perf.test.ts` counts the work asked

@@ -2,7 +2,7 @@
 // stylesheets, the type declarations. Prints the sizes.
 import { build } from "esbuild";
 import { execFileSync } from "node:child_process";
-import { mkdirSync, readFileSync, rmSync } from "node:fs";
+import { copyFileSync, mkdirSync, readFileSync, rmSync } from "node:fs";
 import { gzipSync } from "node:zlib";
 import { fileURLToPath } from "node:url";
 
@@ -19,9 +19,12 @@ for (const name of modules) await build({ ...common, entryPoints: [`src/modules/
 await build({ ...common, entryPoints: ["src/react.ts"], outfile: "dist/react.js", external: ["react", "./index.js"] });
 await build({ absWorkingDir: root, entryPoints: ["src/lightsquare.css"], minify: true, outfile: "dist/lightsquare.css" });
 await build({ absWorkingDir: root, entryPoints: ["src/pieces/cburnett.css"], minify: true, outfile: "dist/pieces/cburnett.css" });
+// The Kibitzo set and the notice of its licence, which goes where the pictures go.
+await build({ absWorkingDir: root, entryPoints: ["src/pieces/kibitzo.css"], minify: true, legalComments: "inline", outfile: "dist/pieces/kibitzo.css" });
+copyFileSync(`${root}piece-sets/NOTICE.md`, `${root}dist/pieces/kibitzo-NOTICE.md`);
 execFileSync("npx", ["tsc", "-p", "tsconfig.build.json", "--emitDeclarationOnly"], { cwd: root, stdio: "inherit" });
 
-for (const file of ["index.js", ...modules.map((m) => `modules/${m}.js`), "react.js", "lightsquare.css", "pieces/cburnett.css"]) {
+for (const file of ["index.js", ...modules.map((m) => `modules/${m}.js`), "react.js", "lightsquare.css", "pieces/cburnett.css", "pieces/kibitzo.css"]) {
   const bytes = readFileSync(`${root}dist/${file}`);
   console.log(`${file.padEnd(22)} ${String(bytes.length).padStart(6)} B   gzip ${String(gzipSync(bytes, { level: 9 }).length).padStart(5)} B`);
 }

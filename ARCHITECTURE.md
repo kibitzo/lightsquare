@@ -360,13 +360,12 @@ with any other board.
   no chess rules inside, pieces as elements, pairing a moved piece with the
   nearest piece of the same kind (cm-chessboard, MIT, does the same), dots
   on the squares a piece may go to.
-- **Pictures:** the one piece set in the package is Cburnett's, taken from
+- **Pictures:** the package has two piece sets. Cburnett's is taken from
   Wikimedia Commons under its BSD licence (`assets/cburnett/NOTICE.md`).
+  Kibitzo is our own, drawn in `piece-sets/` (CC BY 4.0,
+  `piece-sets/NOTICE.md`), in the package since 0.1.5 with its notice.
   Piece sets under GPL or non-commercial licences (many of the sets on
   Lichess) must not be added to the package, nor shown on the demo page.
-  The demo page shows Kibitzo, a piece set of our own drawn in
-  `piece-sets/` (CC BY 4.0, `piece-sets/NOTICE.md`), next to Cburnett. It
-  is outside `src/`, `dist/` and the npm package until a release takes it
-  in, and a test holds it there.
+  The demo page shows the same two sets.
 - Rule 12 of RULES.md keeps it that way for contributors.
 

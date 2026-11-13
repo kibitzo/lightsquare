@@ -1,9 +1,11 @@
-<p align="center"><img src="docs/icons/icon.svg" width="112" height="112" alt=""></p>
+<p align="center"><img src="https://raw.githubusercontent.com/kibitzo/lightsquare/main/docs/icons/icon.svg" width="112" height="112" alt=""></p>
 
 # Lightsquare
 
 A chessboard for the web that stays smooth on every phone, including old
 ones and phones in Low Power Mode.
+
+<p align="center"><a href="https://kibitzo.github.io/lightsquare/"><img src="https://raw.githubusercontent.com/kibitzo/lightsquare/main/docs/hero.png" width="100%" alt="Three boards with the Kibitzo pieces. The first shows a selected knight with dots on the squares it may go to and the last move tinted. The second, in a blue theme, shows two arrows and a circle. The third, in a dark theme, shows a king in check and a badge on the queen that gave mate."></a></p>
 
 **[Try the demo](https://kibitzo.github.io/lightsquare/)**: play on it,
 change its looks, and measure it on your own phone.
@@ -50,7 +52,7 @@ cannot show (it is not a phone) are in
 
 ## How a move reaches the screen
 
-<p align="center"><a href="https://kibitzo.github.io/lightsquare/architecture.html"><img src="docs/architecture.png" width="100%" alt="Your app and the player's finger both change one state object. A reconciler writes only what changed into the board's layers. The browser's compositor slides the pieces: no script runs per frame. Optional modules (arrows, promotion, accessibility) join the same update."></a></p>
+<p align="center"><a href="https://kibitzo.github.io/lightsquare/architecture.html"><img src="https://raw.githubusercontent.com/kibitzo/lightsquare/main/docs/architecture.png" width="100%" alt="Your app and the player's finger both change one state object. A reconciler writes only what changed into the board's layers. The browser's compositor slides the pieces: no script runs per frame. Optional modules (arrows, promotion, accessibility) join the same update."></a></p>
 
 One state, one reconciler, a few writes, and the browser does the sliding.
 That last step is the whole point: while a piece moves, no script of the
@@ -75,7 +77,7 @@ In a project:
 ```ts
 import { lightsquare } from "@kibitzo/lightsquare";
 import "@kibitzo/lightsquare/lightsquare.css";
-import "@kibitzo/lightsquare/pieces/cburnett.css";
+import "@kibitzo/lightsquare/pieces/kibitzo.css";
 import { Chess } from "chess.js";
 
 const chess = new Chess();
@@ -110,6 +112,9 @@ on the squares a piece may go to, the king marked in check. Arrows, a
 promotion picker, premove hints and screen-reader support are modules you
 add with `board.use(...)`: [docs/API.md](docs/API.md).
 
+The package has two piece sets: Kibitzo (`pieces/kibitzo.css`, above) and
+Cburnett (`pieces/cburnett.css`). See Credits for their licences.
+
 What it has: sliding pieces, captures, castling, en passant and promotion
 worked out from two positions; tap and drag; premove; last move, check,
 selection and move dots; coordinates; your own marks and badges; arrows and
@@ -143,5 +148,10 @@ page.
 
 ## Credits
 
-Chess pieces by Colin M.L. Burnett (Cburnett), from Wikimedia Commons, used
-under the BSD licence: [assets/cburnett/NOTICE.md](assets/cburnett/NOTICE.md).
+The Kibitzo chess pieces are our own, drawn for [Kibitzo](https://kibitzo.com)
+and this board: © 2026 Danubian Research AG, CC BY 4.0. Use them, also in a
+commercial product, and give credit ("Kibitzo chess pieces, kibitzo.com"):
+[piece-sets/NOTICE.md](piece-sets/NOTICE.md).
+
+The Cburnett chess pieces are by Colin M.L. Burnett, from Wikimedia Commons,
+used under the BSD licence: [assets/cburnett/NOTICE.md](assets/cburnett/NOTICE.md).

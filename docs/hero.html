@@ -1,0 +1,63 @@
+<!doctype html>
+<!-- The picture at the top of the README (docs/hero.png): three real boards
+     of the built library, each showing something it does. `npm run hero`
+     takes the picture; nothing in it is drawn by hand. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="../dist/lightsquare.css">
+<link rel="stylesheet" href="../dist/pieces/kibitzo.css">
+<style>
+  body { margin: 0; background: #fff; }
+  #hero { display: flex; gap: 28px; padding: 28px; width: max-content; background: #1b1a17; }
+  .frame { width: 384px; }
+  .frame > div { border-radius: 6px; overflow: hidden; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45); }
+  /* An app's own badge: the board places it, this stylesheet draws it. */
+  .ls-mark-mate::after {
+    content: "#"; position: absolute; top: -14%; right: -14%; width: 44%; height: 44%; border-radius: 50%;
+    display: grid; place-items: center; background: #14b8a6; color: #fff; font: 700 15px/1 system-ui, sans-serif;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+  }
+  .ls-mark-mate.ls-at-top::after { top: 4%; }
+</style>
+</head>
+<body>
+<div id="hero">
+  <div class="frame"><div id="one"></div></div>
+  <div class="frame"><div id="two"></div></div>
+  <div class="frame"><div id="three"></div></div>
+</div>
+<script type="module">
+import { lightsquare } from "../dist/index.js";
+import { shapes } from "../dist/modules/shapes.js";
+import { applyTheme, themes } from "../dist/modules/theme.js";
+
+// 1. A piece picked up: the squares it may go to, and the last move. (1. e4 e5 2. Nf3 Nc6 3. Bc4)
+const one = lightsquare(document.getElementById("one"), {
+  position: "r1bqkbnr/pppp1ppp/2n5/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R",
+  lastMove: ["f1", "c4"],
+  movable: "black",
+  targets: new Map([["g8", ["f6", "h6", "e7"]]]),
+});
+one.select("g8");
+
+// 2. Arrows and a circle, another theme. (1. e4 e5 2. Nf3 Nc6 3. Bb5 a6)
+applyTheme(document.getElementById("two"), themes.ocean);
+const two = lightsquare(document.getElementById("two"), {
+  position: "r1bqkbnr/1ppp1ppp/p1n5/1B2p3/4P3/5N2/PPPP1PPP/RNBQK2R",
+  lastMove: ["a7", "a6"],
+});
+two.use(shapes({ arrows: [{ from: "b5", to: "a4" }, { from: "a6", to: "b5", name: "red" }], circles: [{ square: "e5", name: "green" }] }));
+
+// 3. Check, and a badge of the app's own, a dark theme. (1. e4 e5 2. Qh5 Nc6 3. Bc4 Nf6 4. Qxf7#)
+applyTheme(document.getElementById("three"), themes.night);
+lightsquare(document.getElementById("three"), {
+  position: "r1bqkb1r/pppp1Qpp/2n2n2/4p3/2B1P3/8/PPPP1PPP/RNB1K1NR",
+  lastMove: ["h5", "f7"],
+  check: "e8",
+  marks: [{ square: "f7", name: "mate", above: true }],
+});
+window.ready = true;
+</script>
+</body>
+</html>
