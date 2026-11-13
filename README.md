@@ -5,7 +5,7 @@
 A chessboard for the web that stays smooth on every phone, including old
 ones and phones in Low Power Mode.
 
-<p align="center"><a href="https://kibitzo.github.io/lightsquare/"><img src="https://raw.githubusercontent.com/kibitzo/lightsquare/main/docs/hero.png" width="100%" alt="Three boards with the Kibitzo pieces. The first shows a selected knight with dots on the squares it may go to and the last move tinted. The second, in a blue theme, shows two arrows and a circle. The third, in a dark theme, shows a king in check and a badge on the queen that gave mate."></a></p>
+<p align="center"><a href="https://kibitzo.github.io/lightsquare/"><img src="https://raw.githubusercontent.com/kibitzo/lightsquare/main/docs/hero.png" width="100%" alt="Three boards with the Kibitzo pieces. The first shows a selected knight with dots on the squares it may go to and the last move tinted. The second, in a blue theme, shows two arrows and a circle. The third, in a dark theme, shows a checkmate: the king marked in check, with a red badge on it."></a></p>
 
 **[Try the demo](https://kibitzo.github.io/lightsquare/)**: play on it,
 change its looks, and measure it on your own phone.

@@ -34,11 +34,18 @@ const seen = await page.evaluate(() => ({
   circles: document.querySelectorAll("#two .ls-circle").length,
   check: document.querySelectorAll("#three .ls-mark-check").length,
   badge: document.querySelectorAll("#three .ls-mark-mate").length,
+  // Where the badge and the check mark are: the file and rank of their square, read from the screen.
+  marksOn: [".ls-mark-mate", ".ls-mark-check"].map((sel) => {
+    const board = document.getElementById("three").getBoundingClientRect();
+    const mark = document.querySelector(`#three ${sel}`).getBoundingClientRect();
+    return "abcdefgh"[Math.round((mark.left - board.left) / (board.width / 8))] + (8 - Math.round((mark.top - board.top) / (board.width / 8)));
+  }).join(),
+  badgeColour: getComputedStyle(document.querySelector("#three .ls-mark-mate"), "::after").backgroundColor,
   width: document.getElementById("hero").getBoundingClientRect().width,
   height: document.getElementById("hero").getBoundingClientRect().height,
 }));
 await browser.close();
 server.close();
-const wanted = { boards: 3, pieces: 95, selected: 1, dots: 3, lastMoves: 6, arrows: 2, circles: 1, check: 1, badge: 1 };
+const wanted = { boards: 3, pieces: 95, selected: 1, dots: 3, lastMoves: 6, arrows: 2, circles: 1, check: 1, badge: 1, marksOn: "e8,e8", badgeColour: "rgb(190, 18, 60)" };
 for (const [what, count] of Object.entries(wanted)) if (seen[what] !== count) throw new Error(`the picture shows ${seen[what]} ${what}, not ${count}`);
 console.log("docs/hero.png written", JSON.stringify(seen));

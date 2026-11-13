@@ -12,13 +12,16 @@
   #hero { display: flex; gap: 28px; padding: 28px; width: max-content; background: #1b1a17; }
   .frame { width: 384px; }
   .frame > div { border-radius: 6px; overflow: hidden; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45); }
-  /* An app's own badge: the board places it, this stylesheet draws it. */
+  /* An app's own badge: the board places it, this stylesheet draws it.
+     Checkmate as Kibitzo shows it: a red "#" on the mated king, at the
+     corner of its square, kept inside the board on the top row. */
   .ls-mark-mate::after {
-    content: "#"; position: absolute; top: -14%; right: -14%; width: 44%; height: 44%; border-radius: 50%;
-    display: grid; place-items: center; background: #14b8a6; color: #fff; font: 700 15px/1 system-ui, sans-serif;
+    content: "#"; position: absolute; top: -22%; right: -22%; width: 44%; height: 44%; border-radius: 50%;
+    display: grid; place-items: center; background: #be123c; color: #fff; font: 800 15px/1 system-ui, sans-serif;
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
   }
-  .ls-mark-mate.ls-at-top::after { top: 4%; }
+  .ls-mark-mate.ls-at-top::after { top: 2%; }
+  .ls-mark-mate.ls-at-right::after { right: 2%; }
 </style>
 </head>
 <body>
@@ -49,13 +52,13 @@ const two = lightsquare(document.getElementById("two"), {
 });
 two.use(shapes({ arrows: [{ from: "b5", to: "a4" }, { from: "a6", to: "b5", name: "red" }], circles: [{ square: "e5", name: "green" }] }));
 
-// 3. Check, and a badge of the app's own, a dark theme. (1. e4 e5 2. Qh5 Nc6 3. Bc4 Nf6 4. Qxf7#)
+// 3. Checkmate: the king marked in check, and a badge of the app's own on it. A dark theme. (1. e4 e5 2. Qh5 Nc6 3. Bc4 Nf6 4. Qxf7#)
 applyTheme(document.getElementById("three"), themes.night);
 lightsquare(document.getElementById("three"), {
   position: "r1bqkb1r/pppp1Qpp/2n2n2/4p3/2B1P3/8/PPPP1PPP/RNB1K1NR",
   lastMove: ["h5", "f7"],
   check: "e8",
-  marks: [{ square: "f7", name: "mate", above: true }],
+  marks: [{ square: "e8", name: "mate", above: true }],
 });
 window.ready = true;
 </script>
