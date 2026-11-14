@@ -68,6 +68,7 @@ import { overlay } from "${n}/overlay";
 import { a11y } from "${n}/a11y";
 import { premoveTargets } from "${n}/premove";
 import { applyTheme, themes, themeVariables, type Theme } from "${n}/theme";
+import { editor, type Editor, type EditorTool } from "${n}/editor";
 import { Lightsquare, type LightsquareProps } from "${n}/react";
 
 const options: Options = {
@@ -88,6 +89,8 @@ export const drawn = board.use(shapes({ arrows: [arrow] }));
 export type AnyModule = Module<ModuleHooks>;
 export const theme: Theme | undefined = Object.values(themes)[0];
 export const others = [promotion, overlay, a11y, premoveTargets, applyTheme, themeVariables, Lightsquare];
+const tool: EditorTool = "erase";
+export const edit: Editor = board.use(editor({ onChange: (placement, how) => board.set({ position: placement }, how), tool }));
 export type Props = LightsquareProps;
 `,
 );

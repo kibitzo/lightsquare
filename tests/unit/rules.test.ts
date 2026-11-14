@@ -83,13 +83,19 @@ describe("RULES.md", () => {
     expect(count(moduleCode, /offset(Width|Height|Left|Top)|client(Width|Height)|getComputedStyle|scroll(Width|Height|Top|Left)/g)).toBe(0);
   });
 
-  it("a module measures the board at most once per press, and only the drawing pen does", () => {
-    expect(count(moduleCode, /getBoundingClientRect|getClientRects/g)).toBe(1);
+  it("a module measures the board at most once per press, and only the drawing pen and the editor do", () => {
+    expect(count(moduleCode, /getBoundingClientRect|getClientRects/g)).toBe(2);
     expect(modules["shapes.ts"]).toMatch(/function down\([^)]*\): void \{[\s\S]{0,400}getBoundingClientRect/);
+    // The editor measures in one function, asked once where a press begins (on the board, or on the app's palette) and nowhere else.
+    expect(count(modules["editor.ts"], /getBoundingClientRect/g)).toBe(1);
+    expect(modules["editor.ts"]).toMatch(/const frame = \(\): Frame => \{\s*const box = host\.getBoundingClientRect\(\);/);
+    expect(count(modules["editor.ts"], /frame\(\)/g)).toBe(2);
+    expect(modules["editor.ts"]).toMatch(/function down\(e: PointerEvent\): void \{[\s\S]{0,120}const f = frame\(\);/);
+    expect(modules["editor.ts"]).toMatch(/drag\(piece, e\) \{[\s\S]{0,500}\.\.\.frame\(\)/);
   });
 
   it("the modules import only types from the core, so each one stands alone", () => {
-    for (const name of ["shapes.ts", "promotion.ts", "overlay.ts", "a11y.ts"]) {
+    for (const name of ["shapes.ts", "promotion.ts", "overlay.ts", "a11y.ts", "editor.ts"]) {
       const imports = [...modules[name].matchAll(/^import\s+(type\s+)?[^;]+;/gm)];
       expect(imports.length).toBe(1);
       expect(imports[0][1]).toBe("type ");
@@ -97,7 +103,7 @@ describe("RULES.md", () => {
   });
 
   it("each module stays small", async () => {
-    const limit: Record<string, number> = { "shapes.ts": 2200, "promotion.ts": 1000, "overlay.ts": 700, "a11y.ts": 1700, "premove.ts": 1100, "theme.ts": 900 };
+    const limit: Record<string, number> = { "shapes.ts": 2200, "promotion.ts": 1000, "overlay.ts": 700, "a11y.ts": 1700, "premove.ts": 1100, "theme.ts": 900, "editor.ts": 1800 };
     for (const [name, bytes] of Object.entries(limit)) {
       const out = await build({ absWorkingDir: root, entryPoints: [`src/modules/${name}`], bundle: true, format: "esm", minify: true, target: "es2020", write: false });
       expect(gzipSync(out.outputFiles[0].contents, { level: 9 }).length, name).toBeLessThan(bytes);

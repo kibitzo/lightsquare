@@ -1,6 +1,6 @@
 {
   "name": "@kibitzo/lightsquare",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "description": "A chessboard that stays smooth on every phone. Pieces move with CSS transforms on the GPU, no animation loop, no dependencies.",
   "type": "module",
   "main": "./dist/index.js",
@@ -34,6 +34,10 @@
       "types": "./dist/modules/theme.d.ts",
       "import": "./dist/modules/theme.js"
     },
+    "./editor": {
+      "types": "./dist/modules/editor.d.ts",
+      "import": "./dist/modules/editor.js"
+    },
     "./react": {
       "types": "./dist/react.d.ts",
       "import": "./dist/react.js"
@@ -62,6 +66,9 @@
       ],
       "theme": [
         "./dist/modules/theme.d.ts"
+      ],
+      "editor": [
+        "./dist/modules/editor.d.ts"
       ],
       "react": [
         "./dist/react.d.ts"

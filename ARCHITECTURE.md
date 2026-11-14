@@ -9,7 +9,7 @@ marks, coordinates, tap and drag, premove, events) and the modules (arrows
 and circles, promotion picker, HTML on squares, screen readers and keyboard,
 premove geometry, React). The founder's phone test in Low Power Mode passed
 by feel ("excellent"); numbers from that phone are still to be recorded.
-Not built: the board editor. Not done: Kibitzo's move to it (section 12).
+The board editor is a module since 0.1.6 (2026-11-14); fenshot.com's result screen is its first user.
 
 The API is in [docs/API.md](docs/API.md).
 
@@ -76,9 +76,9 @@ that shows a static position downloads only the core.
 | `@kibitzo/lightsquare/premove` | where a piece could premove to (geometry only) | (not in cm-chessboard) | 0.8 kB |
 | `@kibitzo/lightsquare/theme` | looks as data: `applyTheme`, built-in board colours | (not in cm-chessboard) | 0.6 kB |
 | `@kibitzo/lightsquare/react` | React component | (Kibitzo's 1,451-line wrapper, in part) | 0.5 kB |
-| later: `lightsquare/editor` | spare pieces, drag pieces on and off | (not in cm-chessboard) | |
+| `@kibitzo/lightsquare/editor` | a position editor: the hand moves any piece and takes one off when it is dropped outside the board, an eraser, a piece in hand, new pieces carried in from the app's palette | (not in cm-chessboard) | 1.7 kB |
 
-The stylesheet for all of it is 2.0 kB. Everything together is about 13 kB.
+The stylesheet for all of it is 2.0 kB. Everything together is about 15 kB.
 
 A module is a function that receives a `surface` (the board element, the
 orientation, square and screen maths, the pieces, `tap`) and returns its own
@@ -227,13 +227,13 @@ Read from the source and READMEs on 2026-11-12.
 | Drawn as | one SVG drawing | elements, plus SVG for shapes | elements, plus SVG for shapes |
 | A piece slides by | script loop, SVG transform rewritten per frame, drawing repainted | script loop, CSS transform set per frame | one CSS transition, no script per frame |
 | Positions | SVG units | pixels from the measured board; recomputed on resize | fractions of the board's width (container units); nothing to recompute |
-| Size, gzipped | 8.5 kB core, extensions extra | 10 kB | 5.2 kB core; about 13 kB with every module and the stylesheet |
+| Size, gzipped | 8.5 kB core, extensions extra | 10 kB | 5.2 kB core; about 15 kB with every module and the stylesheet |
 | Chess rules inside | no | no | no |
 | Premove | no | yes | yes |
 | User-drawn arrows | extension | yes | module |
 | Promotion picker | extension | not in its feature list | module |
 | Screen readers, keyboard | extension | not checked | module |
-| Spare pieces, editor | no | yes | later module |
+| Spare pieces, editor | no | yes | module |
 | 3D, variants | no | yes | no |
 | Licence | MIT | GPL-3.0 | MIT |
 
@@ -343,7 +343,7 @@ held-back script heard of them, not the slide's true length.
 | M5 | fenshot's board; cm-chessboard removed | no import of cm-chessboard is left |
 | M6 | npm: `@kibitzo/lightsquare`, with the demo at kibitzo.github.io/lightsquare | done; 0.1.0 is on npm since 2026-11-12. How a release is made is in [docs/RELEASING.md](docs/RELEASING.md) |
 | M7 | 1.0: the API is frozen | after some weeks in production |
-| later | the board editor module | when a product needs it |
+| M8 | the board editor module | done in 0.1.6 (2026-11-14), for fenshot.com's result screen |
 
 ## 13. Our own work
 

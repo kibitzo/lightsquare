@@ -6,90 +6,12 @@
  * finger there).
  */
 import type { Server } from "node:http";
-import type { Browser, CDPSession, Page } from "playwright";
+import type { Browser, Page } from "playwright";
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
-import { PROFILES, fresh, open, serve, settle, type Profile } from "./helpers";
+import { PROFILES, fresh, handFor, open, serve, settle, syntheticHand, type Hand, type Point } from "./helpers";
 
 const START = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR";
 const OPENING = { movable: "white", targets: { e2: ["e3", "e4"], g1: ["f3", "h3"], d2: ["d3", "d4"] } };
-
-interface Point {
-  x: number;
-  y: number;
-}
-
-interface Hand {
-  kind: "mouse" | "touch";
-  down(at: Point): Promise<void>;
-  move(to: Point, steps?: number): Promise<void>;
-  up(): Promise<void>;
-  tap(at: Point): Promise<void>;
-}
-
-function path(from: Point, to: Point, steps: number): Point[] {
-  return Array.from({ length: steps }, (_, i) => ({ x: from.x + ((to.x - from.x) * (i + 1)) / steps, y: from.y + ((to.y - from.y) * (i + 1)) / steps }));
-}
-
-function mouseHand(page: Page): Hand {
-  return {
-    kind: "mouse",
-    down: async (at) => {
-      await page.mouse.move(at.x, at.y);
-      await page.mouse.down();
-    },
-    move: (to, steps = 6) => page.mouse.move(to.x, to.y, { steps }),
-    up: () => page.mouse.up(),
-    tap: (at) => page.mouse.click(at.x, at.y),
-  };
-}
-
-function touchHand(page: Page, cdp: CDPSession): Hand {
-  let last: Point = { x: 0, y: 0 };
-  const send = (type: string, points: Point[]) => cdp.send("Input.dispatchTouchEvent", { type: type as "touchStart", touchPoints: points.map((p) => ({ x: p.x, y: p.y, id: 1 })) });
-  return {
-    kind: "touch",
-    down: async (at) => {
-      last = at;
-      await send("touchStart", [at]);
-    },
-    move: async (to, steps = 6) => {
-      for (const p of path(last, to, steps)) await send("touchMove", [p]);
-      last = to;
-      // Chromium hands touch moves to the page once per frame: wait for the last one.
-      await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
-    },
-    up: async () => void (await send("touchEnd", [])),
-    tap: (at) => page.touchscreen.tap(at.x, at.y),
-  };
-}
-
-/** Pointer events made in the page. Works everywhere; used where nothing truer exists. */
-function syntheticHand(page: Page, kind: "mouse" | "touch"): Hand {
-  let last: Point = { x: 0, y: 0 };
-  const send = (type: string, at: Point) => page.evaluate(([t, x, y, k]) => T.pointer(t as string, x as number, y as number, k as string), [type, at.x, at.y, kind]);
-  return {
-    kind,
-    down: async (at) => {
-      last = at;
-      await send("pointerdown", at);
-    },
-    move: async (to, steps = 6) => {
-      for (const p of path(last, to, steps)) await send("pointermove", p);
-      last = to;
-    },
-    up: () => send("pointerup", last),
-    tap: async (at) => {
-      await send("pointerdown", at);
-      await send("pointerup", at);
-    },
-  };
-}
-
-async function handFor(profile: Profile, page: Page): Promise<Hand> {
-  if (!profile.touch) return mouseHand(page);
-  if (profile.engine.name() === "chromium") return touchHand(page, await page.context().newCDPSession(page));
-  return syntheticHand(page, "touch");
-}
 
 let site: { server: Server; origin: string };
 beforeAll(async () => {

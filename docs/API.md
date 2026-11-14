@@ -239,6 +239,36 @@ html.put("tip", "e4", element);    // the same key again moves or replaces it
 html.remove("tip");
 ```
 
+### A position editor: `@kibitzo/lightsquare/editor`
+
+```ts
+import { editor } from "@kibitzo/lightsquare/editor";
+
+const board = lightsquare(el, { movable: "both" });   // both sides, no targets: any piece goes anywhere
+const edit = board.use(editor({
+  onChange(placement, how) { board.set({ position: placement }, how); },   // show what the position became
+}));
+
+edit.pick("erase");    // a press takes the piece under it off
+edit.pick("wq");       // a press puts a white queen there; on a white queen, it takes it off
+edit.pick("move");     // the hand again, which is the default
+spare.onpointerdown = (e) => edit.drag("wq", e);   // carry a new piece from your own palette onto the board
+```
+
+With the hand, the board's own drag and its two taps move any piece, and a
+piece dropped outside the board is taken off. With the eraser or a piece in
+hand, a press does its work on a square, and a drag does it on every square
+it passes. `onChange` gets the placement after each edit (the first field
+of a FEN); the app keeps the position and shows it, as everywhere in
+Lightsquare. The module draws no palette: the buttons are yours, and
+`background-image: var(--ls-wq)` draws a spare queen on one. A palette that
+pieces are dragged from needs `touch-action: none`, or a finger scrolls the
+page instead.
+
+The mouse pointer says which tool is in hand: a waste bin for the eraser,
+"copy" for a piece. `cursors: { erase: "...", wq: "..." }` gives your own
+CSS `cursor` values, for example the piece itself.
+
 ### Screen readers and keyboard: `@kibitzo/lightsquare/a11y`
 
 ```ts

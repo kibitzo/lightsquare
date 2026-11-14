@@ -16,8 +16,8 @@ change its looks, and measure it on your own phone.
   bench page).
 - At rest the board does nothing: no timers, no frames, no paints.
 - Small: the core is 5.2 kB (minified and gzipped) with no dependencies.
-  Arrows, the promotion picker, screen-reader support and the React
-  component are separate imports of about 1 kB each.
+  Arrows, the promotion picker, a position editor, screen-reader support
+  and the React component are separate imports of 1 to 2 kB each.
 - The board tells what every change was (a move, a capture, castling, a
   promotion), by the user or by your app, so your sounds, move list or
   clock need no work of their own to find out. The board itself is silent.
@@ -118,8 +118,10 @@ Cburnett (`pieces/cburnett.css`). See Credits for their licences.
 What it has: sliding pieces, captures, castling, en passant and promotion
 worked out from two positions; tap and drag; premove; last move, check,
 selection and move dots; coordinates; your own marks and badges; arrows and
-circles, drawn by the app or by the user; a promotion picker; HTML on
-squares; screen-reader text and moves by keyboard; a React component;
+circles, drawn by the app or by the user; a promotion picker; a position
+editor (move any piece, take pieces off, put new ones on from your own
+palette); HTML on squares; screen-reader text and moves by keyboard; a
+React component;
 themes as data (squares, pieces, arrows) that one call applies to a whole
 page.
 
