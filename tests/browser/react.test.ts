@@ -40,9 +40,22 @@ describe.each([PROFILES[0], PROFILES[3]])("React component in $name", (profile) 
 
   it("a new position prop slides the pieces; a prop that is left out goes back to its default", async () => {
     await page.evaluate((fen) => (window as unknown as { R: R }).R.setProps({ className: "mine", position: fen }), START);
-    await frames(page);
-    expect(await page.evaluate(() => document.getAnimations().length)).toBe(1);
-    expect(await marks(page)).toEqual([]);
+    // The page as it is in the first frame in which something slides. Not "two frames later": React renders when it
+    // chooses, and on a CI machine two frames were once not enough (2026-11-13). If nothing slides in three seconds the
+    // answer says which it was: the board never got the position, or it got it and placed the piece without a slide.
+    const sliding = await page.evaluate(
+      () =>
+        new Promise<{ animations: number; marks: number; position: string }>((resolve) => {
+          const from = performance.now();
+          const look = (): void => {
+            const animations = document.getAnimations().length;
+            if (!animations && performance.now() - from < 3000) return void requestAnimationFrame(look);
+            resolve({ animations, marks: document.querySelectorAll(".ls-mark").length, position: (window as unknown as { R: R }).R.ref.current!.position() });
+          };
+          look();
+        }),
+    );
+    expect(sliding).toEqual({ animations: 1, marks: 0, position: START });
     await page.waitForFunction("document.getAnimations().length === 0");
     expect(await page.evaluate(() => (window as unknown as { R: R }).R.ref.current!.position())).toBe(START);
   });
