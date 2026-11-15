@@ -210,7 +210,8 @@ describe.each([PROFILES[0], PROFILES[1], PROFILES[2]])("the page in $name", (pro
     await page.mouse.move(grip.x - 110, grip.y - 110, { steps: 6 });
     await page.mouse.up();
     const small = await width();
-    expect(small).toBeLessThan(full - 80);
+    const where = await page.evaluate(() => ({ scrollY, innerWidth, innerHeight, client: document.documentElement.clientWidth, header: document.querySelector("header")!.getBoundingClientRect().height, frame: document.querySelector(".frame")!.getBoundingClientRect().toJSON(), scale: (document.querySelector(".board-side") as HTMLElement).style.getPropertyValue("--board-scale") }));
+    expect(small, `the grip was at ${JSON.stringify(grip)}; afterwards ${JSON.stringify(where)}`).toBeLessThan(full - 80);
     expect(small).toBeGreaterThan(full - 150);
     await page.waitForTimeout(100);
     const state = await page.evaluate(() => {
