@@ -57,7 +57,12 @@ describe.each([PROFILES[0], PROFILES[1], PROFILES[2]])("the page in $name", (pro
   });
   afterAll(() => browser.close());
   beforeEach(async () => {
-    await page.evaluate(() => localStorage.clear());
+    // Every test begins at the top of the page: a reload would bring back how far the test before had scrolled
+    // (on CI the grip of the board stood above the window so, and a press on it met nothing).
+    await page.evaluate(() => {
+      localStorage.clear();
+      history.scrollRestoration = "manual";
+    });
     await page.reload();
     // The page is ready when the board stands, the controls are built and the size under the board has been written (the browser reports the size a moment after layout).
     await page.waitForFunction("document.querySelectorAll('#board .ls-piece').length === 32 && document.querySelectorAll('#boards button').length > 0 && document.getElementById('where').textContent !== ''");
@@ -200,6 +205,7 @@ describe.each([PROFILES[0], PROFILES[1], PROFILES[2]])("the page in $name", (pro
     // The hint arrow fades in when the page opens: let that end, so that an animation seen later is the resize's doing.
     await page.waitForFunction("!document.getAnimations().length");
     const full = await width();
+    expect(await page.evaluate(() => scrollY), "the test begins at the top of the page").toBe(0);
     const grip = (await page.locator("#resize").boundingBox())!;
     // The grip sits beside the board, in the frame's corner: no part of a square is under it.
     const board = (await page.locator("#board").boundingBox())!;
