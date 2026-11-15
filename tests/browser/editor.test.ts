@@ -231,5 +231,10 @@ describe.each(PROFILES)("editor in $name", (profile) => {
     expect(await seen()).toBe(START);
     expect(await page.evaluate(() => T.marks())).toEqual(["select e2"]);
     expect(await edits()).toEqual([]);
+    // And a move made on the board is the board's alone again: the editor that is gone tells nothing.
+    await hand.tap(await at("e4"));
+    await settle(page);
+    expect(await seen()).toBe("rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR");
+    expect(await edits()).toEqual([]);
   });
 });

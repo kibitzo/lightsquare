@@ -1,12 +1,13 @@
 /**
  * The playground: play on the board, change its looks, and measure it on a
  * real phone (RULES.md, rule 11). Everything that ticks here (the frame
- * meter, the auto-play timer, the stuck-script stress) belongs to this
- * page, not to the library.
+ * meter, the auto-play timer, the stuck-script stress, the script's lane of
+ * the race) belongs to this page, not to the library.
  */
 import { Chess, type Square as ChessSquare } from "chess.js";
-import { lightsquare } from "../src/index";
+import { lightsquare, type PieceCode } from "../src/index";
 import { a11y } from "../src/modules/a11y";
+import { editor, type Editor, type EditorTool } from "../src/modules/editor";
 import { premoveTargets } from "../src/modules/premove";
 import { overlay } from "../src/modules/overlay";
 import { promotion } from "../src/modules/promotion";
@@ -54,6 +55,8 @@ function targets(): Map<string, string[]> {
 }
 
 function show(): void {
+  // Whatever shows the game again (a step, the computer, a played position) ends the editing.
+  if (editing) leaveEditor();
   const last = chess.history({ verbose: true }).at(-1);
   const fen = chess.fen();
   const whiteToMove = chess.turn() === "w";
@@ -82,6 +85,7 @@ function show(): void {
 
 /** Where the badges go: the replay's own, one kind on the last move, or all of them at once. */
 function badgePlaces(to: string | undefined): Array<[string, string]> {
+  if (editing) return [];
   if (look.badge === "all") return BADGE_KINDS.map((name, i) => [name, BADGE_SQUARES[i]]);
   if (look.badge !== "auto") return [[look.badge, to ?? "e4"]];
   const places: Array<[string, string]> = to && BADGES[ply] ? [[BADGES[ply], to]] : [];
@@ -116,7 +120,7 @@ function showMate(to: string | undefined): void {
 /** The hint arrow is the next move of the Opera game; the samples show every colour at once. */
 function showShapes(): void {
   const arrows: Arrow[] = toggles.samples ? [...SAMPLE_ARROWS] : [];
-  const san = toggles.hints && ply >= 0 ? OPERA[ply] : undefined;
+  const san = toggles.hints && ply >= 0 && !editing ? OPERA[ply] : undefined;
   if (san) {
     const move = new Chess(chess.fen()).move(san);
     arrows.push({ from: move.from, to: move.to });
@@ -135,6 +139,8 @@ function reply(): void {
 
 const board = lightsquare(host, {
   async onMove({ from, to, piece }) {
+    // In the editor a piece goes where it is put: the editor module tells the new position.
+    if (editing) return;
     let promoteTo: string | undefined;
     if (piece[1] === "p" && (to[1] === "8" || to[1] === "1")) {
       const picked = await picker.ask(to, piece[0] === "w" ? "white" : "black");
@@ -180,7 +186,10 @@ function toggle(id: string, onChange: (on: boolean) => void, start = false): voi
 
 $("next").onclick = () => goTo(ply < 0 ? 1 : ply + 1);
 $("back").onclick = () => goTo(ply < 0 ? 0 : ply - 1);
-$("flip").onclick = () => board.set({ orientation: (orientation = orientation === "white" ? "black" : "white") });
+$("flip").onclick = () => {
+  board.set({ orientation: (orientation = orientation === "white" ? "black" : "white") });
+  fillSpares();
+};
 toggle("versus", show);
 toggle("hints", showShapes, true);
 toggle("samples", showShapes);
@@ -219,6 +228,155 @@ toggle("stress", (on) => {
 });
 toggle("lpm", () => {});
 toggle("layers", (on) => $("page").classList.toggle("own-layers", on));
+
+// ── the position editor ────────────────────────────────────────────────
+// The board's part is the editor module. The palette (two rows: the hand, six
+// pieces of one colour, the bin) is this page's own, as it is any app's.
+
+const HAND_ICON = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 13V5.5a1.5 1.5 0 0 1 3 0V11"/><path d="M11 11V4.5a1.5 1.5 0 0 1 3 0V11"/><path d="M14 11V6a1.5 1.5 0 0 1 3 0v6"/><path d="M17 9.5a1.5 1.5 0 0 1 3 0V15a6 6 0 0 1-6 6h-1.6a6 6 0 0 1-4.9-2.5L4.4 14a1.6 1.6 0 0 1 2.5-2L8 13"/></svg>`;
+const BIN_ICON = `<svg viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.2 9h15.6"/><path d="M11 9V7.4a1.4 1.4 0 0 1 1.4-1.4h3.2A1.4 1.4 0 0 1 17 7.4V9"/><path d="M8.1 9l.9 12.2a2 2 0 0 0 2 1.8h6a2 2 0 0 0 2-1.8L19.9 9"/><path d="M12.2 12.6v6.6M15.8 12.6v6.6"/></svg>`;
+const PIECE_NAMES: Record<string, string> = { k: "king", q: "queen", r: "rook", b: "bishop", n: "knight", p: "pawn" };
+
+/** The editor module while the editor is on, and the placement it last told. */
+let editing: Editor | null = null;
+let edited = "";
+
+function showTool(): void {
+  const tool = editing?.tool();
+  for (const el of document.querySelectorAll<HTMLElement>(".spare")) el.setAttribute("aria-pressed", String(el.dataset.tool === tool));
+  $("placement").textContent = `onChange("${edited}")`;
+}
+
+/** The far side's pieces above the board, the near side's below, whichever way the board is turned. */
+function fillSpares(): void {
+  const near = orientation === "white" ? "w" : "b";
+  for (const [id, colour] of [["spares-top", near === "w" ? "b" : "w"], ["spares-bottom", near]]) {
+    const side = colour === "w" ? "White" : "Black";
+    const pieces = [..."kqrbnp"].map((kind) => `<button class="spare" data-tool="${colour}${kind}" data-piece aria-label="${side} ${PIECE_NAMES[kind]}"><i style="background-image:var(--ls-${colour}${kind})"></i></button>`);
+    $(id).setAttribute("aria-label", `Tools and ${side.toLowerCase()} pieces`);
+    $(id).innerHTML = `<button class="spare" data-tool="move" aria-label="Move pieces">${HAND_ICON}</button>${pieces.join("")}<button class="spare" data-tool="erase" aria-label="Remove pieces">${BIN_ICON}</button>`;
+  }
+  showTool();
+}
+
+/** A press on a spare piece that then travels carries a new piece onto the board; one that stays put takes the piece in hand. */
+function carryFrom(down: PointerEvent): void {
+  const piece = (down.target as HTMLElement).closest<HTMLElement>(".spare[data-piece]")?.dataset.tool as PieceCode | undefined;
+  if (!piece || down.button > 0) return;
+  const moved = (e: PointerEvent): void => {
+    if (e.pointerId !== down.pointerId || Math.hypot(e.clientX - down.clientX, e.clientY - down.clientY) < 5) return;
+    done();
+    editing?.drag(piece, e);
+  };
+  const done = (): void => {
+    for (const name of ["pointermove", "pointerup", "pointercancel"] as const) removeEventListener(name, name === "pointermove" ? moved : done);
+  };
+  for (const name of ["pointermove", "pointerup", "pointercancel"] as const) addEventListener(name, name === "pointermove" ? moved : done);
+}
+
+for (const id of ["spares-top", "spares-bottom"]) {
+  $(id).addEventListener("pointerdown", carryFrom);
+  $(id).addEventListener("click", (e) => {
+    const tool = (e.target as HTMLElement).closest<HTMLElement>(".spare")?.dataset.tool as EditorTool | undefined;
+    if (!tool || !editing) return;
+    editing.pick(tool);
+    showTool();
+  });
+}
+
+function showEditor(on: boolean): void {
+  $("editor").setAttribute("aria-pressed", String(on));
+  for (const id of ["spares-top", "spares-bottom", "placement"]) $(id).hidden = !on;
+  $(".board-side").classList.toggle("editing", on);
+}
+
+function startEditing(): void {
+  for (const id of ["play", "versus"]) if (toggles[id]) $(id).click();
+  clearTimeout(replyTimer);
+  edited = chess.fen().split(" ")[0];
+  editing = board.use(
+    editor({
+      onChange(next, how) {
+        edited = next;
+        // A piece moved with the hand is not a move of a game: no last move is marked.
+        board.set({ position: next, lastMove: null }, how);
+        showTool();
+      },
+    }),
+  );
+  board.set({ movable: "both", targets: null, premovable: "none", premoveTargets: null, premove: null, lastMove: null, check: null, marks: [] });
+  showMate(undefined);
+  showShapes();
+  $("editor-note").textContent = "";
+  showEditor(true);
+  showTool();
+  // On a phone the button is under the board: bring the board and its palette back into sight.
+  $(".frame").scrollIntoView({ block: "nearest" });
+}
+
+/** The board is a board to play on again. The module cannot be taken off a board, only switched off for good: `destroy` does that. */
+function leaveEditor(): void {
+  editing?.destroy?.();
+  editing = null;
+  showEditor(false);
+}
+
+/** The editor is switched off: White plays on from the position that was made, if chess can be played from it. */
+function playEdited(): void {
+  leaveEditor();
+  try {
+    if (new Chess(`${edited} b - - 0 1`).inCheck()) throw new Error("Black is in check and it is White's move");
+    chess = new Chess(`${edited} w - - 0 1`);
+    ply = -1;
+  } catch {
+    $("editor-note").textContent = "That position cannot be played: it needs one king each, no pawn on the first or last rank, and a black king that is not in check. The game is back as it was.";
+  }
+  show();
+}
+
+$("editor").onclick = () => (editing ? playEdited() : startEditing());
+fillSpares();
+
+// ── the race ───────────────────────────────────────────────────────────
+// The same slide twice: by Lightsquare (one write, then the browser moves the
+// rook) and by script (a new place every frame). Half a second in, the script
+// is stopped. The left lane is a whole Lightsquare board of which the first
+// rank shows.
+
+const RACE = { slideMs: 2400, stopAfterMs: 500, stopMs: 1500, from: "8/8/8/8/8/8/8/R7", to: "8/8/8/8/8/8/8/7R" };
+const lane = lightsquare($("race-board"), { position: RACE.from, coordinates: false });
+
+function race(): void {
+  const go = $("race-go") as HTMLButtonElement;
+  const rook = $("race-piece");
+  go.disabled = true;
+  lane.set({ position: RACE.from }, { animate: false });
+  rook.style.transform = "";
+  // Both rooks stand at the start for a frame; then they are sent off in the same task.
+  requestAnimationFrame(() =>
+    requestAnimationFrame((began) => {
+      lane.set({ position: RACE.to });
+      let last = began;
+      let longest = 0;
+      const step = (now: number): void => {
+        longest = Math.max(longest, now - last);
+        last = now;
+        const done = Math.min(1, (now - began) / RACE.slideMs);
+        rook.style.transform = `translateX(${done * 700}%)`;
+        if (done < 1) return void requestAnimationFrame(step);
+        go.disabled = false;
+        const still = matchMedia("(prefers-reduced-motion: reduce)").matches ? " This device asks for less motion, so Lightsquare shows the move without a slide." : "";
+        $("race-note").textContent = `The script stood still for ${Math.round(longest)} ms. The rook on the right waited for it and then jumped. The rook on the left needs no script once it is under way.${still}`;
+      };
+      requestAnimationFrame(step);
+      setTimeout(() => {
+        const until = performance.now() + RACE.stopMs;
+        while (performance.now() < until);
+      }, RACE.stopAfterMs);
+    }),
+  );
+}
+$("race-go").onclick = race;
 
 // ── looks ──────────────────────────────────────────────────────────────
 

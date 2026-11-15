@@ -1,0 +1,33 @@
+# Lightsquare
+
+> Lightsquare is an open-source chessboard for the web (MIT licence, npm package `@kibitzo/lightsquare`). It is small (5.2 kB minified and gzipped, no dependencies) and moves pieces with CSS transitions instead of a JavaScript animation loop, so a move stays smooth on phones, also when the page's script is busy or held back (iPhones in Low Power Mode). It knows no chess rules: the app supplies them, for example with chess.js.
+
+## Facts
+
+- Licence: MIT. The Kibitzo chess piece set that comes with it is CC BY 4.0 (credit: "Kibitzo chess pieces, kibitzo.com"); the Cburnett set is BSD.
+- Install: `npm install @kibitzo/lightsquare`. Works with plain JavaScript or TypeScript; a React component is included (`@kibitzo/lightsquare/react`, 0.5 kB).
+- Size, gzipped: core 5.2 kB. Optional modules, each a separate import: arrows and circles 2.0 kB, position editor 1.7 kB, screen readers and keyboard 1.2 kB, premove 0.8 kB, promotion picker 0.7 kB, themes 0.7 kB, HTML on squares 0.4 kB.
+- What it does: sliding pieces (captures, castling, en passant and promotion worked out from two positions), tap and drag, premove, last move, check and selection marks, move dots, coordinates, the app's own marks and badges, arrows and circles drawn by the app or the user, a promotion picker, a position editor (move any piece, remove pieces, add new ones from the app's own palette), themes, screen-reader text and moves by keyboard.
+- It is a board only: no move generation, no engine, no game logic.
+- In production: every board of kibitzo.com (a chess training site) and the board and position editor of fenshot.com.
+- Tested in Chromium and WebKit, desktop and phone profiles: more than 500 browser tests. Every design rule in RULES.md has a test.
+- Status: young (first release November 2026); until 1.0 a minor version may change the API.
+
+## Compared with other boards
+
+Measured in headless Chromium on a desktop computer, each board driven by the same script (method and full table: compare/RESULTS.md in the repository):
+
+- Script to download, gzipped: Lightsquare 5.2 kB, chessground 11.9 kB, cm-chessboard 8.1 kB, react-chessboard 21.5 kB plus React, chessboard.js 33.0 kB.
+- Script time per move: Lightsquare 0.06 ms, chessground 2.82 ms, cm-chessboard 2.02 ms, react-chessboard 2.77 ms, chessboard.js 4.73 ms.
+- Frames drawn of a slide while the page's script is frozen: Lightsquare 51, react-chessboard 51, chessground 0, cm-chessboard 0, chessboard.js 0.
+- Where another board is ahead: paints per move (chessground), compositing time per move (react-chessboard), style and layout time of a drag (chessground).
+- Licence: chessground is GPL-3.0 (an app that ships it must be open source); Lightsquare, cm-chessboard, react-chessboard and chessboard.js are MIT.
+
+## Links
+
+- [Demo and playground](https://kibitzo.github.io/lightsquare/): play on it, change its looks, measure it on your own phone
+- [Quickstart in one HTML file](https://kibitzo.github.io/lightsquare/quickstart.html): a playable board with chess.js, no build step
+- [Source code](https://github.com/kibitzo/lightsquare)
+- [API](https://github.com/kibitzo/lightsquare/blob/main/docs/API.md)
+- [The comparison with other boards](https://github.com/kibitzo/lightsquare/blob/main/compare/RESULTS.md)
+- [npm](https://www.npmjs.com/package/@kibitzo/lightsquare)

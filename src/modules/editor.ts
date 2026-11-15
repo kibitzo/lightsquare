@@ -73,6 +73,8 @@ export function editor(options: EditorOptions): Module<Editor> {
   return (surface) => {
     const host = surface.host;
     let tool: EditorTool = options.tool ?? "move";
+    /** False once the module is taken away: the board keeps calling `update`, and an editor that is gone says nothing. */
+    let alive = true;
     /** A press of the hand on a piece: it is taken off if it is let go outside the board. */
     let carried: (Frame & { pointer: number; from: Square; code: PieceCode; x: number; y: number; far: boolean }) | null = null;
     /** A press of the eraser or of a piece in hand, and the last square it worked on. */
@@ -237,9 +239,10 @@ export function editor(options: EditorOptions): Module<Editor> {
       },
       update(change) {
         // A move made with the hand: the board shows it already, the app hears what the position is now.
-        if (change?.by === "user") options.onChange(placement(), { animate: true });
+        if (alive && change?.by === "user") options.onChange(placement(), { animate: true });
       },
       destroy() {
+        alive = false;
         endCarry();
         host.removeEventListener("pointerdown", down, true);
         host.removeEventListener("pointermove", move);

@@ -38,7 +38,7 @@ describe.each([PROFILES[0], PROFILES[1], PROFILES[2]])("the page in $name", (pro
       ([sq, c]) => {
         const host = document.getElementById("board")!.getBoundingClientRect();
         const size = host.width / 8;
-        return [...document.querySelectorAll(`.ls-piece.ls-${c}:not(.ls-gone)`)].some((el) => {
+        return [...document.querySelectorAll(`#board .ls-piece.ls-${c}:not(.ls-gone)`)].some((el) => {
           const r = el.getBoundingClientRect();
           return `${"abcdefgh"[Math.round((r.left - host.left) / size)]}${8 - Math.round((r.top - host.top) / size)}` === sq;
         });
@@ -60,13 +60,13 @@ describe.each([PROFILES[0], PROFILES[1], PROFILES[2]])("the page in $name", (pro
     await page.evaluate(() => localStorage.clear());
     await page.reload();
     // The page is ready when the board stands, the controls are built and the size under the board has been written (the browser reports the size a moment after layout).
-    await page.waitForFunction("document.querySelectorAll('.ls-piece').length === 32 && document.querySelectorAll('#boards button').length > 0 && document.getElementById('where').textContent !== ''");
+    await page.waitForFunction("document.querySelectorAll('#board .ls-piece').length === 32 && document.querySelectorAll('#boards button').length > 0 && document.getElementById('where').textContent !== ''");
     errors.length = 0;
   });
 
   it("opens clean: the board, its labels, the name, the controls, and no errors", async () => {
     const seen = await page.evaluate(() => ({
-      pieces: document.querySelectorAll(".ls-piece").length,
+      pieces: document.querySelectorAll("#board .ls-piece").length,
       coords: document.querySelectorAll(".ls-coord").length,
       name: document.querySelector("h1")!.textContent,
       themes: document.querySelectorAll("#boards button").length,
@@ -216,7 +216,7 @@ describe.each([PROFILES[0], PROFILES[1], PROFILES[2]])("the page in $name", (pro
     const state = await page.evaluate(() => {
       const host = document.getElementById("board")!.getBoundingClientRect();
       const size = host.width / 8;
-      const off = Math.max(...[...document.querySelectorAll(".ls-piece")].map((el) => { const r = el.getBoundingClientRect(); const c = (r.left - host.left) / size; return Math.abs(c - Math.round(c)); }));
+      const off = Math.max(...[...document.querySelectorAll("#board .ls-piece")].map((el) => { const r = el.getBoundingClientRect(); const c = (r.left - host.left) / size; return Math.abs(c - Math.round(c)); }));
       // What must not move is the board. The grip's own colour fades for a moment when the pointer leaves it; that is not the board's doing.
       const board = document.getElementById("board")!;
       const running = document.getAnimations().filter((a) => board.contains((a.effect as KeyframeEffect).target)).length;
@@ -247,6 +247,133 @@ describe.each([PROFILES[0], PROFILES[1], PROFILES[2]])("the page in $name", (pro
     const reply = await lastMove();
     expect(reply.every((square) => Number(square[1]) >= 5), `Black moved: ${reply.join(" ")}`).toBe(true);
     await page.evaluate(() => document.getElementById("versus")!.click());
+  });
+
+  it("the position editor: a palette beside a board that still fits, the bin, a spare piece and the hand edit, and the position made is played", async () => {
+    const at = async (square: string): Promise<{ x: number; y: number }> => {
+      const box = (await page.locator("#board").boundingBox())!;
+      const size = box.width / 8;
+      return { x: box.x + (square.charCodeAt(0) - 97 + 0.5) * size, y: box.y + (8 - Number(square[1]) + 0.5) * size };
+    };
+    const press = async (square: string): Promise<void> => {
+      await page.locator("#board").scrollIntoViewIfNeeded();
+      const point = await at(square);
+      if (profile.touch) await page.touchscreen.tap(point.x, point.y);
+      else await page.mouse.click(point.x, point.y);
+      await page.waitForTimeout(300);
+    };
+    const told = (): Promise<string | null> => page.evaluate(() => document.getElementById("placement")!.textContent);
+    const tool = (name: string): Promise<void> => page.locator(`#spares-bottom [data-tool="${name}"]`).click();
+
+    await page.locator("#editor").click();
+    // The button is under the board on a narrow screen: the page brings the board and its palette back into sight.
+    await expect.poll(() => page.evaluate(() => { const r = document.querySelector(".frame")!.getBoundingClientRect(); return r.top >= -0.5 && (r.bottom <= innerHeight + 0.5 || r.height > innerHeight); }), { timeout: 3000 }).toBe(true);
+    const seen = await page.evaluate(() => {
+      const board = document.getElementById("board")!.getBoundingClientRect();
+      const spares = [...document.querySelectorAll(".spare")].map((el) => el.getBoundingClientRect());
+      const pictures = [...document.querySelectorAll<HTMLElement>(".spare[data-piece] i")].filter((el) => getComputedStyle(el).backgroundImage.length > 100).length;
+      const top = document.getElementById("spares-top")!.getBoundingClientRect();
+      const bottom = document.getElementById("spares-bottom")!.getBoundingClientRect();
+      return {
+        spares: spares.length,
+        pictures,
+        smallest: Math.min(...spares.map((r) => Math.min(r.width, r.height))),
+        inHand: [...document.querySelectorAll('.spare[aria-pressed="true"]')].map((el) => (el as HTMLElement).dataset.tool),
+        boardInWindow: board.left >= 0 && board.right <= innerWidth + 0.5,
+        square: Math.abs(board.width - board.height) < 0.5,
+        around: top.bottom <= board.top + 0.5 && bottom.top >= board.bottom - 0.5,
+        asWide: Math.abs(top.width - board.width) < 1 && Math.abs(bottom.width - board.width) < 1,
+        // On a wide screen the whole of it is seen at once: the two rows and the board fit the window's height.
+        tall: bottom.bottom - top.top,
+        window: innerHeight,
+        sideways: document.documentElement.scrollWidth > innerWidth,
+        pieces: document.querySelectorAll("#board .ls-piece:not(.ls-gone)").length,
+        top: document.querySelector("#spares-top [data-piece]")!.getAttribute("aria-label"),
+      };
+    });
+    expect(seen).toMatchObject({ spares: 16, pictures: 12, inHand: ["move", "move"], boardInWindow: true, square: true, around: true, asWide: true, sideways: false, pieces: 32, top: "Black king" });
+    expect(seen.smallest, "a spare piece is large enough for a finger").toBeGreaterThanOrEqual(profile.touch ? 40 : 30);
+    if (!profile.touch) expect(seen.tall, "the palette and the board are seen together").toBeLessThanOrEqual(seen.window);
+    expect(await told()).toBe('onChange("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR")');
+
+    await tool("erase");
+    await press("e2");
+    expect(await told()).toContain("/PPPP1PPP/");
+    await tool("wq");
+    await press("e4");
+    expect(await told()).toContain("/4Q3/");
+    // The hand moves a piece where no rule would let it go.
+    await tool("move");
+    await press("a1");
+    await press("a5");
+    expect(await told()).toBe('onChange("rnbqkbnr/pppppppp/8/R7/4Q3/8/PPPP1PPP/1NBQKBNR")');
+    expect(await page.evaluate(() => document.querySelectorAll(".ls-arrow, .ls-mark-last").length), "no arrow or last move of the game on the editor").toBe(0);
+
+    // Switched off, the position is played by the rules again: the rook may not jump its own knight, the queen may take on e7.
+    await page.locator("#editor").click();
+    expect(await page.evaluate(() => ({ palette: [...document.querySelectorAll(".spares")].every((el) => (el as HTMLElement).hidden), on: document.getElementById("editor")!.getAttribute("aria-pressed") }))).toEqual({ palette: true, on: "false" });
+    await press("e4");
+    await press("e7");
+    expect(await pieceOn("e7", "wq")).toBe(true);
+    expect(await pieceOn("e7", "bp")).toBe(false);
+
+    // A position without a king cannot be played: the game comes back as it was, and the page says why.
+    await page.locator("#editor").click();
+    await tool("erase");
+    await press("e1");
+    expect(await pieceOn("e1", "wk")).toBe(false);
+    await page.locator("#editor").click();
+    await page.waitForTimeout(300);
+    expect(await pieceOn("e1", "wk")).toBe(true);
+    expect(await pieceOn("e7", "wq")).toBe(true);
+    expect(await page.evaluate(() => document.getElementById("editor-note")!.textContent)).toContain("cannot be played");
+    expect(errors).toEqual([]);
+  });
+
+  it("the editor's palette turns with the board, and a step through the game leaves the editor", async () => {
+    await page.locator("#editor").click();
+    await page.locator("#flip").click();
+    expect(await page.evaluate(() => [document.querySelector("#spares-top [data-piece]")!.getAttribute("aria-label"), document.querySelector("#spares-bottom [data-piece]")!.getAttribute("aria-label")])).toEqual(["White king", "Black king"]);
+    await page.locator("#flip").click();
+    await page.evaluate(() => document.getElementById("next")!.click());
+    await page.waitForTimeout(350);
+    expect(await pieceOn("e4", "wp")).toBe(true);
+    expect(await page.evaluate(() => ({ palette: [...document.querySelectorAll(".spares")].every((el) => (el as HTMLElement).hidden), on: document.getElementById("editor")!.getAttribute("aria-pressed"), last: document.querySelectorAll(".ls-mark-last").length }))).toEqual({ palette: true, on: "false", last: 2 });
+    expect(errors).toEqual([]);
+  });
+
+  it("the race: two lanes of one size, both rooks arrive, the page tells how long its script stood still, and nothing runs afterwards", async () => {
+    await page.locator("#race-go").scrollIntoViewIfNeeded();
+    const lanes = (): Promise<Array<{ width: number; ratio: number; from: number; to: number }>> =>
+      page.evaluate(() =>
+        [document.querySelector("#race-board .ls-piece")!, document.getElementById("race-piece")!].map((rook) => {
+          const lane = rook.closest(".lane-view")!.getBoundingClientRect();
+          const r = rook.getBoundingClientRect();
+          return { width: lane.width, ratio: lane.width / lane.height, from: (r.left - lane.left) / lane.width, to: (lane.right - r.right) / lane.width };
+        }),
+      );
+    const before = await lanes();
+    expect(Math.abs(before[0].width - before[1].width)).toBeLessThan(1);
+    for (const lane of before) {
+      expect(Math.abs(lane.ratio - 8), "one rank of a board").toBeLessThan(0.05);
+      expect(Math.abs(lane.from), "the rook stands on the first square").toBeLessThan(0.005);
+    }
+    expect(await page.evaluate(() => document.querySelectorAll("#race-board .ls-piece").length)).toBe(1);
+    await page.locator("#race-go").click();
+    expect(await page.evaluate(() => (document.getElementById("race-go") as HTMLButtonElement).disabled)).toBe(true);
+    await page.waitForFunction("!document.getElementById('race-go').disabled", undefined, { timeout: 12000 });
+    const note = await page.evaluate(() => document.getElementById("race-note")!.textContent ?? "");
+    expect(Number(/stood still for (\d+) ms/.exec(note)?.[1]), note).toBeGreaterThanOrEqual(1400);
+    await page.waitForTimeout(300);
+    for (const lane of await lanes()) expect(Math.abs(lane.to), "the rook stands on the last square").toBeLessThan(0.005);
+    await page.evaluate(() => P.reset());
+    await page.waitForTimeout(600);
+    expect(await page.evaluate(() => ({ animations: document.getAnimations().length, raf: P.raf }))).toEqual({ animations: 0, raf: 0 });
+    // A second race starts from the first square again.
+    await page.locator("#race-go").click();
+    await page.waitForFunction("!document.getElementById('race-go').disabled", undefined, { timeout: 12000 });
+    for (const lane of await lanes()) expect(Math.abs(lane.to)).toBeLessThan(0.005);
+    expect(errors).toEqual([]);
   });
 
   it("at rest the page animates nothing and asks for no frame", async () => {
@@ -303,7 +430,7 @@ describe.each([PROFILES[0], PROFILES[2]])("the published demo in $name", (profil
       if (r.status() >= 400) failed.push(`${r.status()} ${new URL(r.url()).pathname}`);
     });
     await page.reload();
-    await page.waitForFunction("document.querySelectorAll('.ls-piece').length === 32 && document.querySelectorAll('#boards button').length > 0");
+    await page.waitForFunction("document.querySelectorAll('#board .ls-piece').length === 32 && document.querySelectorAll('#boards button').length > 0");
   });
   afterAll(async () => {
     await browser.close();

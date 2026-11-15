@@ -125,6 +125,28 @@ React component;
 themes as data (squares, pieces, arrows) that one call applies to a whole
 page.
 
+## Coming from another board
+
+- **chessground** (Lichess's board) is GPL-3.0: an app that ships it must
+  be open source too. Lightsquare is MIT, about half the size, and does the
+  same kind of work per move with far less script. Chessground has years of
+  Lichess behind it; Lightsquare is new.
+- **cm-chessboard**: the same idea of a small board without chess rules.
+  It moves pieces from script, frame by frame; Lightsquare hands the slide
+  to the browser. `node scripts/sprite-to-css.mjs sprite.svg pieces.css
+  mine` turns a cm-chessboard piece sprite into a Lightsquare piece set, so
+  you keep your pieces. What replaces each cm-chessboard extension is in
+  [ARCHITECTURE.md](ARCHITECTURE.md), section 4.
+- **chessboard.js**: no jQuery here, and a sixth of the script to
+  download.
+- **react-chessboard**: Lightsquare is not a React library, but it has a
+  React component (`@kibitzo/lightsquare/react`, 0.5 kB) over the same
+  board, about a quarter of the download, and it works without React as
+  well.
+
+The numbers behind these lines, and the rows where another board is ahead,
+are in [compare/RESULTS.md](compare/RESULTS.md).
+
 ## Read first
 
 - [docs/API.md](docs/API.md): everything the library offers.

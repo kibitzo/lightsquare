@@ -138,6 +138,16 @@ describe("RULES.md", () => {
     expect(reaching).toEqual([]);
   });
 
+  it("llms.txt quotes the comparison as the README's table has it, and is published with the demo", () => {
+    const facts = readFileSync(`${root}docs/llms.txt`, "utf8");
+    const table = readFileSync(`${root}README.md`, "utf8").split("<!-- comparison:")[1].split("<!-- end of comparison -->")[0];
+    const quoted = facts.split("## Compared with other boards")[1].split("## Links")[0].match(/\d+(\.\d+)? (kB|ms)/g) ?? [];
+    expect(quoted.length).toBeGreaterThanOrEqual(10);
+    for (const figure of quoted) expect(table, `${figure} is not in the README's comparison: run compare/run.mjs and bring docs/llms.txt up to date`).toContain(figure);
+    expect(count(facts, /—|–|--/g)).toBe(0);
+    expect(readFileSync(`${root}bench/server.mjs`, "utf8")).toContain('"/llms.txt": ["docs/llms.txt"');
+  });
+
   it("rule 12: nothing borrowed from GPL boards", () => {
     const everything = code + moduleCode + css;
     expect(count(everything, /chessground|cg-wrap|cg-board|cg-container/gi)).toBe(0);

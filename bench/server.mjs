@@ -35,6 +35,8 @@ export const files = {
   "/results.json": ["compare/results.json", "application/json"],
   "/pieces-kibitzo-NOTICE.md": ["piece-sets/NOTICE.md", "text/markdown; charset=utf-8"],
   "/quickstart.html": ["docs/quickstart.html", "text/html; charset=utf-8"],
+  // What the library is, in plain facts, for the assistants that read such a file.
+  "/llms.txt": ["docs/llms.txt", "text/plain; charset=utf-8"],
 };
 
 /** Start the page's server. `port` 0 takes any free port (the tests do). */
