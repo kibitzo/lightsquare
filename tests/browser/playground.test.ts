@@ -404,7 +404,8 @@ describe.each([PROFILES[0], PROFILES[1], PROFILES[2]])("the page in $name", (pro
         requestAnimationFrame(look);
       });
       await page.reload();
-      await page.waitForFunction("window.ready === true");
+      // The page can be ready before the browser has drawn a frame with pieces (WebKit on CI): wait for that frame.
+      await page.waitForFunction("window.ready === true && !!window.FIRST");
       const first = await page.evaluate(() => (window as unknown as { FIRST?: string }).FIRST);
       expect(first, JSON.stringify(saved)).toBe(saved ? "page ls-set-cburnett|cburnett" : "page ls-set-kibitzo|kibitzo");
     }
