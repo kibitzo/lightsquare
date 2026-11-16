@@ -461,7 +461,23 @@ const PIECE_SETS: Record<string, string> = { kibitzo: "Kibitzo", cburnett: "Cbur
 /** True on a static host (the published demo): nothing there can take what a phone reports. */
 let onStaticHost = false;
 
+/** The saved look, or the defaults. */
+function restoreLook(): void {
+  try {
+    Object.assign(look, JSON.parse(localStorage.getItem(LOOK_KEY) ?? "{}"));
+  } catch {
+    /* a broken saved look is ignored */
+  }
+  if (!(look.board in themes)) look.board = "wood";
+  if (!(look.pieces in PIECE_SETS)) look.pieces = "kibitzo";
+}
+
 async function buildLooks(): Promise<void> {
+  // The look goes on before the first wait: until then the page showed the stylesheet's default pieces and squares
+  // (Cburnett, the plain colours) for the frames the settings file took to arrive.
+  restoreLook();
+  boardScale(look.boardScale);
+  applyLook();
   const config = (await fetch("config.json").then((r) => r.json()).catch(() => ({}))) as { static?: boolean };
   onStaticHost = !!config.static;
   if (onStaticHost) for (const el of document.querySelectorAll("[data-needs-server]")) el.remove();
@@ -474,20 +490,12 @@ async function buildLooks(): Promise<void> {
   choice("labels", "labels", "on", "On", "");
   choice("labels", "labels", "off", "Off", "");
   for (const [set, name] of Object.entries(PIECE_SETS)) choice("sets", "pieces", set, name, "");
-  try {
-    Object.assign(look, JSON.parse(localStorage.getItem(LOOK_KEY) ?? "{}"));
-  } catch {
-    /* a broken saved look is ignored */
-  }
-  if (!(look.board in themes)) look.board = "wood";
-  if (!(look.pieces in PIECE_SETS)) look.pieces = "kibitzo";
   for (const id of ["pieceSize", "moveMs", "arrowWidth", "arrowHead", "glow"] as const) {
     $(id).oninput = () => {
       look[id] = Number(($(id) as HTMLInputElement).value);
       applyLook();
     };
   }
-  boardScale(look.boardScale);
   wireResize();
   wells("arrowColours", look.arrowColours);
   wells("circleColours", look.circleColours);
@@ -656,7 +664,8 @@ $("smooth").onclick = () => send("feels smooth");
 $("rough").onclick = () => send("not smooth");
 addEventListener("pagehide", () => send("leaving"));
 
-show();
 void showComparison();
 // The page says when it is fully built: its tests wait for this.
-void buildLooks().then(() => ((window as unknown as { ready: boolean }).ready = true));
+const built = buildLooks();
+show();
+void built.then(() => ((window as unknown as { ready: boolean }).ready = true));

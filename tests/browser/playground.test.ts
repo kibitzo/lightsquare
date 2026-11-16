@@ -383,6 +383,34 @@ describe.each([PROFILES[0], PROFILES[1], PROFILES[2]])("the page in $name", (pro
     expect(errors).toEqual([]);
   });
 
+  it("the first frame with pieces already shows the chosen set and board: no default set first", async () => {
+    // Seen by the founder on 2026-11-16: Cburnett for about 0.3 s, then Kibitzo, while the settings file loaded.
+    for (const saved of [null, { pieces: "cburnett", board: "ocean" }]) {
+      await page.evaluate((look) => {
+        localStorage.clear();
+        if (look) localStorage.setItem("lightsquare-playground-look-4", JSON.stringify(look));
+      }, saved);
+      await page.evaluate(() => {
+        sessionStorage.setItem("watch", "1");
+      });
+      await page.addInitScript(() => {
+        if (!sessionStorage.getItem("watch")) return;
+        const w = window as unknown as { FIRST?: string };
+        const look = (): void => {
+          const piece = document.querySelector("#board .ls-wk");
+          if (piece && !w.FIRST) w.FIRST = `${document.getElementById("page")!.className}|${getComputedStyle(piece).backgroundImage.includes("viewBox=%220 0 45 45") ? "cburnett" : "kibitzo"}`;
+          if (!w.FIRST) requestAnimationFrame(look);
+        };
+        requestAnimationFrame(look);
+      });
+      await page.reload();
+      await page.waitForFunction("window.ready === true");
+      const first = await page.evaluate(() => (window as unknown as { FIRST?: string }).FIRST);
+      expect(first, JSON.stringify(saved)).toBe(saved ? "page ls-set-cburnett|cburnett" : "page ls-set-kibitzo|kibitzo");
+    }
+    await page.evaluate(() => sessionStorage.removeItem("watch"));
+  });
+
   it("at rest the page animates nothing and asks for no frame", async () => {
     await page.waitForTimeout(700);
     await page.evaluate(() => P.reset());
