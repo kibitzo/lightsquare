@@ -107,6 +107,9 @@ export function attachInput(b: InputHost): Input {
 
   function move(e: PointerEvent): void {
     if (!g || e.pointerId !== g.pointer) return;
+    // A mouse that moves with no button held has been released where the
+    // board did not hear it: end the gesture there.
+    if (e.pointerType === "mouse" && e.buttons === 0) return release(e);
     const el = b.element(g.piece);
     if (!g.dragging) {
       if (Math.hypot(e.clientX - g.x, e.clientY - g.y) < (g.touch ? DRAG_AFTER_TOUCH : DRAG_AFTER_MOUSE)) return;
@@ -162,10 +165,27 @@ export function attachInput(b: InputHost): Input {
     if (g && e.pointerId === g.pointer) abort();
   };
 
+  /**
+   * The board lost its hold on the pointer while a piece was held. Chrome
+   * can send this before the pointerup, and the pointerup then goes to
+   * whatever is under the pointer, not to the board (founder's Brave,
+   * 2026-11-17: the piece stayed on the mouse with no button held). With
+   * no button held it is the release; with a button still held the hold
+   * was taken away, and the piece goes back.
+   */
+  const lost = (e: PointerEvent): void => {
+    if (!g || e.pointerId !== g.pointer) return;
+    if (e.buttons === 0) {
+      if (press && e.pointerId === press.pointer) press = null;
+      release(e);
+    } else cancel(e);
+  };
+
   b.host.addEventListener("pointerdown", down);
   b.host.addEventListener("pointermove", move);
   b.host.addEventListener("pointerup", up);
   b.host.addEventListener("pointercancel", cancel);
+  b.host.addEventListener("lostpointercapture", lost);
 
   return {
     abort,
@@ -178,6 +198,7 @@ export function attachInput(b: InputHost): Input {
       b.host.removeEventListener("pointermove", move);
       b.host.removeEventListener("pointerup", up);
       b.host.removeEventListener("pointercancel", cancel);
+      b.host.removeEventListener("lostpointercapture", lost);
     },
   };
 }

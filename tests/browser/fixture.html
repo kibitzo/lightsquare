@@ -33,6 +33,8 @@ import { editor } from "/modules/editor.js";
 window.M = { shapes, promotion, overlay, a11y, premoveTargets, applyTheme, themeVariables, themes: () => themes, editor };
 
 const host = document.getElementById("board");
+let heldPointer = 0;
+document.addEventListener("pointerdown", (e) => { heldPointer = e.pointerId; }, true);
 const FILES = "abcdefgh";
 
 /** Test helpers. They read the page the way a user sees it: by where things are. */
@@ -127,6 +129,10 @@ window.T = {
     return [...host.querySelectorAll(".ls-coord")].map((el) => `${el.textContent}@${T.squareOf(el, "white")}`);
   },
   /** A synthetic finger or mouse, for browsers where no real one can be driven. */
+  /** The pointer id of the last press on the board (a real mouse, a real or synthetic finger). */
+  held() {
+    return heldPointer;
+  },
   pointer(type, x, y, kind = "touch") {
     host.dispatchEvent(new PointerEvent(type, { pointerId: 7, pointerType: kind, isPrimary: true, clientX: x, clientY: y, button: 0, bubbles: true, cancelable: true }));
   },

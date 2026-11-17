@@ -287,7 +287,7 @@ describe("work measured inside Chromium", () => {
       const found = await cdp.send("DOMDebugger.getEventListeners", { objectId: result.objectId! });
       return found.listeners.map((l) => l.type).sort();
     };
-    expect(await listeners("#board")).toEqual(["pointercancel", "pointerdown", "pointermove", "pointerup"]);
+    expect(await listeners("#board")).toEqual(["lostpointercapture", "pointercancel", "pointerdown", "pointermove", "pointerup"]);
     expect(await listeners(".ls-pieces")).toEqual(["transitionend"]);
     expect(await listeners(".ls-piece")).toEqual([]);
     expect(await listeners(".ls-mark")).toEqual([]);

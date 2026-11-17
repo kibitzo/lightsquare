@@ -53,9 +53,9 @@ describe("RULES.md", () => {
   });
 
   it("rule 6: one set of listeners, on the board, not per piece or square", () => {
-    expect(count(source["input.ts"], /addEventListener\(/g)).toBe(4);
+    expect(count(source["input.ts"], /addEventListener\(/g)).toBe(5);
     expect(count(source["pieces.ts"], /addEventListener\(/g)).toBe(1);
-    expect(count(code, /addEventListener\(/g)).toBe(5);
+    expect(count(code, /addEventListener\(/g)).toBe(6);
   });
 
   it("rules 6 and 8: the board is measured in exactly one place, at pointer down", () => {

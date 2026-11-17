@@ -228,6 +228,7 @@ declare global {
     tag(square: string, name: string): void;
     tagAt(square: string, orientation?: string): string | null;
     point(square: string, orientation?: string): { x: number; y: number; size: number };
+    held(): number;
     pointer(type: string, x: number, y: number, kind?: string): void;
     settled(): boolean;
   };

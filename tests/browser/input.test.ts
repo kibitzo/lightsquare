@@ -279,6 +279,51 @@ describe.each(PROFILES)("moving pieces in $name", (profile) => {
     expect(await seen()).toBe(START);
   });
 
+  it("a release the board never hears (capture lost first) still ends the drag", async () => {
+    await fresh(page, OPENING);
+    const from = await at("e2");
+    const to = await at("e4");
+    await hand.down(from);
+    await hand.move(to);
+    // Chrome sent lostpointercapture with no button held, and the pointerup to another element.
+    await page.evaluate(([x, y]) => document.getElementById("board")!.dispatchEvent(new PointerEvent("lostpointercapture", { pointerId: T.held(), pointerType: "mouse", isPrimary: true, clientX: x, clientY: y, buttons: 0, bubbles: true })), [to.x, to.y]);
+    expect(await page.evaluate(() => document.querySelectorAll(".ls-dragging").length)).toBe(0);
+    await settle(page);
+    expect(await moves()).toEqual([{ type: "move", from: "e2", to: "e4", piece: "wp" }]);
+    await hand.up();
+    expect(await moves()).toEqual([{ type: "move", from: "e2", to: "e4", piece: "wp" }]);
+  });
+
+  it("a hold taken away while the button is still down puts the piece back", async () => {
+    await fresh(page, OPENING);
+    const from = await at("e2");
+    const to = await at("e4");
+    await hand.down(from);
+    await hand.move(to);
+    await page.evaluate(([x, y]) => document.getElementById("board")!.dispatchEvent(new PointerEvent("lostpointercapture", { pointerId: T.held(), pointerType: "mouse", isPrimary: true, clientX: x, clientY: y, buttons: 1, bubbles: true })), [to.x, to.y]);
+    expect(await page.evaluate(() => document.querySelectorAll(".ls-dragging").length)).toBe(0);
+    await settle(page);
+    expect(await seen()).toBe(START);
+    await hand.up();
+    expect(await moves()).toEqual([]);
+  });
+
+  it("a mouse that moves with no button held ends the drag where it is", async () => {
+    await fresh(page, OPENING);
+    const from = await at("e2");
+    await page.evaluate(([x, y]) => {
+      const host = document.getElementById("board")!;
+      const fire = (type: string, px: number, py: number, buttons: number) => host.dispatchEvent(new PointerEvent(type, { pointerId: 11, pointerType: "mouse", isPrimary: true, clientX: px, clientY: py, button: type === "pointermove" ? -1 : 0, buttons, bubbles: true }));
+      fire("pointerdown", x, y, 1);
+      fire("pointermove", x + 20, y - 40, 1);
+      fire("pointermove", x + 900, y + 900, 0);
+    }, [from.x, from.y]);
+    expect(await page.evaluate(() => document.querySelectorAll(".ls-dragging").length)).toBe(0);
+    await settle(page);
+    expect(await moves()).toEqual([]);
+    expect(await seen()).toBe(START);
+  });
+
   it("a press that barely moves is a tap, not a drag", async () => {
     await fresh(page, OPENING);
     const from = await at("e2");
